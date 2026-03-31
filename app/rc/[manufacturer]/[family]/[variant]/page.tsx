@@ -1,11 +1,8 @@
-export const dynamic = "force-dynamic";
-
 import type { Metadata } from "next";
 import { VariantPage } from "@/components/variant-page/VariantPage";
 import { getVariantPagePayload } from "@/lib/variant-page";
 
-export const revalidate = 3600;
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{

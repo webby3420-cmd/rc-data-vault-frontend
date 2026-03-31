@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata } from "next";
 import { VariantPage } from "@/components/variant-page/VariantPage";
 import { getVariantPagePayload } from "@/lib/variant-page";

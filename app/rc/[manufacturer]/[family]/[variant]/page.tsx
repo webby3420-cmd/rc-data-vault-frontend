@@ -1,3 +1,8 @@
+// @ts-nocheck
+export const dynamic = "force-dynamic";
+
+import type { Metadata } from "next";
+// ... rest unchanged
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";

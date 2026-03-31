@@ -151,7 +151,7 @@ export default async function VariantPage({ params }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {price_trends.map((t) => (
+                     {(price_trends as Array<{ month: string; median_price: number; min_price: number; max_price: number; observation_count: number }>).map((t) => (
                         <tr key={t.month} className="border-t border-slate-800">
                           <td className="py-3 pr-4">{fmtMonth(t.month)}</td>
                           <td className="py-3 pr-4 font-medium text-amber-400">{fmt(t.median_price)}</td>

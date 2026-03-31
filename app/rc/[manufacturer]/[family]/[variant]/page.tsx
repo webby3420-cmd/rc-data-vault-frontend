@@ -2,10 +2,6 @@
 export const dynamic = "force-dynamic";
 
 import type { Metadata } from "next";
-// ... rest unchanged
-export const dynamic = "force-dynamic";
-
-import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
 
@@ -109,7 +105,6 @@ export default async function VariantPage({ params }: Props) {
       <main className="min-h-screen bg-slate-950 text-slate-100">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 
-          {/* Breadcrumb */}
           <nav className="mb-6 text-sm text-slate-400">
             <a className="hover:text-white" href={related.manufacturer.canonical_url}>{identity.manufacturer_name}</a>
             <span className="mx-2">/</span>
@@ -118,7 +113,6 @@ export default async function VariantPage({ params }: Props) {
             <span>{identity.variant_name}</span>
           </nav>
 
-          {/* H1 */}
           <header className="mb-8">
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
               {identity.manufacturer_name} {identity.variant_full_name}
@@ -128,7 +122,6 @@ export default async function VariantPage({ params }: Props) {
 
           <div className="grid gap-8">
 
-            {/* Valuation card */}
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
               <div className="mb-2 text-sm uppercase tracking-wide text-slate-400">Estimated Value</div>
               <div className="text-5xl font-semibold text-amber-400">{fmt(valuation.estimated_value_mid)}</div>
@@ -141,7 +134,6 @@ export default async function VariantPage({ params }: Props) {
               <div className="mt-2 text-xs text-slate-500">Source: eBay sold listings</div>
             </section>
 
-            {/* Price trend */}
             {price_trends && price_trends.length > 0 && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <h2 className="mb-4 text-2xl font-semibold text-white">Market Trend</h2>
@@ -156,7 +148,7 @@ export default async function VariantPage({ params }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                     {(price_trends as Array<{ month: string; median_price: number; min_price: number; max_price: number; observation_count: number }>).map((t) => (
+                      {price_trends.map((t) => (
                         <tr key={t.month} className="border-t border-slate-800">
                           <td className="py-3 pr-4">{fmtMonth(t.month)}</td>
                           <td className="py-3 pr-4 font-medium text-amber-400">{fmt(t.median_price)}</td>
@@ -175,7 +167,6 @@ export default async function VariantPage({ params }: Props) {
               </section>
             )}
 
-            {/* Recent sales */}
             {recent_sales && recent_sales.length > 0 && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <h2 className="mb-4 text-2xl font-semibold text-white">Recent Sold Listings</h2>
@@ -204,7 +195,6 @@ export default async function VariantPage({ params }: Props) {
               </section>
             )}
 
-            {/* Market summary */}
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">Market Summary</h2>
               <p className="max-w-3xl text-base leading-7 text-slate-200">
@@ -227,7 +217,6 @@ export default async function VariantPage({ params }: Props) {
               </div>
             </section>
 
-            {/* Related */}
             {related && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <h2 className="mb-4 text-2xl font-semibold text-white">Related Models</h2>
@@ -248,7 +237,6 @@ export default async function VariantPage({ params }: Props) {
               </section>
             )}
 
-            {/* Footer */}
             <div className="text-sm text-slate-400">
               Price data updated {fmtDate(valuation.valuation_last_updated_at)} from {valuation.observation_count} eBay sold listings. Data refreshes every {Math.round(freshness.revalidate_after_seconds / 60)} minutes.
             </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RC Bluebook",
+  title: "RC Data Vault",
   description: "Used RC car values, price guides, and sold market data.",
 };
 

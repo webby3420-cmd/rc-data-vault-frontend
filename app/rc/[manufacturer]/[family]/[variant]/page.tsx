@@ -15,6 +15,16 @@ function getSupabase() {
   );
 }
 
+function buildVariantSubject(manufacturerName: string, variantFullName: string) {
+  const manufacturer = (manufacturerName || "").trim();
+  const full = (variantFullName || "").trim();
+  if (!manufacturer) return full;
+  const lowerManufacturer = manufacturer.toLowerCase();
+  const lowerFull = full.toLowerCase();
+  if (lowerFull.startsWith(lowerManufacturer + " ")) return full;
+  return `${manufacturer} ${full}`.trim();
+}
+
 type Props = {
   params: Promise<{ manufacturer: string; family: string; variant: string }>;
 };
@@ -27,7 +37,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!data) return { title: "Not Found | RC Data Vault" };
 
-  const name = data.identity.variant_full_name;
+  const name = buildVariantSubject(
+    data.identity.manufacturer_name,
+    data.identity.variant_full_name
+  );
   const mid = data.valuation?.estimated_value_mid;
   const obs = data.valuation?.observation_count;
   const canonical = `${BASE_URL}${data.identity.canonical_url}`;
@@ -48,25 +61,57 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 function fmt(v: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(v);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(v);
 }
 
 function fmtDate(s: string) {
-  return new Date(s + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return new Date(s + "T00:00:00").toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function fmtMonth(s: string) {
-  return new Date(s + "T00:00:00").toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  return new Date(s + "T00:00:00").toLocaleDateString("en-US", {
+    month: "short",
+    year: "2-digit",
+  });
 }
 
 export default async function VariantPage({ params }: Props) {
   const { variant: slug } = await params;
-  const { data: payload, error } = await getSupabase().rpc("get_variant_page_payload", { p_variant_slug: slug });
+  const { data: payload, error } = await getSupabase().rpc("get_variant_page_payload", {
+    p_variant_slug: slug,
+  });
 
   if (error || !payload) notFound();
 
   const { identity, valuation, recent_sales, price_trends, market_summary, related, freshness } = payload;
   const canonical = `${BASE_URL}${identity.canonical_url}`;
+
+  const subject = buildVariantSubject(
+    identity.manufacturer_name,
+    identity.variant_full_name
+  );
+
+  const dedupedRecentSales = Array.from(
+    new Map(
+      (recent_sales || []).map((sale) => {
+        const key = [
+          sale.source || "",
+          sale.price_date || "",
+          sale.price || "",
+          (sale.title || "").trim().toLowerCase(),
+        ].join("|");
+        return [key, sale];
+      })
+    ).values()
+  );
 
   const productSchema = {
     "@context": "https://schema.org",
@@ -115,7 +160,7 @@ export default async function VariantPage({ params }: Props) {
 
           <header className="mb-8">
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-              {identity.manufacturer_name} {identity.variant_full_name}
+              {subject}
               <span className="mt-2 block text-2xl font-normal text-slate-300">Used Value &amp; Price Guide</span>
             </h1>
           </header>
@@ -167,7 +212,7 @@ export default async function VariantPage({ params }: Props) {
               </section>
             )}
 
-            {recent_sales && recent_sales.length > 0 && (
+            {dedupedRecentSales && dedupedRecentSales.length > 0 && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <h2 className="mb-4 text-2xl font-semibold text-white">Recent Sold Listings</h2>
                 <div className="overflow-x-auto">
@@ -181,8 +226,16 @@ export default async function VariantPage({ params }: Props) {
                       </tr>
                     </thead>
                     <tbody>
-                      {recent_sales.map((sale, i) => (
-                        <tr key={i} className="border-t border-slate-800">
+                      {dedupedRecentSales.map((sale) => (
+                        <tr
+                          key={[
+                            sale.source || "",
+                            sale.price_date || "",
+                            sale.price || "",
+                            (sale.title || "").trim().toLowerCase(),
+                          ].join("|")}
+                          className="border-t border-slate-800"
+                        >
                           <td className="py-3 pr-4 font-medium text-amber-400">{fmt(sale.price)}</td>
                           <td className="py-3 pr-4">{new Date(sale.price_date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>
                           <td className="py-3 pr-4 uppercase text-slate-400">{sale.source}</td>

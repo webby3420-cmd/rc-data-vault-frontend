@@ -23,11 +23,8 @@ export default function LosiPage() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <a href="/rc/losi/super-baja-rey" className="card">Super Baja Rey</a>
-          <a href="/rc/losi/lmt" className="card">LMT</a>
-          <a href="/rc/losi/baja-rey" className="card">Baja Rey</a>
-          <a href="/rc/losi/mini-lmt" className="card">Mini LMT</a>
-        </div>
+  <a href="/rc/losi/super-baja-rey" className="card">Super Baja Rey</a>
+</div>
       </div>
     </main>
   );

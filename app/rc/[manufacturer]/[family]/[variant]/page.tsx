@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-
+import { buildVariantSubject, dedupeListings } from "@/lib/variant-utils";
 const BASE_URL = "https://rcdatavault.com";
 
 function getSupabase() {
@@ -15,15 +15,6 @@ function getSupabase() {
   );
 }
 
-function buildVariantSubject(manufacturerName: string, variantFullName: string) {
-  const manufacturer = (manufacturerName || "").trim();
-  const full = (variantFullName || "").trim();
-  if (!manufacturer) return full;
-  const lowerManufacturer = manufacturer.toLowerCase();
-  const lowerFull = full.toLowerCase();
-  if (lowerFull.startsWith(lowerManufacturer + " ")) return full;
-  return `${manufacturer} ${full}`.trim();
-}
 
 type Props = {
   params: Promise<{ manufacturer: string; family: string; variant: string }>;
@@ -99,20 +90,7 @@ export default async function VariantPage({ params }: Props) {
     identity.variant_full_name
   );
 
-  const dedupedRecentSales = Array.from(
-    new Map(
-      (recent_sales || []).map((sale) => {
-        const key = [
-          sale.source || "",
-          sale.price_date || "",
-          sale.price || "",
-          (sale.title || "").trim().toLowerCase(),
-        ].join("|");
-        return [key, sale];
-      })
-    ).values()
-  );
-
+ const dedupedRecentSales = dedupeListings(recent_sales);
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",

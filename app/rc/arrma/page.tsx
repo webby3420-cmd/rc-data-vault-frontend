@@ -23,10 +23,10 @@ export default function ARRMAPage() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <a href="/rc/arrma/kraton" className="card">Kraton</a>
-          <a href="/rc/arrma/typhon" className="card">Typhon</a>
-          <a href="/rc/arrma/mojave" className="card">Mojave</a>
-          <a href="/rc/arrma/felony" className="card">Felony</a>
+          <div className="grid gap-4 sm:grid-cols-2">
+  <a href="/rc/arrma/kraton" className="card">Kraton</a>
+  <a href="/rc/arrma/typhon" className="card">Typhon</a>
+</div>
         </div>
       </div>
     </main>

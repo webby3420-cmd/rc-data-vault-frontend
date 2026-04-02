@@ -23,11 +23,9 @@ export default function TraxxasPage() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <a href="/rc/traxxas/x-maxx" className="card">X-Maxx</a>
-          <a href="/rc/traxxas/slash" className="card">Slash</a>
-          <a href="/rc/traxxas/xrt" className="card">XRT</a>
-          <a href="/rc/traxxas/sledge" className="card">Sledge</a>
-        </div>
+  <a href="/rc/traxxas/x-maxx" className="card">X-Maxx</a>
+  <a href="/rc/traxxas/slash" className="card">Slash</a>
+</div>
       </div>
     </main>
   );

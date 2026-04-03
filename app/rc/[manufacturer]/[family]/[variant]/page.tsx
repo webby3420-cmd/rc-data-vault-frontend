@@ -47,12 +47,56 @@ function fmtDate(d: string | null | undefined) {
 
 function fmtMonth(d: string | null | undefined) {
   if (!d) return "—";
-  const dt = new Date(d);
-  return dt.toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+  return new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
+}
+
+function cap(s: string | null | undefined) {
+  if (!s) return null;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+type SpecRow = { label: string; value: string | null };
+
+function buildSpecRows(specs: any): SpecRow[] {
+  if (!specs) return [];
+  const rows: SpecRow[] = [];
+
+  const add = (label: string, value: string | number | boolean | null | undefined, suffix = "") => {
+    if (value === null || value === undefined) return;
+    const display = typeof value === "boolean" ? (value ? "Yes" : "No") : `${value}${suffix}`;
+    rows.push({ label, value: display });
+  };
+
+  add("Scale", specs.scale);
+  add("Class", cap(specs.vehicle_class));
+  add("Configuration", specs.body_style?.toUpperCase());
+  add("Drive", specs.drive_config?.toUpperCase());
+  add("Drivetrain", cap(specs.drivetrain_type));
+  add("Power", cap(specs.power_type));
+  add("Battery", specs.battery_config);
+  add("Battery Included", specs.battery_included);
+  add("Motor", specs.motor_name);
+  add("ESC", specs.esc_name);
+  add("Top Speed", specs.top_speed_mph, " mph");
+  if (specs.length_mm) add("Length", `${specs.length_mm} mm`);
+  if (specs.width_mm) add("Width", `${specs.width_mm} mm`);
+  if (specs.wheelbase_mm) add("Wheelbase", `${specs.wheelbase_mm} mm`);
+  if (specs.weight_g) add("Weight", specs.weight_g >= 1000 ? `${(specs.weight_g / 1000).toFixed(1)} kg` : `${specs.weight_g} g`);
+  add("Waterproof", specs.is_waterproof);
+  add("Self-Righting", specs.is_self_righting);
+  add("Diff Lock", specs.has_diff_lock);
+  add("2-Speed", specs.has_2_speed);
+  add("Portal Axles", specs.has_portal_axles);
+  add("Radio", specs.radio_system);
+  if (specs.msrp_usd) add("Original MSRP", `$${Number(specs.msrp_usd).toLocaleString()}`);
+  if (specs.year_released) add("Year Released", specs.year_released);
+  if (specs.year_discontinued) add("Discontinued", specs.year_discontinued);
+
+  return rows;
 }
 
 export default async function VariantPage({ params }: PageProps) {
-  const { manufacturer, family, variant: variantSlug } = await params;
+  const { variant: variantSlug } = await params;
   const { data: payload } = await supabase.rpc("get_variant_page_payload", { p_variant_slug: variantSlug });
 
   if (!payload) {
@@ -67,12 +111,13 @@ export default async function VariantPage({ params }: PageProps) {
     );
   }
 
-  const { identity, valuation, recent_sales, price_trends, market_summary, related, content, seo, freshness } = payload;
+  const { identity, valuation, recent_sales, price_trends, market_summary, related, specs, content, seo, freshness } = payload;
   const hasValuation = valuation?.has_sufficient_data;
   const hasTrends = price_trends && price_trends.length >= 2;
   const firstTrend = hasTrends ? price_trends[0] : null;
   const lastTrend = hasTrends ? price_trends[price_trends.length - 1] : null;
   const trendDelta = (firstTrend && lastTrend) ? Math.round(lastTrend.median_price - firstTrend.median_price) : null;
+  const specRows = buildSpecRows(specs);
 
   const productSchema = hasValuation ? JSON.stringify({
     "@context": "https://schema.org",
@@ -125,7 +170,7 @@ export default async function VariantPage({ params }: PageProps) {
 
         <div className="grid gap-8">
 
-          {/* SEO Intro Content — shown when available */}
+          {/* Intro paragraph */}
           {content?.intro_paragraph && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <p className="text-base leading-7 text-slate-200">{content.intro_paragraph}</p>
@@ -135,6 +180,24 @@ export default async function VariantPage({ params }: PageProps) {
                     <span key={tag} className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-400 capitalize">{tag}</span>
                   ))}
                 </div>
+              )}
+            </section>
+          )}
+
+          {/* Specs table — rendered from structured data, never from prose */}
+          {specRows.length > 0 && (
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+              <h2 className="mb-4 text-2xl font-semibold text-white">Specifications</h2>
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                {specRows.map(({ label, value }) => (
+                  <div key={label}>
+                    <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
+                    <dd className="mt-0.5 text-sm font-medium text-slate-200">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {specs?.spec_notes && (
+                <p className="mt-4 text-xs text-slate-500">* {specs.spec_notes}</p>
               )}
             </section>
           )}
@@ -158,7 +221,7 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Price Trend Table */}
+          {/* Price Trend */}
           {hasTrends && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">Market Trend</h2>
@@ -221,7 +284,7 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Buying Tips — shown when available */}
+          {/* Buying Tips */}
           {content?.buying_tips && content.buying_tips.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">What to Look For When Buying Used</h2>
@@ -266,7 +329,7 @@ export default async function VariantPage({ params }: PageProps) {
           )}
 
           {/* Related Models */}
-          {(related?.siblings?.length > 0) && (
+          {related?.siblings?.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">Related Models</h2>
               <div className="mb-6 grid gap-3">
@@ -288,7 +351,7 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Freshness footer */}
+          {/* Freshness */}
           <div className="text-sm text-slate-400">
             Price data updated {fmtDate(valuation?.valuation_last_updated_at)} from {valuation?.observation_count ?? 0} eBay sold listings. Data refreshes every {Math.round((freshness?.revalidate_after_seconds ?? 3600) / 60)} minutes.
           </div>

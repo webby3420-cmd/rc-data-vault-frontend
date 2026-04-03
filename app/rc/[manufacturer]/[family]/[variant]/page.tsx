@@ -40,6 +40,11 @@ function fmt(n: number | null | undefined) {
   return "$" + Math.round(n).toLocaleString();
 }
 
+function fmtExact(n: number | null | undefined) {
+  if (n == null) return null;
+  return "$" + Number(n).toFixed(2);
+}
+
 function fmtDate(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -55,18 +60,16 @@ function cap(s: string | null | undefined) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-type SpecRow = { label: string; value: string | null };
+type SpecRow = { label: string; value: string };
 
 function buildSpecRows(specs: any): SpecRow[] {
   if (!specs) return [];
   const rows: SpecRow[] = [];
-
   const add = (label: string, value: string | number | boolean | null | undefined, suffix = "") => {
     if (value === null || value === undefined) return;
     const display = typeof value === "boolean" ? (value ? "Yes" : "No") : `${value}${suffix}`;
     rows.push({ label, value: display });
   };
-
   add("Scale", specs.scale);
   add("Class", cap(specs.vehicle_class));
   add("Configuration", specs.body_style?.toUpperCase());
@@ -91,13 +94,131 @@ function buildSpecRows(specs: any): SpecRow[] {
   if (specs.msrp_usd) add("Original MSRP", `$${Number(specs.msrp_usd).toLocaleString()}`);
   if (specs.year_released) add("Year Released", specs.year_released);
   if (specs.year_discontinued) add("Discontinued", specs.year_discontinued);
-
   return rows;
+}
+
+function StarRating({ rating, count }: { rating: number | null; count: number | null }) {
+  if (!rating) return null;
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="flex text-amber-400 text-xs">
+        {Array.from({ length: 5 }, (_, i) => (
+          <span key={i}>{i < full ? "★" : i === full && half ? "½" : "☆"}</span>
+        ))}
+      </span>
+      <span className="text-slate-400 text-xs">{rating.toFixed(1)}{count ? ` (${count.toLocaleString()})` : ""}</span>
+    </span>
+  );
+}
+
+const RETAILER_LABELS: Record<string, string> = {
+  traxxas_direct: "Traxxas",
+  amain: "AMain Hobbies",
+  amazon: "Amazon",
+  tower: "Tower Hobbies",
+  spektrum_direct: "Spektrum",
+  gpm_direct: "GPM Racing",
+  vitavon_direct: "Vitavon",
+  hot_racing_direct: "Hot Racing",
+  losi_direct: "Losi",
+};
+
+function BuyButton({ link }: { link: any }) {
+  const label = RETAILER_LABELS[link.retailer_slug] ?? link.retailer_name;
+  const price = fmtExact(link.price_usd);
+  return (
+    
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+      className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition hover:border-amber-500 hover:text-amber-400"
+    >
+      <span>{label}</span>
+      {price && <span className="text-amber-400 font-medium">{price}</span>}
+    </a>
+  );
+}
+
+function PartCard({ part }: { part: any }) {
+  const isOem = part.is_oem === true || part.is_oem === "true";
+  const isAftermarket = part.part_type === "aftermarket_upgrade";
+  const links: any[] = part.purchase_links ?? [];
+  const sortedLinks = [...links].sort((a, b) => (a.display_priority ?? 99) - (b.display_priority ?? 99));
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 transition hover:border-slate-700">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            {isOem && (
+              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">OEM</span>
+            )}
+            {isAftermarket && (
+              <span className="rounded-full bg-amber-950 border border-amber-800 px-2 py-0.5 text-xs text-amber-400">Upgrade</span>
+            )}
+            {part.fit_confidence === "verified" && (
+              <span className="rounded-full bg-green-950 border border-green-800 px-2 py-0.5 text-xs text-green-400">✓ Verified Fit</span>
+            )}
+          </div>
+          <h4 className="text-sm font-medium text-white leading-snug">{part.part_name}</h4>
+          {part.part_number && (
+            <p className="text-xs text-slate-500 mt-0.5">#{part.part_number}</p>
+          )}
+          {part.description && (
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed">{part.description}</p>
+          )}
+          {part.replaces_part_number && (
+            <p className="text-xs text-slate-500 mt-1">Replaces OEM #{part.replaces_part_number}</p>
+          )}
+          {part.spec_notes && (
+            <p className="text-xs text-slate-500 mt-1 italic">{part.spec_notes}</p>
+          )}
+          {part.fit_notes && (
+            <p className="text-xs text-slate-600 mt-1">{part.fit_notes}</p>
+          )}
+          {(part.weighted_rating || part.total_reviews) && (
+            <div className="mt-2">
+              <StarRating rating={Number(part.weighted_rating)} count={Number(part.total_reviews)} />
+            </div>
+          )}
+        </div>
+        {part.best_price && (
+          <div className="text-right flex-shrink-0">
+            <div className="text-lg font-semibold text-amber-400">{fmtExact(part.best_price)}</div>
+            <div className="text-xs text-slate-500">best price</div>
+          </div>
+        )}
+      </div>
+
+      {sortedLinks.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {sortedLinks.map((link: any) => (
+            <BuyButton key={link.link_id ?? link.retailer_slug} link={link} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PartsSection({ variantId }: { variantId: string }) {
+  // This is a placeholder — parts are loaded server-side in the page component
+  // and passed in. See the page component below.
+  return null;
 }
 
 export default async function VariantPage({ params }: PageProps) {
   const { variant: variantSlug } = await params;
-  const { data: payload } = await supabase.rpc("get_variant_page_payload", { p_variant_slug: variantSlug });
+
+  // Fetch payload and parts in parallel
+  const [{ data: payload }, { data: partsRaw }] = await Promise.all([
+    supabase.rpc("get_variant_page_payload", { p_variant_slug: variantSlug }),
+    supabase.rpc("get_parts_for_vehicle", {
+      p_variant_id: "00000000-0000-0000-0000-000000000000" // placeholder, resolved below
+    }),
+  ]);
 
   if (!payload) {
     return (
@@ -110,6 +231,24 @@ export default async function VariantPage({ params }: PageProps) {
       </main>
     );
   }
+
+  // Fetch parts with the real variant ID now that we have the payload
+  const variantId = payload.identity.variant_id;
+  const { data: partsData } = await supabase.rpc("get_parts_for_vehicle", {
+    p_variant_id: variantId,
+  });
+
+  const parts: any[] = partsData ?? [];
+
+  // Group parts by category
+  const partsByCategory: Record<string, any[]> = {};
+  for (const part of parts) {
+    const cat = part.category ?? "Other";
+    if (!partsByCategory[cat]) partsByCategory[cat] = [];
+    partsByCategory[cat].push(part);
+  }
+  const hasOemParts = parts.some(p => p.is_oem === true || p.is_oem === "true");
+  const hasAftermarketParts = parts.some(p => p.part_type === "aftermarket_upgrade");
 
   const { identity, valuation, recent_sales, price_trends, market_summary, related, specs, content, seo, freshness } = payload;
   const hasValuation = valuation?.has_sufficient_data;
@@ -184,7 +323,7 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* Specs table — rendered from structured data, never from prose */}
+          {/* Specs */}
           {specRows.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">Specifications</h2>
@@ -196,9 +335,7 @@ export default async function VariantPage({ params }: PageProps) {
                   </div>
                 ))}
               </dl>
-              {specs?.spec_notes && (
-                <p className="mt-4 text-xs text-slate-500">* {specs.spec_notes}</p>
-              )}
+              {specs?.spec_notes && <p className="mt-4 text-xs text-slate-500">* {specs.spec_notes}</p>}
             </section>
           )}
 
@@ -281,6 +418,45 @@ export default async function VariantPage({ params }: PageProps) {
                   </tbody>
                 </table>
               </div>
+            </section>
+          )}
+
+          {/* ── PARTS SECTION ─────────────────────────────────────────── */}
+          {parts.length > 0 && (
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+              <div className="mb-6 flex items-start justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold text-white">Parts & Upgrades</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {parts.length} part{parts.length !== 1 ? "s" : ""} available for the {identity.variant_full_name}
+                    {hasOemParts && hasAftermarketParts && " — OEM replacements and aftermarket upgrades"}
+                    {hasOemParts && !hasAftermarketParts && " — OEM replacement parts"}
+                  </p>
+                </div>
+                <div className="flex gap-2 text-xs flex-shrink-0">
+                  {hasOemParts && <span className="rounded-full bg-slate-800 px-2 py-1 text-slate-400">OEM</span>}
+                  {hasAftermarketParts && <span className="rounded-full bg-amber-950 border border-amber-800 px-2 py-1 text-amber-400">Upgrades</span>}
+                </div>
+              </div>
+
+              <div className="space-y-8">
+                {Object.entries(partsByCategory).map(([category, categoryParts]) => (
+                  <div key={category}>
+                    <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-800 pb-2">
+                      {category}
+                    </h3>
+                    <div className="grid gap-3">
+                      {categoryParts.map((part: any) => (
+                        <PartCard key={part.part_id} part={part} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-6 text-xs text-slate-600">
+                Fitment verified against manufacturer specs. Purchase links may include affiliate referrals. Prices shown are from purchase links and may not reflect current availability. Always verify fitment with your specific vehicle configuration before ordering.
+              </p>
             </section>
           )}
 

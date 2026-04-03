@@ -15,19 +15,13 @@ export const metadata: Metadata = {
 type Manufacturer = {
   manufacturer_name: string;
   manufacturer_slug: string;
-  families: { family_name: string; family_slug: string; variant_count: number }[];
+  family_count: number;
+  variant_count: number;
 };
 
 export default async function RCBrowsePage() {
-  const { data } = await supabase.rpc("get_manufacturer_page", { p_manufacturer_slug: "traxxas" });
-  
-  // Fetch all manufacturers from the database
-  const { data: mfrs } = await supabase
-    .from("manufacturers")
-    .select("name, slug")
-    .order("name");
-
-  const manufacturers = mfrs ?? [];
+  const { data } = await supabase.rpc("list_manufacturers");
+  const manufacturers: Manufacturer[] = data ?? [];
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
@@ -40,9 +34,9 @@ export default async function RCBrowsePage() {
         <h2 className="mb-4 text-xl font-medium text-slate-200">Browse by Manufacturer</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {manufacturers.map((m) => (
-            <a key={m.slug} href={`/rc/${m.slug}`} className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500">
-              <div className="text-lg font-medium text-white">{m.name}</div>
-              <div className="mt-1 text-sm text-slate-400">Browse {m.name} RC values &rarr;</div>
+            <a key={m.manufacturer_slug} href={`/rc/${m.manufacturer_slug}`} className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500">
+              <div className="text-lg font-medium text-white">{m.manufacturer_name}</div>
+              <div className="mt-1 text-sm text-slate-400">{m.family_count} {m.family_count === 1 ? "model family" : "model families"} &middot; {m.variant_count} variants</div>
             </a>
           ))}
         </div>

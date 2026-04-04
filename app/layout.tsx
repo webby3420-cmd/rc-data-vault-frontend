@@ -14,20 +14,35 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://rcdatavault.com'),
 }
 
+const MANUFACTURERS = [
+  { name: 'Traxxas', slug: 'traxxas' },
+  { name: 'ARRMA', slug: 'arrma' },
+  { name: 'Losi', slug: 'losi' },
+]
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="border-b border-slate-800 bg-slate-950">
+        <header className="border-b border-slate-800 bg-slate-950 relative z-50">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <a href="/" className="flex items-center gap-3">
               <Image src="/logo.png" alt="RC Data Vault" width={180} height={75} className="h-12 w-auto" />
-              <span className="text-lg font-semibold tracking-tight text-white">
-                RC<span className="text-amber-400">DataVault</span>
-              </span>
+              <span className="text-lg font-semibold tracking-tight text-white">RC<span className="text-amber-400">DataVault</span></span>
             </a>
             <nav className="flex items-center gap-6 text-sm">
-              <a href="/rc" className="text-slate-400 transition hover:text-white">Values</a>
+              <div className="relative group">
+                <a href="/rc" className="flex items-center gap-1 text-slate-400 transition hover:text-white py-2">
+                  Values <span className="text-xs">▾</span>
+                </a>
+                <div className="absolute top-full left-0 hidden group-hover:block w-48 rounded-xl border border-slate-700 bg-slate-900 shadow-xl py-1">
+                  <a href="/rc" className="block px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800">All Vehicles</a>
+                  <div className="border-t border-slate-800 my-1" />
+                  {MANUFACTURERS.map(m => (
+                    <a key={m.slug} href={`/rc/${m.slug}`} className="block px-4 py-2 text-sm text-slate-300 hover:text-white hover:bg-slate-800">{m.name}</a>
+                  ))}
+                </div>
+              </div>
               <a href="/market" className="text-slate-400 transition hover:text-white">Market</a>
             </nav>
           </div>

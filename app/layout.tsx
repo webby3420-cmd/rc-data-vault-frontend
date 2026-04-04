@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Image from 'next/image'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -20,9 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-slate-800 bg-slate-950">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
             <a href="/" className="flex items-center gap-2">
-              <span className="text-lg font-semibold tracking-tight text-white">
-                RC<span className="text-amber-400">DataVault</span>
-              </span>
+              <Image src="/logo.png" alt="RC Data Vault" width={140} height={58} className="h-9 w-auto" />
             </a>
             <nav className="flex items-center gap-6 text-sm">
               <a href="/rc" className="text-slate-400 transition hover:text-white">Values</a>

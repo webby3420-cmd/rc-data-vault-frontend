@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -12,8 +13,10 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-4xl px-4 py-20 text-center sm:px-6 lg:px-8">
-        <h1 className="mb-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">RC Data Vault</h1>
+      <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
+        <div className="mb-8 flex justify-center">
+          <Image src="/logo.png" alt="RC Data Vault" width={480} height={200} priority className="w-full max-w-md" />
+        </div>
         <p className="mx-auto mb-10 max-w-xl text-lg text-slate-400">Independent market values and price guides for used RC vehicles. Based on real sold listings.</p>
         {stats && (
           <div className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">

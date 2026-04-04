@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default async function MarketPage() {
   const supabase = createClient()
-  const { data } = await supabase.rpc('get_market_overview')
+  const supabase = createSupabaseServerClient()
 
   const topByValue: any[] = data?.top_by_value ?? []
   const topByDemand: any[] = data?.top_by_demand ?? []

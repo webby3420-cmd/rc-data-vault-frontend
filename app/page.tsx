@@ -40,7 +40,7 @@ export default async function HomePage() {
           href="/rc"
           className="inline-block rounded-xl bg-amber-500 px-6 py-3 font-medium text-slate-950 transition-colors hover:bg-amber-400"
         >
-          Browse RC Vehicle Values →
+          Browse RC Vehicle Values
         </a>
       </div>
     </main>

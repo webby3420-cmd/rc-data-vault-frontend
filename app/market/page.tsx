@@ -24,19 +24,11 @@ export default async function MarketPage() {
             <h2 className="mb-4 text-xl font-semibold text-white">Top Value Retention</h2>
             <div className="space-y-3">
               {topByValue.length > 0 ? topByValue.map((v: any) => (
-                
-                  key={v.slug}
-                  href={`/rc/${v.manufacturer_slug}/${v.family_slug}/${v.slug}`}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 p-3 hover:border-slate-600 transition"
-                >
+                <a key={v.slug} href={`/rc/${v.manufacturer_slug}/${v.family_slug}/${v.slug}`} className="flex items-center justify-between rounded-xl border border-slate-800 p-3 hover:border-slate-600 transition">
                   <span className="text-sm text-slate-200">{v.full_name}</span>
-                  <span className="text-sm font-semibold text-amber-400">
-                    ${Number(v.median_price).toLocaleString()}
-                  </span>
+                  <span className="text-sm font-semibold text-amber-400">${Number(v.median_price).toLocaleString()}</span>
                 </a>
-              )) : (
-                <p className="text-sm text-slate-500">No data yet.</p>
-              )}
+              )) : <p className="text-sm text-slate-500">No data yet.</p>}
             </div>
           </section>
 
@@ -44,17 +36,11 @@ export default async function MarketPage() {
             <h2 className="mb-4 text-xl font-semibold text-white">Most Active Markets</h2>
             <div className="space-y-3">
               {topByDemand.length > 0 ? topByDemand.map((v: any) => (
-                
-                  key={v.slug}
-                  href={`/rc/${v.manufacturer_slug}/${v.family_slug}/${v.slug}`}
-                  className="flex items-center justify-between rounded-xl border border-slate-800 p-3 hover:border-slate-600 transition"
-                >
+                <a key={v.slug} href={`/rc/${v.manufacturer_slug}/${v.family_slug}/${v.slug}`} className="flex items-center justify-between rounded-xl border border-slate-800 p-3 hover:border-slate-600 transition">
                   <span className="text-sm text-slate-200">{v.full_name}</span>
                   <span className="text-sm text-slate-400">{v.total_sales} sales</span>
                 </a>
-              )) : (
-                <p className="text-sm text-slate-500">No data yet.</p>
-              )}
+              )) : <p className="text-sm text-slate-500">No data yet.</p>}
             </div>
           </section>
         </div>

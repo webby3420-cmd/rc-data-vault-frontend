@@ -3,8 +3,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const revalidate = 3600
 
 export async function GET() {
-  const supabase = createClient()
   const supabase = createSupabaseServerClient()
+  const { data: pages } = await supabase.rpc('get_sitemap_all_pages')
 
   const priorityMap: Record<string, string> = {
     hub: '1.0', parts_hub: '0.9', manufacturer: '0.8',

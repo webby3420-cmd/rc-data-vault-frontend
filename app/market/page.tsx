@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -18,7 +18,6 @@ export default async function MarketPage() {
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <h1 className="mb-2 text-3xl font-semibold text-white">RC Market Overview</h1>
         <p className="mb-10 text-slate-400">Based on recent eBay sold listings across all tracked variants.</p>
-
         <div className="grid gap-8 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
             <h2 className="mb-4 text-xl font-semibold text-white">Top Value Retention</h2>
@@ -31,7 +30,6 @@ export default async function MarketPage() {
               )) : <p className="text-sm text-slate-500">No data yet.</p>}
             </div>
           </section>
-
           <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
             <h2 className="mb-4 text-xl font-semibold text-white">Most Active Markets</h2>
             <div className="space-y-3">

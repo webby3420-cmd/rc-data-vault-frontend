@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import VariantDashboard from '@/components/dashboard/VariantDashboard'
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 type PageProps = { params: Promise<{ manufacturer: string; family: string; variant: string }> };
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

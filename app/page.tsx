@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'RC Data Vault | Used RC Car Values & Price Guide',
   description: 'Used RC car values, price guides, and sold market data for Traxxas, ARRMA, Losi, Axial, and more.',
-}
-
+}const supabase = createSupabaseServerClient()
 export default async function HomePage() {
   const supabase = createClient()
   const { data: stats } = await supabase.rpc('get_homepage_stats')

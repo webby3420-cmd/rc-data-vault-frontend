@@ -15,7 +15,7 @@ export default async function HomePage() {
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <div className="mb-8 flex justify-center">
-          <Image src="/logo.png" alt="RC Data Vault" width={480} height={200} priority className="w-full max-w-md" />
+          <Image src="/logo.png" alt="RC Data Vault" width={720} height={300} priority className="w-full max-w-2xl" />
         </div>
         <p className="mx-auto mb-10 max-w-xl text-lg text-slate-400">Independent market values and price guides for used RC vehicles. Based on real sold listings.</p>
         {stats && (

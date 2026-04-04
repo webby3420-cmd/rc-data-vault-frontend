@@ -1,59 +1,41 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@/utils/supabase/server'
 
-const BASE_URL = "https://rcdatavault.com";
-
-type SitemapRow = {
-  manufacturer_slug: string;
-  model_family_slug: string;
-  variant_slug: string;
-  last_modified: string | null;
-};
+export const revalidate = 3600
 
 export async function GET() {
-  const staticUrls = [
-    `<url><loc>${BASE_URL}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
-    `<url><loc>${BASE_URL}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>`,
-  ];
+  const supabase = createClient()
+  const { data: pages } = await supabase.rpc('get_sitemap_all_pages')
 
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
-
-    const { data, error } = await supabase.rpc("get_sitemap_variant_pages");
-
-    if (error || !data || data.length === 0) {
-      return buildXmlResponse(staticUrls);
-    }
-
-    const variantUrls = (data as SitemapRow[]).map(
-      (row) =>
-        `<url>` +
-        `<loc>${BASE_URL}/rc/${row.manufacturer_slug}/${row.model_family_slug}/${row.variant_slug}</loc>` +
-        `<lastmod>${row.last_modified ?? new Date().toISOString().split("T")[0]}</lastmod>` +
-        `<changefreq>weekly</changefreq>` +
-        `<priority>0.8</priority>` +
-        `</url>`
-    );
-
-    return buildXmlResponse([...staticUrls, ...variantUrls]);
-  } catch {
-    return buildXmlResponse(staticUrls);
+  const priorityMap: Record<string, string> = {
+    hub: '1.0', parts_hub: '0.9', manufacturer: '0.8',
+    family: '0.7', variant: '0.9', parts_category: '0.6',
   }
-}
+  const changefreqMap: Record<string, string> = {
+    hub: 'daily', parts_hub: 'weekly', manufacturer: 'weekly',
+    family: 'weekly', variant: 'daily', parts_category: 'weekly',
+  }
 
-function buildXmlResponse(urls: string[]) {
-  const xml =
-    `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    urls.join("\n") +
-    `\n</urlset>`;
-  return new NextResponse(xml, {
-    headers: { "Content-Type": "application/xml" },
-  });
-}
+  const base = 'https://rcdatavault.com'
+  let urls = `
+  <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>${base}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>${base}/market</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
 
-export const dynamic = "force-dynamic";
+  if (pages) {
+    for (const p of pages as any[]) {
+      const lastmod = p.last_updated
+        ? `\n    <lastmod>${new Date(p.last_updated).toISOString().split('T')[0]}</lastmod>`
+        : ''
+      urls += `
+  <url>
+    <loc>${base}${p.canonical_path}</loc>${lastmod}
+    <changefreq>${changefreqMap[p.page_type] ?? 'weekly'}</changefreq>
+    <priority>${priorityMap[p.page_type] ?? '0.5'}</priority>
+  </url>`
+    }
+  }
+
+  return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`, {
+    headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=3600' },
+  })
+}

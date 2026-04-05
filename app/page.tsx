@@ -4,6 +4,8 @@ import { HowItWorks } from '@/components/home/HowItWorks'
 import { WhatYouSee } from '@/components/home/WhatYouSee'
 import { PopularModels } from '@/components/home/PopularModels'
 import { HomeCtaStrip } from '@/components/home/HomeCtaStrip'
+import { HomepageRecentlyResearchedVariants } from '@/components/home/HomepageRecentlyResearchedVariants'
+import { HomepageResearchPaths } from '@/components/home/HomepageResearchPaths'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
@@ -71,6 +73,8 @@ export default async function HomePage() {
         )}
       </div>
 
+      <HomepageRecentlyResearchedVariants />
+      <HomepageResearchPaths />
       <HowItWorks />
       <WhatYouSee />
       <PopularModels />

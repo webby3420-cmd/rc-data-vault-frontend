@@ -5,22 +5,24 @@ import Collapsible from '@/components/Collapsible'
 import { VariantNextStepCta } from '@/components/variant/VariantNextStepCta'
 import { RecentlyViewedVariants } from '@/components/variant/RecentlyViewedVariants'
 import { MoreFromManufacturer } from '@/components/variant/MoreFromManufacturer'
-import { VariantNextStepCta } from '@/components/variant/VariantNextStepCta'
-import { RecentlyViewedVariants } from '@/components/variant/RecentlyViewedVariants'
-import { MoreFromManufacturer } from '@/components/variant/MoreFromManufacturer'
+
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+
 type PageProps = { params: Promise<{ manufacturer: string; family: string; variant: string }> };
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { variant: variantSlug } = await params;
   const { data } = await supabase.rpc("get_variant_page_payload", { p_variant_slug: variantSlug });
   if (!data) return { title: "RC Data Vault" };
   return { title: data.seo.title_tag, description: data.seo.meta_description, robots: data.seo.robots_directive, alternates: { canonical: data.seo.canonical_url }, openGraph: { title: data.identity.variant_full_name + " Value & Price Guide", description: data.seo.meta_description, url: data.seo.canonical_url, siteName: "RC Data Vault", type: "website" }, twitter: { card: "summary", title: data.identity.variant_full_name + " Value & Price Guide", description: data.seo.meta_description } };
 }
+
 function fmt(n: number | null | undefined) { if (n == null) return "—"; return "$" + Math.round(n).toLocaleString(); }
 function fmtExact(n: number | null | undefined) { if (n == null) return null; return "$" + Number(n).toFixed(2); }
 function fmtDate(d: string | null | undefined) { if (!d) return "—"; return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
 function fmtMonth(d: string | null | undefined) { if (!d) return "—"; return new Date(d).toLocaleDateString("en-US", { month: "short", year: "2-digit" }); }
 function cap(s: string | null | undefined) { if (!s) return null; return s.charAt(0).toUpperCase() + s.slice(1); }
+
 type SpecRow = { label: string; value: string };
 function buildSpecRows(specs: any): SpecRow[] {
   if (!specs) return [];
@@ -32,17 +34,21 @@ function buildSpecRows(specs: any): SpecRow[] {
   if (specs.msrp_usd) add("Original MSRP", `$${Number(specs.msrp_usd).toLocaleString()}`); if (specs.year_released) add("Year Released", specs.year_released); if (specs.year_discontinued) add("Discontinued", specs.year_discontinued);
   return rows;
 }
+
 function StarRating({ rating, count }: { rating: number | null; count: number | null }) {
   if (!rating) return null;
   const full = Math.floor(rating); const half = rating - full >= 0.5;
   return (<span className="flex items-center gap-1.5"><span className="flex text-amber-400 text-xs">{Array.from({ length: 5 }, (_, i) => (<span key={i}>{i < full ? "★" : i === full && half ? "½" : "☆"}</span>))}</span><span className="text-slate-400 text-xs">{rating.toFixed(1)}{count ? ` (${count.toLocaleString()})` : ""}</span></span>);
 }
+
 const RETAILER_LABELS: Record<string, string> = { traxxas_direct: "Traxxas", amain: "AMain Hobbies", amazon: "Amazon", tower: "Tower Hobbies", spektrum_direct: "Spektrum", gpm_direct: "GPM Racing", vitavon_direct: "Vitavon", hot_racing_direct: "Hot Racing", losi_direct: "Losi" };
+
 function BuyButton({ link }: { link: any }) {
   const label = RETAILER_LABELS[link.retailer_slug] ?? link.retailer_name;
   const price = fmtExact(link.price_usd);
   return (<a href={link.url} target="_blank" rel="noopener noreferrer sponsored" className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition hover:border-amber-500 hover:text-amber-400"><span>{label}</span>{price && <span className="text-amber-400 font-medium">{price}</span>}</a>);
 }
+
 function PartCard({ part }: { part: any }) {
   const isOem = part.is_oem === true || part.is_oem === "true";
   const isAftermarket = part.part_type === "aftermarket_upgrade";
@@ -70,8 +76,9 @@ function PartCard({ part }: { part: any }) {
     </div>
   );
 }
+
 export default async function VariantPage({ params }: PageProps) {
-  const { variant: variantSlug } = await params;
+  const { manufacturer, family, variant: variantSlug } = await params;
   const [{ data: payload }, { data: dashboard }] = await Promise.all([
     supabase.rpc("get_variant_page_payload", { p_variant_slug: variantSlug }),
     supabase.rpc("get_variant_dashboard", { p_variant_slug: variantSlug }),
@@ -113,26 +120,26 @@ export default async function VariantPage({ params }: PageProps) {
           {content?.buying_tips && content.buying_tips.length > 0 && (<Collapsible title="What to Look For When Buying Used"><ul className="space-y-3">{content.buying_tips.map((tip: string, i: number) => (<li key={i} className="flex gap-3 text-slate-200"><span className="mt-0.5 flex-shrink-0 text-amber-400 font-semibold">{i + 1}.</span><span className="leading-7">{tip}</span></li>))}</ul></Collapsible>)}
           {hasValuation && (<Collapsible title="Market Summary"><p className="max-w-3xl text-base leading-7 text-slate-200">The {identity.variant_full_name} has a <strong className="text-white">{market_summary.market_depth_label}</strong> secondary market with <strong className="text-white">{valuation.observation_count}</strong> recent sold listings. Prices currently range from <strong className="text-white">{fmt(valuation.estimated_value_low)}</strong> to <strong className="text-white">{fmt(valuation.estimated_value_high)}</strong>, and the market is trending <strong className="text-white">{market_summary.trend_direction?.replace("_", " ")}</strong>.</p><div className="mt-6 grid gap-4 sm:grid-cols-3"><div className="rounded-xl border border-slate-800 p-4"><div className="text-sm text-slate-400">Depth</div><div className="mt-1 text-lg font-medium text-white">{market_summary.market_depth_label}</div></div><div className="rounded-xl border border-slate-800 p-4"><div className="text-sm text-slate-400">Trend</div><div className="mt-1 text-lg font-medium text-white">{market_summary.trend_direction?.replace("_", " ")}</div></div><div className="rounded-xl border border-slate-800 p-4"><div className="text-sm text-slate-400">Data points</div><div className="mt-1 text-lg font-medium text-white">{valuation.observation_count}</div></div></div></Collapsible>)}
           {related?.siblings?.length > 0 && (<Collapsible title="Related Models"><div className="mb-6 grid gap-3">{related.siblings.map((s: any) => (<a key={s.variant_id} className="rounded-xl border border-slate-800 p-4 transition hover:border-slate-600" href={s.canonical_url}><div className="font-medium text-white">{s.full_name}</div><div className="text-sm text-slate-400">{s.obs_count} sold listings</div></a>))}</div><div className="flex flex-wrap gap-3 text-sm"><a className="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-slate-500" href={related.model_family.canonical_url}>{related.model_family.name} family</a><a className="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-slate-500" href={related.manufacturer.canonical_url}>{related.manufacturer.name}</a></div></Collapsible>)}
-          <div className="text-sm text-<div className="mt-8 space-y-6">
-  <MoreFromManufacturer
-    manufacturerName={payload.identity.manufacturer_name}
-    currentCanonicalPath={payload.identity.canonical_url}
-    currentFamilySlug={params.family}
-  />
-  <VariantNextStepCta
-    manufacturerName={payload.identity.manufacturer_name}
-    manufacturerSlug={payload.identity.manufacturer_slug}
-    modelFamilyName={payload.identity.model_family_name}
-    modelFamilySlug={payload.identity.model_family_slug}
-    fullName={payload.identity.variant_full_name}
-  />
-  <RecentlyViewedVariants
-    canonicalPath={payload.identity.canonical_url}
-    fullName={payload.identity.variant_full_name}
-    manufacturerName={payload.identity.manufacturer_name}
-  />
-</div>
--400">Price data updated {fmtDate(valuation?.valuation_last_updated_at)} from {valuation?.observation_count ?? 0} eBay sold listings. Data refreshes every {Math.round((freshness?.revalidate_after_seconds ?? 3600) / 60)} minutes.</div>
+          <div className="mt-8 space-y-6">
+            <MoreFromManufacturer
+              manufacturerName={identity.manufacturer_name}
+              currentCanonicalPath={identity.canonical_url}
+              currentFamilySlug={family}
+            />
+            <VariantNextStepCta
+              manufacturerName={identity.manufacturer_name}
+              manufacturerSlug={identity.manufacturer_slug}
+              modelFamilyName={identity.model_family_name}
+              modelFamilySlug={identity.model_family_slug}
+              fullName={identity.variant_full_name}
+            />
+            <RecentlyViewedVariants
+              canonicalPath={identity.canonical_url}
+              fullName={identity.variant_full_name}
+              manufacturerName={identity.manufacturer_name}
+            />
+          </div>
+          <div className="text-sm text-slate-400">Price data updated {fmtDate(valuation?.valuation_last_updated_at)} from {valuation?.observation_count ?? 0} eBay sold listings. Data refreshes every {Math.round((freshness?.revalidate_after_seconds ?? 3600) / 60)} minutes.</div>
         </div>
       </div>
     </main>

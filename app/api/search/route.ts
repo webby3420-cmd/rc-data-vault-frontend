@@ -12,9 +12,9 @@ export async function GET(req: NextRequest) {
   const supabase = createSupabaseServerClient()
 
   try {
+    // search_rc takes a single arg: search_text
     const { data: rpcData, error: rpcError } = await supabase.rpc('search_rc', {
-      p_query: q,
-      p_limit: 8,
+      search_text: q,
     })
 
     if (!rpcError && rpcData?.length) {
@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
           const row = payloadMap.get(r.variant_id)
           return {
             variant_id: r.variant_id,
-            full_name: row?.full_name ?? r.full_name ?? r.name ?? '',
-            manufacturer_name: row?.manufacturer_name ?? r.manufacturer_name ?? '',
+            full_name: row?.full_name ?? r.display_name ?? '',
+            manufacturer_name: row?.manufacturer_name ?? r.brand ?? '',
             canonical_path: row?.canonical_path ?? '',
             price_mid: row?.price_mid ? parseFloat(row.price_mid) : null,
           }
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ results })
     }
 
-    // Fallback: direct ilike if RPC returns nothing
+    // Fallback: direct ilike on public_payload_variant
     const { data: fallbackRows } = await supabase
       .from('public_payload_variant')
       .select('variant_id, full_name, manufacturer_name, canonical_path, price_mid')

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseTitle = `${data.identity.variant_full_name} Value, Sold Prices & Market Trends | RC Data Vault`;
   const baseDescription = `Research the ${data.identity.variant_full_name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`;
   return {
-    title: baseTitle,
+    title: { absolute: baseTitle },
     description: baseDescription,
     robots: data.seo.robots_directive,
     alternates: { canonical: data.seo.canonical_url },

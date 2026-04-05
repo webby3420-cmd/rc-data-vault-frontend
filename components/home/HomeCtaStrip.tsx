@@ -15,12 +15,12 @@ export function HomeCtaStrip() {
             </p>
           </div>
           <div className="mt-6 flex flex-wrap gap-3">
-            
-              href="#top"
+            <Link
+              href="/#top"
               className="inline-flex items-center rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
             >
               Search now
-            </a>
+            </Link>
             <Link
               href="#popular-models"
               className="inline-flex items-center rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:text-white"

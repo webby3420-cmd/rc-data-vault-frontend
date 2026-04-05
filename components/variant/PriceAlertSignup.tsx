@@ -125,7 +125,7 @@ export function PriceAlertSignup({ variantId, variantSlug, modelName }: PriceAle
       </form>
 
       {(error || success) && (
-        <div className="mt-4 rounded-xl border px-4 py-3 text-sm leading-6 ${error ? "border-red-900 bg-red-950/40 text-red-200" : "border-emerald-900 bg-emerald-950/40 text-emerald-200"}">
+        <div className={`mt-4 rounded-xl border px-4 py-3 text-sm leading-6 ${error ? "border-red-900 bg-red-950/40 text-red-200" : "border-emerald-900 bg-emerald-950/40 text-emerald-200"}`}>
           {error ?? success}
         </div>
       )}

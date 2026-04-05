@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
   const supabase = createSupabaseServerClient()
 
   try {
-    // search_rc takes a single arg: search_text
     const { data: rpcData, error: rpcError } = await supabase.rpc('search_rc', {
       search_text: q,
     })
@@ -45,7 +44,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ results })
     }
 
-    // Fallback: direct ilike on public_payload_variant
     const { data: fallbackRows } = await supabase
       .from('public_payload_variant')
       .select('variant_id, full_name, manufacturer_name, canonical_path, price_mid')

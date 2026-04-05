@@ -16,6 +16,7 @@ export async function GET() {
   }
 
   const base = 'https://rcdatavault.com'
+
   let urls = `
   <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${base}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
@@ -23,19 +24,22 @@ export async function GET() {
 
   if (pages) {
     for (const p of pages as any[]) {
+      const path = p.url ?? p.canonical_path
+      if (!path) continue
       const lastmod = p.last_updated
         ? `\n    <lastmod>${new Date(p.last_updated).toISOString().split('T')[0]}</lastmod>`
         : ''
       urls += `
   <url>
-    <loc>${base}${p.canonical_path}</loc>${lastmod}
+    <loc>${base}${path}</loc>${lastmod}
     <changefreq>${changefreqMap[p.page_type] ?? 'weekly'}</changefreq>
     <priority>${priorityMap[p.page_type] ?? '0.5'}</priority>
   </url>`
     }
   }
 
-  return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`, {
-    headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=3600' },
-  })
+  return new Response(
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls}\n</urlset>`,
+    { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=3600' } }
+  )
 }

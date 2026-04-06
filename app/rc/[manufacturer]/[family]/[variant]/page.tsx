@@ -104,7 +104,7 @@ function buildSpecRows(specs: any): SpecRow[] {
   add("2-Speed", specs.two_speed);
   add("Portal Axles", specs.portal_axles);
   add("Radio", specs.radio_system);
-  add("Original MSRP", specs.msrp_usd ? Number(specs.msrp_usd).toLocaleString("en-US", { style: "currency", currency: "USD" }) : null);
+  add("Original MSRP", specs.msrp_display ?? null;
   add("Year Released", specs.year_released);
 
   return rows;

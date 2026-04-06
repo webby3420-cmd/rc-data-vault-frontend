@@ -14,6 +14,39 @@ type PageProps = {
   params: Promise<{ manufacturer: string; family: string; variant: string }>;
 };
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { variant: variantSlug } = await params;
+  const { data: variant } = await supabase
+    .from("variants")
+    .select("full_name, model_families(name, manufacturers(name))")
+    .eq("slug", variantSlug)
+    .single();
+
+  if (!variant) return { title: "RC Data Vault" };
+
+  const name = variant.full_name;
+
+  return {
+    title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
+    description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
+    robots: "index,follow",
+    alternates: {
+      canonical: `https://rcdatavault.com/rc/${(variant.model_families as any)?.manufacturers?.name?.toLowerCase()}/${(variant.model_families as any)?.name?.toLowerCase().replace(/\s+/g, "-")}/${variantSlug}`,
+    },
+    openGraph: {
+      title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
+      description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
+      siteName: "RC Data Vault",
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
+      description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
+    },
+  };
+}
+
 function getApprovedPrimaryImage(payloadRow: any): {
   url: string | null;
   alt: string | null;
@@ -66,39 +99,6 @@ function VariantHeroImage({
       </div>
     </section>
   );
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { variant: variantSlug } = await params;
-  const { data: variant } = await supabase
-    .from("variants")
-    .select("full_name, model_families(name, manufacturers(name))")
-    .eq("slug", variantSlug)
-    .single();
-
-  if (!variant) return { title: "RC Data Vault" };
-
-  const name = variant.full_name;
-
-  return {
-    title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
-    description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
-    robots: "index,follow",
-    alternates: {
-      canonical: `https://rcdatavault.com/rc/${(variant.model_families as any)?.manufacturers?.name?.toLowerCase()}/${(variant.model_families as any)?.name?.toLowerCase().replace(/\s+/g, "-")}/${variantSlug}`,
-    },
-    openGraph: {
-      title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
-      description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
-      siteName: "RC Data Vault",
-      type: "website",
-    },
-    twitter: {
-      card: "summary",
-      title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
-      description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
-    },
-  };
 }
 
 function fmt(n: number | null | undefined) {
@@ -164,6 +164,22 @@ function buildSpecRows(specs: any): SpecRow[] {
   return rows;
 }
 
+const RESOURCE_LABEL: Record<string, string> = {
+  product_page:    "Product Page",
+  manual:          "Manuals",
+  exploded_view:   "Exploded Views",
+  parts_list:      "Parts Lists",
+  setup_sheet:     "Setup Sheets",
+  spare_parts_page:"Spare Parts",
+  video:           "Videos",
+  other:           "Other Resources",
+};
+
+const RESOURCE_ORDER = [
+  "product_page","manual","exploded_view","parts_list",
+  "setup_sheet","spare_parts_page","video","other",
+];
+
 export default async function VariantPage({ params }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
 
@@ -178,6 +194,7 @@ export default async function VariantPage({ params }: PageProps) {
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;
 
+  // Siblings — two-query pattern (no nested join)
   const { data: siblingVariants } = await supabase
     .from("variants")
     .select("variant_id, full_name, slug")
@@ -204,7 +221,6 @@ export default async function VariantPage({ params }: PageProps) {
   const [
     { data: specsData },
     { data: valuationData },
-    { data: contentData },
     { data: trendData },
     { data: listingsData },
     { data: payloadData },
@@ -214,11 +230,6 @@ export default async function VariantPage({ params }: PageProps) {
     supabase
       .from("v_variant_valuations_clean")
       .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at")
-      .eq("variant_id", variantId)
-      .single(),
-    supabase
-      .from("variant_content")
-      .select("intro_paragraph, buying_tips, category_tags")
       .eq("variant_id", variantId)
       .single(),
     supabase
@@ -241,6 +252,24 @@ export default async function VariantPage({ params }: PageProps) {
       .limit(3),
   ]);
 
+  // Verified content — only renders if verification_status = verified
+  const { data: verifiedContent } = await supabase
+    .from("variant_verified_content")
+    .select("overview_sentence_1, overview_sentence_2, overview_sentence_3, overview_sentence_4, spec_facts, included_facts, required_facts")
+    .eq("variant_slug", variantSlug)
+    .eq("verification_status", "verified")
+    .eq("render_status", "render_verified_only")
+    .maybeSingle();
+
+  // Resources — only verified, active rows
+  const { data: resources } = await supabase
+    .from("variant_resources")
+    .select("resource_id, resource_type, title, url, file_format, language, publisher, display_order")
+    .eq("variant_id", variantId)
+    .eq("is_verified", true)
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -249,7 +278,6 @@ export default async function VariantPage({ params }: PageProps) {
 
   const valuation = valuationData;
   const specs = specsData;
-  const content = contentData;
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
 
@@ -353,13 +381,50 @@ export default async function VariantPage({ params }: PageProps) {
 
         <div className="grid gap-8">
 
-          {content?.intro_paragraph && (
+          {/* Verified content — only renders when verification_status = verified */}
+          {verifiedContent && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              {content.intro_paragraph.split("\n\n").map((para: string, i: number) => (
-                <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-4" : ""}`}>
-                  {para}
-                </p>
+              {[
+                verifiedContent.overview_sentence_1,
+                verifiedContent.overview_sentence_2,
+                verifiedContent.overview_sentence_3,
+                verifiedContent.overview_sentence_4,
+              ].filter(Boolean).map((s, i) => (
+                <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-3" : ""}`}>{s}</p>
               ))}
+
+              {Array.isArray(verifiedContent.spec_facts) && verifiedContent.spec_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Key Facts</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.spec_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? `${f.label}: ${f.value}${f.qualifier ? ` (${f.qualifier})` : ""}` : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {Array.isArray(verifiedContent.included_facts) && verifiedContent.included_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What&apos;s Included</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.included_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {Array.isArray(verifiedContent.required_facts) && verifiedContent.required_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What You&apos;ll Need</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.required_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
           )}
 
@@ -488,6 +553,51 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
+          {/* Resources — manuals, exploded views, product pages etc */}
+          {resources && resources.length > 0 && (
+            <CollapsibleSection title="Resources">
+              {RESOURCE_ORDER.map((type) => {
+                const group = (resources as any[]).filter(r => r.resource_type === type);
+                if (group.length === 0) return null;
+                return (
+                  <div key={type} className="mb-6 last:mb-0">
+                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                      {RESOURCE_LABEL[type]}
+                    </h3>
+                    <div className="space-y-2">
+                      {group.map((r: any) => (
+                        
+                          key={r.resource_id}
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 hover:border-slate-600 transition"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span>{r.title}</span>
+                            <div className="flex gap-2 text-xs text-slate-400 ml-4 flex-shrink-0">
+                              {r.file_format && (
+                                <span className="px-2 py-0.5 border border-slate-700 rounded">
+                                  {r.file_format}
+                                </span>
+                              )}
+                              {r.language && r.language !== "en" && (
+                                <span>{r.language.toUpperCase()}</span>
+                              )}
+                            </div>
+                          </div>
+                          {r.publisher && (
+                            <div className="text-xs text-slate-500 mt-1">{r.publisher}</div>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </CollapsibleSection>
+          )}
+
           {listingsData && listingsData.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
               <div className="overflow-x-auto">
@@ -596,22 +706,6 @@ export default async function VariantPage({ params }: PageProps) {
                 </div>
               </div>
             </CollapsibleSection>
-          )}
-
-          {content?.buying_tips && content.buying_tips.length > 0 && (
-            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              <h2 className="text-xl font-semibold text-white mb-4">What to Look For When Buying Used</h2>
-              <ol className="space-y-3">
-                {content.buying_tips.map((tip: string, i: number) => (
-                  <li key={i} className="flex gap-3 text-sm text-slate-300">
-                    <span className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-xs font-semibold text-slate-950">
-                      {i + 1}
-                    </span>
-                    <span className="leading-6">{tip}</span>
-                  </li>
-                ))}
-              </ol>
-            </section>
           )}
 
           <div className="mt-8 space-y-6">

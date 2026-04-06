@@ -124,6 +124,30 @@ export default async function VariantPage({ params }: PageProps) {
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;
 
+  // FIX 3: two-query siblings pattern — no nested PostgREST join
+  const { data: siblingVariants } = await supabase
+    .from("variants")
+    .select("variant_id, full_name, slug")
+    .eq("model_family_id", modelFamilyId)
+    .neq("slug", variantSlug)
+    .limit(6);
+
+  const siblingIds = (siblingVariants ?? []).map((s: any) => s.variant_id);
+  const { data: siblingVals } = siblingIds.length > 0
+    ? await supabase
+        .from("v_variant_valuations_clean")
+        .select("variant_id, fair_value")
+        .in("variant_id", siblingIds)
+    : { data: [] };
+
+  const siblingValMap = Object.fromEntries(
+    (siblingVals ?? []).map((v: any) => [v.variant_id, v])
+  );
+  const siblingData = (siblingVariants ?? []).map((s: any) => ({
+    ...s,
+    valuation: siblingValMap[s.variant_id] ?? null,
+  }));
+
   const [
     { data: specsData },
     { data: valuationData },
@@ -132,7 +156,6 @@ export default async function VariantPage({ params }: PageProps) {
     { data: listingsData },
     { data: intelligenceData },
     { data: partsData },
-    { data: siblingData },
   ] = await Promise.all([
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
@@ -145,30 +168,27 @@ export default async function VariantPage({ params }: PageProps) {
       .select("intro_paragraph, buying_tips, category_tags")
       .eq("variant_id", variantId)
       .single(),
+    // FIX 1: v_price_observations
     supabase
-      .from("price_observations")
+      .from("v_price_observations")
       .select("sale_price, observed_at")
       .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(50),
+    // FIX 1: v_price_observations
     supabase
-      .from("price_observations")
+      .from("v_price_observations")
       .select("sale_price, observed_at, source, listing_title")
       .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(12),
     supabase.from("mv_variant_payload").select("intelligence").eq("variant_slug", variantSlug).single(),
+    // FIX 2: v_parts_with_compat
     supabase
-      .from("parts")
+      .from("v_parts_with_compat")
       .select("part_id, name, part_number, oem_price, part_type")
       .contains("compatible_variant_ids", [variantId])
       .limit(3),
-    supabase
-      .from("variants")
-      .select("full_name, slug, v_variant_valuations_clean(fair_value)")
-      .eq("model_family_id", modelFamilyId)
-      .neq("slug", variantSlug)
-      .limit(6),
   ]);
 
   const mfr = (variantData.model_families as any)?.manufacturers;
@@ -257,12 +277,13 @@ export default async function VariantPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 
+        {/* FIX: breadcrumb final node = variant name */}
         <nav className="mb-6 text-sm text-slate-400">
           <a className="hover:text-white" href={`/rc/${mfrSlug}`}>{mfrName}</a>
           <span className="mx-2">/</span>
           <a className="hover:text-white" href={`/rc/${mfrSlug}/${familySlug}`}>{familyName}</a>
           <span className="mx-2">/</span>
-          <span>{familyName}</span>
+          <span>{variantData.full_name}</span>
         </nav>
 
         <header className="mb-8">
@@ -539,7 +560,7 @@ export default async function VariantPage({ params }: PageProps) {
 
           <div className="mt-8 space-y-6">
 
-            {siblingData && siblingData.length > 0 && (
+            {siblingData.length > 0 && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <div className="mb-4">
                   <h2 className="text-base font-semibold text-white">More from {mfrName}</h2>
@@ -553,9 +574,9 @@ export default async function VariantPage({ params }: PageProps) {
                       href={`/rc/${mfrSlug}/${familySlug}/${v.slug}`}
                     >
                       <div className="text-sm font-medium text-white leading-5">{v.full_name}</div>
-                      {v.v_variant_valuations_clean?.fair_value && (
+                      {v.valuation?.fair_value && (
                         <div className="mt-1.5 text-sm font-semibold text-amber-400">
-                          ~{fmt(v.v_variant_valuations_clean.fair_value)}
+                          ~{fmt(v.valuation.fair_value)}
                         </div>
                       )}
                     </Link>

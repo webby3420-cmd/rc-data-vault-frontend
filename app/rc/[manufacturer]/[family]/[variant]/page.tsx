@@ -6,7 +6,7 @@ import { VariantNextStepCta } from '@/components/variant/VariantNextStepCta'
 import { RecentlyViewedVariants } from '@/components/variant/RecentlyViewedVariants'
 import { MoreFromManufacturer } from '@/components/variant/MoreFromManufacturer'
 import { PriceAlertSignup } from '@/components/variant/PriceAlertSignup'
-
+export const dynamic = "force-dynamic";
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 type PageProps = { params: Promise<{ manufacturer: string; family: string; variant: string }> };

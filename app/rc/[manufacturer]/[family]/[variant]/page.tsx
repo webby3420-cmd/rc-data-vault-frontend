@@ -453,12 +453,12 @@ export default async function VariantPage({ params }: PageProps) {
                     {totalPartsCount} part{totalPartsCount !== 1 ? "s" : ""} available — OEM + aftermarket
                   </p>
                 </div>
-                
+                <Link
                   href={`/rc/${mfrSlug}/${familySlug}/${variantSlug}/parts`}
                   className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-amber-400"
                 >
                   View all parts
-                </a>
+                </Link>
               </div>
               <div className="grid gap-3">
                 {partsData.map((part) => (
@@ -553,7 +553,7 @@ export default async function VariantPage({ params }: PageProps) {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {siblingData.map((v: any) => (
-                    
+                    <Link
                       key={v.slug}
                       className="rounded-xl border border-slate-800 bg-slate-950 p-3 transition hover:border-slate-600"
                       href={`/rc/${mfrSlug}/${familySlug}/${v.slug}`}
@@ -564,7 +564,7 @@ export default async function VariantPage({ params }: PageProps) {
                           ~{fmt(v.v_variant_valuations_clean.fair_value)}
                         </div>
                       )}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </section>

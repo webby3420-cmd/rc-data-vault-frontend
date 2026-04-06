@@ -44,7 +44,16 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
   const { manufacturer, family } = await params;
   const { data } = await supabase.rpc("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
   const page = data as PageData | null;
-  if (!page || !page.variants?.length) notFound();
+  if (!page || !page.variants?.length) const { data, error } = await supabase.rpc('get_family_page', {
+  p_manufacturer_slug: manufacturer,
+  p_family_slug: family,
+});
+
+if (error) console.error('[family page] RPC error:', JSON.stringify(error));
+if (!data) {
+  console.error('[family page] null data — manufacturer:', manufacturer, 'family:', family);
+  notFound();
+};
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">

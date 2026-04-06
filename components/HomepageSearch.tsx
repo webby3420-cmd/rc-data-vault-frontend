@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { trackSearchEvent } from '@/lib/telemetry/search'
 
 interface SearchResult {
   variant_id: string
@@ -21,8 +22,13 @@ export default function HomepageSearch() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  const lastResolvedQueryRef = useRef('')
+  const zeroResultTrackedForQueryRef = useRef<string | null>(null)
+
   const router = useRouter()
 
   useEffect(() => {
@@ -31,6 +37,7 @@ export default function HomepageSearch() {
         setOpen(false)
       }
     }
+
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
@@ -39,22 +46,54 @@ export default function HomepageSearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
     const q = query.trim()
+
     if (q.length < 2) {
       setResults([])
       setOpen(false)
+      lastResolvedQueryRef.current = ''
+      zeroResultTrackedForQueryRef.current = null
       return
     }
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
+
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
         const json = await res.json()
-        setResults(json.results ?? [])
+        const nextResults = json.results ?? []
+
+        setResults(nextResults)
         setOpen(true)
+        lastResolvedQueryRef.current = q
+
+        if (nextResults.length > 0) {
+          zeroResultTrackedForQueryRef.current = null
+        } else if (zeroResultTrackedForQueryRef.current !== q) {
+          trackSearchEvent({
+            type: 'search_zero_results',
+            query: q,
+            query_length: q.length,
+            source: 'homepage',
+            pathname: window.location.pathname,
+          })
+          zeroResultTrackedForQueryRef.current = q
+        }
       } catch {
         setResults([])
         setOpen(true)
+        lastResolvedQueryRef.current = q
+
+        if (zeroResultTrackedForQueryRef.current !== q) {
+          trackSearchEvent({
+            type: 'search_zero_results',
+            query: q,
+            query_length: q.length,
+            source: 'homepage',
+            pathname: window.location.pathname,
+          })
+          zeroResultTrackedForQueryRef.current = q
+        }
       } finally {
         setLoading(false)
       }
@@ -65,7 +104,46 @@ export default function HomepageSearch() {
     }
   }, [query])
 
-  function handleSelect(result: SearchResult) {
+  function handleSubmit() {
+    const q = query.trim()
+    if (q.length < 2) return
+
+    const resolvedQuery = lastResolvedQueryRef.current === q
+    const firstResult = results[0] ?? null
+
+    trackSearchEvent({
+      type: 'search_submit',
+      query: q,
+      query_length: q.length,
+      source: 'homepage',
+      had_prefetched_results: resolvedQuery,
+      results_count: resolvedQuery ? results.length : 0,
+      pathname: window.location.pathname,
+    })
+
+    if (firstResult) {
+      handleSelect(firstResult, 0)
+      return
+    }
+
+    setOpen(true)
+  }
+
+  function handleSelect(result: SearchResult, index: number) {
+    const q = query.trim()
+
+    trackSearchEvent({
+      type: 'search_result_click',
+      query: q,
+      query_length: q.length,
+      source: 'homepage',
+      result_rank: index + 1,
+      results_count: results.length,
+      variant_id: result.variant_id,
+      canonical_path: result.canonical_path,
+      pathname: window.location.pathname,
+    })
+
     setOpen(false)
     setQuery('')
     router.push(result.canonical_path)
@@ -79,11 +157,19 @@ export default function HomepageSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              handleSubmit()
+            }
+          }}
           placeholder="Search any RC vehicle — e.g. Traxxas X-Maxx, ARRMA Kraton…"
           className="w-full rounded-xl border border-slate-600 bg-slate-900 px-4 py-3.5 pr-10 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
           autoComplete="off"
           spellCheck={false}
+          aria-label="Search RC vehicles"
         />
+
         {loading ? (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-amber-400" />
@@ -91,7 +177,13 @@ export default function HomepageSearch() {
         ) : query ? (
           <button
             type="button"
-            onClick={() => { setQuery(''); setResults([]); setOpen(false) }}
+            onClick={() => {
+              setQuery('')
+              setResults([])
+              setOpen(false)
+              lastResolvedQueryRef.current = ''
+              zeroResultTrackedForQueryRef.current = null
+            }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
             aria-label="Clear search"
           >
@@ -102,17 +194,18 @@ export default function HomepageSearch() {
 
       {open && results.length > 0 && (
         <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
-          {results.map((r) => (
+          {results.map((r, index) => (
             <li key={r.variant_id}>
               <button
                 type="button"
-                onClick={() => handleSelect(r)}
+                onClick={() => handleSelect(r, index)}
                 className="flex w-full items-center justify-between px-4 py-3 text-left transition hover:bg-slate-800"
               >
                 <div>
                   <div className="text-sm font-medium text-white">{r.full_name}</div>
                   <div className="mt-0.5 text-xs text-slate-400">{r.manufacturer_name}</div>
                 </div>
+
                 {r.price_mid != null && (
                   <div className="ml-4 flex-shrink-0 text-sm font-semibold text-amber-400">
                     ~{formatPrice(r.price_mid)}

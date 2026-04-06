@@ -138,25 +138,26 @@ function buildSpecRows(specs: any): SpecRow[] {
   };
 
   add("Scale", specs.scale);
-  add("Class", cap(specs.vehicle_type?.replace(/_/g, " ")));
-  add("Configuration", specs.configuration);
+  add("Class", cap(specs.vehicle_class?.replace(/_/g, " ")));
+  add("Body Style", cap(specs.body_style?.replace(/_/g, " ")));
   add("Drive", specs.drive_config?.toUpperCase());
   add("Drivetrain", cap(specs.drivetrain_type));
-  add("Power", specs.power_system ? cap(specs.power_system.replace(/_/g, " ")) : null);
+  add("Power", specs.power_type ? cap(specs.power_type.replace(/_/g, " ")) : null);
   add("Battery", specs.battery_config);
   add("Battery Included", specs.battery_included);
   add("Motor", specs.motor_name);
   add("ESC", specs.esc_name);
+  add("Servo", specs.servo_name);
   add("Top Speed", specs.top_speed_mph, " mph");
   add("Length", specs.length_mm, " mm");
   add("Width", specs.width_mm, " mm");
   add("Wheelbase", specs.wheelbase_mm, " mm");
   add("Weight", specs.weight_g ? (specs.weight_g / 1000).toFixed(1) + " kg" : null);
-  add("Waterproof", specs.waterproof);
-  add("Self-Righting", specs.self_righting);
-  add("Diff Lock", specs.diff_lock);
-  add("2-Speed", specs.two_speed);
-  add("Portal Axles", specs.portal_axles);
+  add("Waterproof", specs.is_waterproof);
+  add("Self-Righting", specs.is_self_righting);
+  add("Diff Lock", specs.has_diff_lock);
+  add("2-Speed", specs.has_2_speed);
+  add("Portal Axles", specs.has_portal_axles);
   add("Radio", specs.radio_system);
   add("Original MSRP", specs.msrp_display ?? null);
   add("Year Released", specs.year_released);
@@ -165,19 +166,19 @@ function buildSpecRows(specs: any): SpecRow[] {
 }
 
 const RESOURCE_LABEL: Record<string, string> = {
-  product_page:    "Product Page",
-  manual:          "Manuals",
-  exploded_view:   "Exploded Views",
-  parts_list:      "Parts Lists",
-  setup_sheet:     "Setup Sheets",
-  spare_parts_page:"Spare Parts",
-  video:           "Videos",
-  other:           "Other Resources",
+  product_page:     "Product Page",
+  manual:           "Manuals",
+  exploded_view:    "Exploded Views",
+  parts_list:       "Parts Lists",
+  setup_sheet:      "Setup Sheets",
+  spare_parts_page: "Spare Parts",
+  video:            "Videos",
+  other:            "Other Resources",
 };
 
 const RESOURCE_ORDER = [
-  "product_page","manual","exploded_view","parts_list",
-  "setup_sheet","spare_parts_page","video","other",
+  "product_page", "manual", "exploded_view", "parts_list",
+  "setup_sheet", "spare_parts_page", "video", "other",
 ];
 
 export default async function VariantPage({ params }: PageProps) {
@@ -194,7 +195,7 @@ export default async function VariantPage({ params }: PageProps) {
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;
 
-  // Siblings — two-query pattern (no nested join)
+  // Siblings — two-query pattern, no nested join
   const { data: siblingVariants } = await supabase
     .from("variants")
     .select("variant_id, full_name, slug")
@@ -252,7 +253,7 @@ export default async function VariantPage({ params }: PageProps) {
       .limit(3),
   ]);
 
-  // Verified content — only renders if verification_status = verified
+  // Verified content — only renders when verification_status = verified
   const { data: verifiedContent } = await supabase
     .from("variant_verified_content")
     .select("overview_sentence_1, overview_sentence_2, overview_sentence_3, overview_sentence_4, spec_facts, included_facts, required_facts")
@@ -381,7 +382,6 @@ export default async function VariantPage({ params }: PageProps) {
 
         <div className="grid gap-8">
 
-          {/* Verified content — only renders when verification_status = verified */}
           {verifiedContent && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               {[
@@ -438,11 +438,6 @@ export default async function VariantPage({ params }: PageProps) {
                   </div>
                 ))}
               </dl>
-              {specs?.motor_name && (
-                <p className="mt-4 text-xs text-slate-500">
-                  * {specs.motor_name} — purpose-built motor for {familyName}. Verified April 2026.
-                </p>
-              )}
             </CollapsibleSection>
           )}
 
@@ -469,7 +464,7 @@ export default async function VariantPage({ params }: PageProps) {
           />
 
           {intelligence && (
-            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 mt-8">
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="mb-1 text-2xl font-semibold text-white">Market Intelligence</h2>
               {intelligence.era && (
                 <p className="mb-4 text-xs text-slate-500 uppercase tracking-wide">{intelligence.era}</p>
@@ -553,7 +548,6 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
-          {/* Resources — manuals, exploded views, product pages etc */}
           {resources && resources.length > 0 && (
             <CollapsibleSection title="Resources">
               {RESOURCE_ORDER.map((type) => {

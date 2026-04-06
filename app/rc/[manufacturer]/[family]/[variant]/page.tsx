@@ -25,13 +25,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!variant) return { title: "RC Data Vault" };
 
   const name = variant.full_name;
-  const mfr = (variant.model_families as any)?.manufacturers?.name ?? "";
 
   return {
     title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
     description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
     robots: "index,follow",
-    alternates: { canonical: `https://rcdatavault.com/rc/${(variant.model_families as any)?.manufacturers?.name?.toLowerCase()}/${(variant.model_families as any)?.name?.toLowerCase().replace(/\s+/g, "-")}/${variantSlug}` },
+    alternates: {
+      canonical: `https://rcdatavault.com/rc/${(variant.model_families as any)?.manufacturers?.name?.toLowerCase()}/${(variant.model_families as any)?.name?.toLowerCase().replace(/\s+/g, "-")}/${variantSlug}`,
+    },
     openGraph: {
       title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
       description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
@@ -46,9 +47,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-function fmt(n: number | null | undefined, prefix = "$") {
+function fmt(n: number | null | undefined) {
   if (n == null) return "—";
-  return prefix + Math.round(n).toLocaleString();
+  return "$" + Math.round(n).toLocaleString();
 }
 
 function fmtDate(d: string | null | undefined) {
@@ -112,7 +113,15 @@ function buildSpecRows(specs: any): SpecRow[] {
 export default async function VariantPage({ params }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
 
-  // ── Data fetching ─────────────────────────────────────────
+  const variantIdRes = await supabase
+    .from("variants")
+    .select("variant_id, model_family_id")
+    .eq("slug", variantSlug)
+    .single();
+
+  const variantId = variantIdRes.data?.variant_id ?? "";
+  const modelFamilyId = variantIdRes.data?.model_family_id ?? "";
+
   const [
     { data: variantData },
     { data: specsData },
@@ -129,61 +138,39 @@ export default async function VariantPage({ params }: PageProps) {
       .select("variant_id, full_name, slug, model_families(name, manufacturers(name, slug))")
       .eq("slug", variantSlug)
       .single(),
-    supabase
-      .from("variant_specs")
-      .select("*")
-      .eq("variant_id",
-        (await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""
-      )
-      .single(),
+    supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
       .from("v_variant_valuations_clean")
       .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at")
-      .eq("variant_id",
-        (await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""
-      )
+      .eq("variant_id", variantId)
       .single(),
     supabase
       .from("variant_content")
       .select("intro_paragraph, buying_tips, category_tags")
-      .eq("variant_id",
-        (await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""
-      )
+      .eq("variant_id", variantId)
       .single(),
     supabase
       .from("price_observations")
       .select("sale_price, observed_at")
-      .eq("variant_id",
-        (await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""
-      )
+      .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(50),
     supabase
       .from("price_observations")
       .select("sale_price, observed_at, source, listing_title")
-      .eq("variant_id",
-        (await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""
-      )
+      .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(12),
-    supabase
-      .from("mv_variant_payload")
-      .select("intelligence")
-      .eq("variant_slug", variantSlug)
-      .single(),
+    supabase.from("mv_variant_payload").select("intelligence").eq("variant_slug", variantSlug).single(),
     supabase
       .from("parts")
       .select("part_id, name, part_number, oem_price, part_type")
-      .contains("compatible_variant_ids",
-        [(await supabase.from("variants").select("variant_id").eq("slug", variantSlug).single()).data?.variant_id ?? ""]
-      )
+      .contains("compatible_variant_ids", [variantId])
       .limit(3),
     supabase
       .from("variants")
       .select("full_name, slug, v_variant_valuations_clean(fair_value)")
-      .eq("model_family_id",
-        (await supabase.from("variants").select("model_family_id").eq("slug", variantSlug).single()).data?.model_family_id ?? ""
-      )
+      .eq("model_family_id", modelFamilyId)
       .neq("slug", variantSlug)
       .limit(6),
   ]);
@@ -201,7 +188,6 @@ export default async function VariantPage({ params }: PageProps) {
   const content = contentData;
   const intelligence = intelligenceData?.intelligence as any;
 
-  // ── Trend calculation ─────────────────────────────────────
   const monthlyMap = new Map<string, number[]>();
   for (const obs of trendData ?? []) {
     const d = new Date(obs.observed_at);
@@ -229,24 +215,24 @@ export default async function VariantPage({ params }: PageProps) {
       ? Math.abs(trendRows[trendRows.length - 1].median - trendRows[trendRows.length - 2].median)
       : null;
 
-  // ── Parts ─────────────────────────────────────────────────
   const totalPartsCount = partsData?.length ?? 0;
 
-  // ── Structured data ───────────────────────────────────────
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: variantData.full_name,
     brand: { "@type": "Brand", name: mfrName },
-    ...(valuation ? {
-      offers: {
-        "@type": "AggregateOffer",
-        priceCurrency: "USD",
-        lowPrice: valuation.low_value,
-        highPrice: valuation.high_value,
-        offerCount: valuation.total_observation_count,
-      },
-    } : {}),
+    ...(valuation
+      ? {
+          offers: {
+            "@type": "AggregateOffer",
+            priceCurrency: "USD",
+            lowPrice: valuation.low_value,
+            highPrice: valuation.high_value,
+            offerCount: valuation.total_observation_count,
+          },
+        }
+      : {}),
     url: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}`,
   };
 
@@ -262,12 +248,14 @@ export default async function VariantPage({ params }: PageProps) {
 
   const specRows = buildSpecRows(specs);
   const confidenceLabel =
-    valuation?.confidence === "high_confidence" ? "High Confidence"
-    : valuation?.confidence === "low_confidence" ? "Low Confidence"
-    : valuation?.confidence === "estimate" ? "Estimate"
-    : "Limited Data";
+    valuation?.confidence === "high_confidence"
+      ? "High Confidence"
+      : valuation?.confidence === "low_confidence"
+      ? "Low Confidence"
+      : valuation?.confidence === "estimate"
+      ? "Estimate"
+      : "Limited Data";
 
-  // ── Render ────────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
@@ -275,7 +263,6 @@ export default async function VariantPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 
-        {/* Breadcrumb */}
         <nav className="mb-6 text-sm text-slate-400">
           <a className="hover:text-white" href={`/rc/${mfrSlug}`}>{mfrName}</a>
           <span className="mx-2">/</span>
@@ -284,7 +271,6 @@ export default async function VariantPage({ params }: PageProps) {
           <span>{familyName}</span>
         </nav>
 
-        {/* Header */}
         <header className="mb-8">
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             {variantData.full_name}
@@ -296,20 +282,16 @@ export default async function VariantPage({ params }: PageProps) {
 
         <div className="grid gap-8">
 
-          {/* ── INTRO DESCRIPTION ── */}
           {content?.intro_paragraph && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              <div className="prose prose-invert prose-slate max-w-none">
-                {content.intro_paragraph.split("\n\n").map((para: string, i: number) => (
-                  <p key={i} className={`text-slate-300 leading-7 ${i > 0 ? "mt-4" : ""}`}>
-                    {para}
-                  </p>
-                ))}
-              </div>
+              {content.intro_paragraph.split("\n\n").map((para: string, i: number) => (
+                <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-4" : ""}`}>
+                  {para}
+                </p>
+              ))}
             </section>
           )}
 
-          {/* ── SPECS ── */}
           {specRows.length > 0 && (
             <CollapsibleSection title="Specifications">
               <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
@@ -322,13 +304,12 @@ export default async function VariantPage({ params }: PageProps) {
               </dl>
               {specs?.motor_name && (
                 <p className="mt-4 text-xs text-slate-500">
-                  * {specs.motor_name} — purpose-built motor for {familyName}, not shared with other platforms. Verified April 2026.
+                  * {specs.motor_name} — purpose-built motor for {familyName}. Verified April 2026.
                 </p>
               )}
             </CollapsibleSection>
           )}
 
-          {/* ── VALUATION ── */}
           {valuation && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
               <div className="mb-2 text-sm uppercase tracking-wide text-slate-400">Estimated Value</div>
@@ -345,14 +326,12 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* ── PRICE ALERT ── */}
           <PriceAlertSignup
             variantId={variantData.variant_id}
             variantSlug={variantSlug}
             modelName={variantData.full_name}
           />
 
-          {/* ── MARKET INTELLIGENCE ── */}
           {intelligence && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 mt-8">
               <h2 className="mb-1 text-2xl font-semibold text-white">Market Intelligence</h2>
@@ -403,7 +382,6 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* ── MARKET TREND ── */}
           {trendRows.length > 0 && (
             <CollapsibleSection title="Market Trend">
               <div className="overflow-x-auto">
@@ -439,7 +417,6 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
-          {/* ── RECENT LISTINGS ── */}
           {listingsData && listingsData.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
               <div className="overflow-x-auto">
@@ -467,12 +444,11 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
-          {/* ── PARTS ── */}
           {partsData && partsData.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-2xl font-semibold text-white">Parts & Upgrades</h2>
+                  <h2 className="text-2xl font-semibold text-white">Parts &amp; Upgrades</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     {totalPartsCount} part{totalPartsCount !== 1 ? "s" : ""} available — OEM + aftermarket
                   </p>
@@ -506,26 +482,35 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* ── MARKET SUMMARY ── */}
           {valuation && (
             <CollapsibleSection title="Market Summary">
               <p className="max-w-3xl text-base leading-7 text-slate-200">
                 The {variantData.full_name} has a{" "}
                 <strong className="text-white">
-                  {(valuation.total_observation_count ?? 0) > 20 ? "deep" : (valuation.total_observation_count ?? 0) > 10 ? "moderate" : "developing"}
+                  {(valuation.total_observation_count ?? 0) > 20
+                    ? "deep"
+                    : (valuation.total_observation_count ?? 0) > 10
+                    ? "moderate"
+                    : "developing"}
                 </strong>{" "}
                 secondary market with{" "}
                 <strong className="text-white">{valuation.total_observation_count}</strong> recent sold listings.
                 Prices currently range from{" "}
                 <strong className="text-white">{fmt(valuation.low_value)}</strong> to{" "}
                 <strong className="text-white">{fmt(valuation.high_value)}</strong>, and the market is trending{" "}
-                <strong className="text-white">{trendDirection === "up" ? "rising" : trendDirection === "down" ? "falling" : "stable"}</strong>.
+                <strong className="text-white">
+                  {trendDirection === "up" ? "rising" : trendDirection === "down" ? "falling" : "stable"}
+                </strong>.
               </p>
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <div className="rounded-xl border border-slate-800 p-4">
                   <div className="text-sm text-slate-400">Depth</div>
                   <div className="mt-1 text-lg font-medium text-white">
-                    {(valuation.total_observation_count ?? 0) > 20 ? "deep" : (valuation.total_observation_count ?? 0) > 10 ? "moderate" : "developing"}
+                    {(valuation.total_observation_count ?? 0) > 20
+                      ? "deep"
+                      : (valuation.total_observation_count ?? 0) > 10
+                      ? "moderate"
+                      : "developing"}
                   </div>
                 </div>
                 <div className="rounded-xl border border-slate-800 p-4">
@@ -542,7 +527,6 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
-          {/* ── BUYING TIPS ── */}
           {content?.buying_tips && content.buying_tips.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
               <h2 className="text-xl font-semibold text-white mb-4">What to Look For When Buying Used</h2>
@@ -560,7 +544,7 @@ export default async function VariantPage({ params }: PageProps) {
           )}
 
           <div className="mt-8 space-y-6">
-            {/* ── MORE FROM THIS BRAND ── */}
+
             {siblingData && siblingData.length > 0 && (
               <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
                 <div className="mb-4">
@@ -586,7 +570,6 @@ export default async function VariantPage({ params }: PageProps) {
               </section>
             )}
 
-            {/* ── KEEP RESEARCHING ── */}
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 md:p-8">
               <div className="max-w-2xl">
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Keep researching</p>

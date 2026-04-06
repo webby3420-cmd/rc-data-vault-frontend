@@ -14,6 +14,60 @@ type PageProps = {
   params: Promise<{ manufacturer: string; family: string; variant: string }>;
 };
 
+function getApprovedPrimaryImage(payloadRow: any): {
+  url: string | null;
+  alt: string | null;
+} {
+  if (!payloadRow) return { url: null, alt: null };
+  return {
+    url: payloadRow.primary_image_url ?? null,
+    alt: payloadRow.primary_image_alt ?? null,
+  };
+}
+
+function VariantHeroImage({
+  imageUrl,
+  imageAlt,
+  modelName,
+}: {
+  imageUrl: string | null;
+  imageAlt: string | null;
+  modelName: string;
+}) {
+  return (
+    <section className="mb-8">
+      <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+        <div className="relative w-full aspect-[4/3] bg-slate-950">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={imageAlt || `${modelName} approved reference image`}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
+              <div className="px-6 text-center">
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Approved image pending
+                </div>
+                <div className="mt-3 text-xl font-semibold text-white sm:text-2xl">
+                  {modelName}
+                </div>
+                <p className="mt-2 text-sm text-slate-400">
+                  RC Data Vault only displays approved governed images.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { variant: variantSlug } = await params;
   const { data: variant } = await supabase
@@ -124,7 +178,6 @@ export default async function VariantPage({ params }: PageProps) {
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;
 
-  // FIX 3: two-query siblings pattern — no nested PostgREST join
   const { data: siblingVariants } = await supabase
     .from("variants")
     .select("variant_id, full_name, slug")
@@ -154,7 +207,7 @@ export default async function VariantPage({ params }: PageProps) {
     { data: contentData },
     { data: trendData },
     { data: listingsData },
-    { data: intelligenceData },
+    { data: payloadData },
     { data: partsData },
   ] = await Promise.all([
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
@@ -168,22 +221,19 @@ export default async function VariantPage({ params }: PageProps) {
       .select("intro_paragraph, buying_tips, category_tags")
       .eq("variant_id", variantId)
       .single(),
-    // FIX 1: v_price_observations
     supabase
       .from("v_price_observations")
       .select("sale_price, observed_at")
       .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(50),
-    // FIX 1: v_price_observations
     supabase
       .from("v_price_observations")
       .select("sale_price, observed_at, source, listing_title")
       .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(12),
-    supabase.from("mv_variant_payload").select("intelligence").eq("variant_slug", variantSlug).single(),
-    // FIX 2: v_parts_with_compat
+    supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
     supabase
       .from("v_parts_with_compat")
       .select("part_id, name, part_number, oem_price, part_type")
@@ -200,7 +250,8 @@ export default async function VariantPage({ params }: PageProps) {
   const valuation = valuationData;
   const specs = specsData;
   const content = contentData;
-  const intelligence = intelligenceData?.intelligence as any;
+  const intelligence = payloadData?.intelligence as any;
+  const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
 
   const monthlyMap = new Map<string, number[]>();
   for (const obs of trendData ?? []) {
@@ -277,7 +328,6 @@ export default async function VariantPage({ params }: PageProps) {
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 
-        {/* FIX: breadcrumb final node = variant name */}
         <nav className="mb-6 text-sm text-slate-400">
           <a className="hover:text-white" href={`/rc/${mfrSlug}`}>{mfrName}</a>
           <span className="mx-2">/</span>
@@ -294,6 +344,12 @@ export default async function VariantPage({ params }: PageProps) {
             Current valuation, sold comps, price trends, specs, and market intelligence.
           </p>
         </header>
+
+        <VariantHeroImage
+          imageUrl={approvedPrimaryImage.url}
+          imageAlt={approvedPrimaryImage.alt}
+          modelName={variantData.full_name}
+        />
 
         <div className="grid gap-8">
 

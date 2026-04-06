@@ -104,7 +104,7 @@ function buildSpecRows(specs: any): SpecRow[] {
   add("2-Speed", specs.two_speed);
   add("Portal Axles", specs.portal_axles);
   add("Radio", specs.radio_system);
-  add("Original MSRP", specs.msrp_usd ? "$" + Number(specs.msrp_usd).toFixed(2) : null);
+  add("Original MSRP", specs.msrp_usd ? Number(specs.msrp_usd).toLocaleString("en-US", { style: "currency", currency: "USD" }) : null);
   add("Year Released", specs.year_released);
 
   return rows;
@@ -113,7 +113,6 @@ function buildSpecRows(specs: any): SpecRow[] {
 export default async function VariantPage({ params }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
 
-  // Single pre-fetch — gets variant_id, model_family_id, AND all display fields in one query
   const { data: variantData } = await supabase
     .from("variants")
     .select("variant_id, model_family_id, full_name, slug, model_families(name, manufacturers(name, slug))")

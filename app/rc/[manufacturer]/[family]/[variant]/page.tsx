@@ -113,17 +113,19 @@ function buildSpecRows(specs: any): SpecRow[] {
 export default async function VariantPage({ params }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
 
-  const variantIdRes = await supabase
+  // Single pre-fetch — gets variant_id, model_family_id, AND all display fields in one query
+  const { data: variantData } = await supabase
     .from("variants")
-    .select("variant_id, model_family_id")
+    .select("variant_id, model_family_id, full_name, slug, model_families(name, manufacturers(name, slug))")
     .eq("slug", variantSlug)
     .single();
 
-  const variantId = variantIdRes.data?.variant_id ?? "";
-  const modelFamilyId = variantIdRes.data?.model_family_id ?? "";
+  if (!variantData) return <div className="p-8 text-white">Variant not found.</div>;
+
+  const variantId = variantData.variant_id;
+  const modelFamilyId = variantData.model_family_id;
 
   const [
-    { data: variantData },
     { data: specsData },
     { data: valuationData },
     { data: contentData },
@@ -133,11 +135,6 @@ export default async function VariantPage({ params }: PageProps) {
     { data: partsData },
     { data: siblingData },
   ] = await Promise.all([
-    supabase
-      .from("variants")
-      .select("variant_id, full_name, slug, model_families(name, manufacturers(name, slug))")
-      .eq("slug", variantSlug)
-      .single(),
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
       .from("v_variant_valuations_clean")
@@ -174,8 +171,6 @@ export default async function VariantPage({ params }: PageProps) {
       .neq("slug", variantSlug)
       .limit(6),
   ]);
-
-  if (!variantData) return <div className="p-8 text-white">Variant not found.</div>;
 
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;

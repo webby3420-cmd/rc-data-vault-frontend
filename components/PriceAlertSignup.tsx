@@ -11,10 +11,14 @@ export default function PriceAlertSignup({
   variantId,
   variantSlug,
   modelName,
+  mfrSlug,
+  familySlug,
 }: {
   variantId: string;
   variantSlug: string;
   modelName: string;
+  mfrSlug?: string;
+  familySlug?: string;
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
@@ -34,7 +38,7 @@ export default function PriceAlertSignup({
     setLoading(true);
     setError(null);
 
-    const { error: insertError } = await supabase
+    const { data: insertedRow, error: insertError } = await supabase
       .from("alert_subscriptions")
       .insert({
         subscriber_email: email.trim().toLowerCase(),
@@ -43,12 +47,12 @@ export default function PriceAlertSignup({
         alert_name: `Price alert for ${modelName}`,
         max_total_price: targetPrice,
         is_active: true,
-      });
-
-    setLoading(false);
+      })
+      .select("unsubscribe_token")
+      .single();
 
     if (insertError) {
-      // Unique constraint = already subscribed
+      setLoading(false);
       if (insertError.code === "23505") {
         setSubmitted(true);
         return;
@@ -58,6 +62,25 @@ export default function PriceAlertSignup({
       return;
     }
 
+    try {
+      await fetch("/api/alerts/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          modelName,
+          targetPrice,
+          variantSlug,
+          mfrSlug: mfrSlug ?? null,
+          familySlug: familySlug ?? null,
+          unsubscribeToken: insertedRow?.unsubscribe_token ?? null,
+        }),
+      });
+    } catch (emailErr) {
+      console.error("Confirmation email error:", emailErr);
+    }
+
+    setLoading(false);
     setSubmitted(true);
   }
 
@@ -73,8 +96,9 @@ export default function PriceAlertSignup({
           <div>
             <p className="text-sm font-medium text-emerald-200">Price alert set</p>
             <p className="mt-1 text-sm text-slate-400">
-              We will email <span className="text-slate-300">{email}</span> when {modelName} drops below{" "}
+              We'll email <span className="text-slate-300">{email}</span> when {modelName} drops below{" "}
               <span className="text-slate-300">${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>.
+              Check your inbox for a confirmation.
             </p>
             <p className="mt-2 text-xs text-slate-500">
               You can unsubscribe anytime via the link in any alert email.
@@ -92,7 +116,7 @@ export default function PriceAlertSignup({
           Get notified when this model drops below your target price
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Set your target price for {modelName} and we will email you when the market drops below it.
+          Set your target price for {modelName} and we'll email you when the market drops below it.
         </p>
       </div>
       <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_auto] md:items-end">

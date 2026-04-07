@@ -511,6 +511,8 @@ export default async function VariantPage({ params }: PageProps) {
             variantId={variantData.variant_id}
             variantSlug={variantSlug}
             modelName={variantData.full_name}
+            mfrSlug={mfrSlug}
+            familySlug={familySlug}
           />
 
           {intelligence && (

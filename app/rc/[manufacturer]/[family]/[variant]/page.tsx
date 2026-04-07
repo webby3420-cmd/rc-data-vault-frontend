@@ -143,6 +143,24 @@ function buildSpecRows(specs: any): SpecRow[] {
   add("Drive", specs.drive_config?.toUpperCase());
   add("Drivetrain", cap(specs.drivetrain_type));
   add("Power", specs.power_type ? cap(specs.power_type.replace(/_/g, " ")) : null);
+  add("Battery", specs.battery_config);
+  add("Battery Included", specs.battery_included);
+  add("Motor", specs.motor_name);
+  add("ESC", specs.esc_name);
+  add("Servo", specs.servo_name);
+  add("Top Speed", specs.top_speed_mph, " mph");
+  add("Length", specs.length_mm, " mm");
+  add("Width", specs.width_mm, " mm");
+  add("Wheelbase", specs.wheelbase_mm, " mm");
+  add("Weight", specs.weight_g ? (specs.weight_g / 1000).toFixed(1) + " kg" : null);
+  add("Waterproof", specs.is_waterproof);
+  add("Self-Righting", specs.is_self_righting);
+  add("Diff Lock", specs.has_diff_lock);
+  add("2-Speed", specs.has_2_speed);
+  add("Portal Axles", specs.has_portal_axles);
+  add("Radio", specs.radio_system);
+  add("Original MSRP", specs.msrp_display ?? null);
+  add("Year Released", specs.year_released);
 
   return rows;
 }

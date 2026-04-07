@@ -9,6 +9,8 @@ import { HomepageResearchPaths } from '@/components/home/HomepageResearchPaths'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: 'RC Data Vault | Used RC Car Values & Price Guide',
   description: 'Used RC car values, price guides, and sold market data for Traxxas, ARRMA, Losi, Axial, and more.',

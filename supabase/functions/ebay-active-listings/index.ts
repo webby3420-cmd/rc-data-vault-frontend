@@ -6,7 +6,6 @@ async function getEbayToken(): Promise<string> {
   const clientId = Deno.env.get("EBAY_CLIENT_ID");
   const clientSecret = Deno.env.get("EBAY_CLIENT_SECRET");
   if (!clientId || !clientSecret) throw new Error("Missing eBay credentials");
-
   const credentials = btoa(`${clientId}:${clientSecret}`);
   const res = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
     method: "POST",
@@ -16,12 +15,7 @@ async function getEbayToken(): Promise<string> {
     },
     body: "grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope",
   });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`eBay OAuth failed: ${res.status} ${text}`);
-  }
-
+  if (!res.ok) { const text = await res.text(); throw new Error(`eBay OAuth failed: ${res.status} ${text}`); }
   const data = await res.json();
   return data.access_token;
 }
@@ -30,12 +24,10 @@ async function searchEbayActive(token: string, query: string, limit = 20): Promi
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
-    // Fixed price listings only — no auctions (cleaner for deal alerts)
     "filter": "buyingOptions:{FIXED_PRICE},price:[50..5000],priceCurrency:USD",
     "sort": "price",
     "fieldgroups": "MATCHING_ITEMS",
   });
-
   const res = await fetch(`https://api.ebay.com/buy/browse/v1/item_summary/search?${params}`, {
     headers: {
       "Authorization": `Bearer ${token}`,
@@ -43,31 +35,18 @@ async function searchEbayActive(token: string, query: string, limit = 20): Promi
       "Content-Type": "application/json",
     },
   });
-
-  if (!res.ok) {
-    console.error(`eBay Browse API error: ${res.status} for query "${query}"`);
-    return [];
-  }
-
+  if (!res.ok) { console.error(`eBay Browse API error: ${res.status} for query "${query}"`); return []; }
   const data = await res.json();
   return data.itemSummaries ?? [];
 }
 
-function extractPrice(item: any): number | null {
-  const price = item.price?.value;
-  if (!price) return null;
-  return parseFloat(price);
-}
-
-Deno.serve(async (req) => {
+Deno.serve(async (_req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get search terms for variants that have active subscriptions
-    // Prioritize variants users actually care about
     const { data: searchQueue } = await supabase
       .from("ebay_search_queue_view")
       .select("search_term, variant_id")
@@ -85,13 +64,10 @@ Deno.serve(async (req) => {
       const items = await searchEbayActive(token, search_term, 10);
 
       for (const item of items) {
-        const price = extractPrice(item);
+        const price = item.price?.value ? parseFloat(item.price.value) : null;
         if (!price || price < 50) { skipped++; continue; }
-
         const listingUrl = item.itemWebUrl;
         if (!listingUrl) { skipped++; continue; }
-
-        // Use eBay item ID as dedupe key
         const externalId = item.itemId;
         if (!externalId) { skipped++; continue; }
 
@@ -100,19 +76,15 @@ Deno.serve(async (req) => {
           .from("marketplace_listings")
           .select("listing_id, price_amount, listing_status")
           .eq("external_listing_id", externalId)
-          .single();
+          .maybeSingle();
 
         if (existing) {
-          // Update price if changed, refresh updated_at
-          if (existing.listing_status !== "active" || Math.abs(existing.price_amount - price) > 0.01) {
-            await supabase
-              .from("marketplace_listings")
-              .update({
-                price_amount: price,
-                listing_status: "active",
-                updated_at: new Date().toISOString(),
-              })
-              .eq("listing_id", existing.listing_id);
+          if (existing.listing_status !== "active" || Math.abs(Number(existing.price_amount) - price) > 0.01) {
+            await supabase.from("marketplace_listings").update({
+              price_amount: price,
+              listing_status: "active",
+              updated_at: new Date().toISOString(),
+            }).eq("listing_id", existing.listing_id);
           }
           skipped++;
           continue;
@@ -145,8 +117,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Auto-match to variant using the search queue mapping
-        await supabase
+        // Match to variant — ignore duplicate key errors
+        const { error: matchErr } = await supabase
           .from("listing_matches")
           .insert({
             listing_id: inserted.listing_id,
@@ -157,20 +129,20 @@ Deno.serve(async (req) => {
             is_primary_match: true,
             is_primary: true,
             verification_status: "auto",
-          })
-          .on("conflict", "do nothing");
+          });
+
+        if (matchErr && !matchErr.message.includes("duplicate")) {
+          console.error("Match insert error:", matchErr.message);
+        }
 
         ingested++;
       }
 
-      // Small delay between searches to be polite to the API
       await new Promise((r) => setTimeout(r, 200));
     }
 
-    // Mark listings we haven't seen recently as potentially ended
-    // Any active listing not updated in 2 hours is probably gone
-    await supabase
-      .from("marketplace_listings")
+    // Mark listings not seen in 2 hours as ended
+    await supabase.from("marketplace_listings")
       .update({ listing_status: "ended" })
       .eq("listing_status", "active")
       .eq("is_sold", false)
@@ -182,9 +154,6 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("ebay-active-listings error:", err);
-    return new Response(
-      JSON.stringify({ success: false, error: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: false, error: String(err) }), { status: 500 });
   }
 });

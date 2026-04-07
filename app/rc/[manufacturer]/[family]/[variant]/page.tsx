@@ -124,6 +124,10 @@ function cap(s: string | null | undefined) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+function specsAreIndividuallyVerified(specs: any) {
+  return Boolean(specs?.spec_verified && specs?.spec_verified_at);
+}
+
 type SpecRow = { label: string; value: string | null };
 
 function buildSpecRows(specs: any): SpecRow[] {
@@ -313,6 +317,7 @@ export default async function VariantPage({ params }: PageProps) {
   };
 
   const specRows = buildSpecRows(specs);
+  const specsVerified = specsAreIndividuallyVerified(specs);
   const confidenceLabel =
     valuation?.confidence === "high_confidence"
       ? "High Confidence"
@@ -375,10 +380,18 @@ export default async function VariantPage({ params }: PageProps) {
                   </div>
                 ))}
               </dl>
-              {specs?.motor_name && (
-                <p className="mt-4 text-xs text-slate-500">
-                  * {specs.motor_name} — purpose-built motor for {familyName}. Verified April 2026.
-                </p>
+              {specsVerified ? (
+                <div className="mt-4 rounded-xl border border-emerald-800/60 bg-emerald-950/30 px-4 py-3">
+                  <p className="text-xs leading-6 text-emerald-200">
+                    Specs verified against a primary manufacturer source for this variant.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
+                  <p className="text-xs leading-6 text-amber-200">
+                    Specification disclosure: these specs are shown for research utility, but individual field verification is still in progress for this variant. Treat them as provisional until confirmed against a primary manufacturer source.
+                  </p>
+                </div>
               )}
             </CollapsibleSection>
           )}

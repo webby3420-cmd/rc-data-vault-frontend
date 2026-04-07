@@ -128,6 +128,32 @@ function specsAreIndividuallyVerified(specs: any) {
   return Boolean(specs?.spec_verified && specs?.spec_verified_at);
 }
 
+// Extracts the best purchase URL from a part's purchase_links JSON array
+function getPartPrimaryUrl(part: any): string | null {
+  if (!part?.purchase_links) return null;
+  const links: any[] = Array.isArray(part.purchase_links) ? part.purchase_links : [];
+  if (links.length === 0) return null;
+  // Prefer Amazon, then AMain, then first available
+  const amazon = links.find((l) => l.retailer_slug === "amazon" && l.url);
+  if (amazon) return amazon.url;
+  const amain = links.find((l) => l.retailer_slug === "amain" && l.url);
+  if (amain) return amain.url;
+  const first = links.find((l) => l.url);
+  return first?.url ?? null;
+}
+
+// Returns a human-readable source label for a sold listing
+function listingSourceLabel(source: string | null | undefined): string {
+  if (!source) return "Marketplace";
+  const map: Record<string, string> = {
+    ebay: "eBay",
+    facebook: "Facebook Marketplace",
+    craigslist: "Craigslist",
+    amazon: "Amazon",
+  };
+  return map[source.toLowerCase()] ?? cap(source) ?? "Marketplace";
+}
+
 type SpecRow = { label: string; value: string | null };
 
 function buildSpecRows(specs: any): SpecRow[] {
@@ -170,8 +196,17 @@ function buildSpecRows(specs: any): SpecRow[] {
   return rows;
 }
 
-const RESOURCE_LABEL: Record<string, string> = { product_page: "Product Page", manual: "Manuals", exploded_view: "Exploded Views", parts_list: "Parts Lists", setup_sheet: "Setup Sheets", spare_parts_page: "Spare Parts", video: "Videos", other: "Other Resources" };
-const RESOURCE_ORDER = ["product_page","manual","exploded_view","parts_list","setup_sheet","spare_parts_page","video","other"];
+const RESOURCE_LABEL: Record<string, string> = {
+  product_page: "Product Page",
+  manual: "Manuals",
+  exploded_view: "Exploded Views",
+  parts_list: "Parts Lists",
+  setup_sheet: "Setup Sheets",
+  spare_parts_page: "Spare Parts",
+  video: "Videos",
+  other: "Other Resources",
+};
+const RESOURCE_ORDER = ["product_page", "manual", "exploded_view", "parts_list", "setup_sheet", "spare_parts_page", "video", "other"];
 
 export default async function VariantPage({ params }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
@@ -210,6 +245,15 @@ export default async function VariantPage({ params }: PageProps) {
     valuation: siblingValMap[s.variant_id] ?? null,
   }));
 
+  // Step 1: get compatible part_ids
+  const { data: compatParts } = await supabase
+    .from("v_parts_with_compat")
+    .select("part_id")
+    .contains("compatible_variant_ids", [variantId])
+    .limit(20);
+
+  const compatPartIds = (compatParts ?? []).map((p: any) => p.part_id);
+
   const [
     { data: specsData },
     { data: valuationData },
@@ -232,20 +276,37 @@ export default async function VariantPage({ params }: PageProps) {
       .limit(50),
     supabase
       .from("v_price_observations")
-      .select("sale_price, observed_at, source, listing_title")
+      .select("*")
       .eq("variant_id", variantId)
       .order("observed_at", { ascending: false })
       .limit(12),
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
-    supabase
-      .from("v_parts_with_compat")
-      .select("part_id, name, part_number, oem_price, part_type")
-      .contains("compatible_variant_ids", [variantId])
-      .limit(3),
+    // Step 2: get full purchase data for compatible parts
+    compatPartIds.length > 0
+      ? supabase
+          .from("v_parts_with_purchase_options")
+          .select("part_id, part_name, part_number, part_type, fitment_type, is_oem, msrp, best_price, purchase_link_count, purchase_links")
+          .in("part_id", compatPartIds)
+          .gt("purchase_link_count", 0)
+          .limit(3)
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const { data: verifiedContent } = await supabase.from("variant_verified_content").select("overview_sentence_1, overview_sentence_2, overview_sentence_3, overview_sentence_4, spec_facts, included_facts, required_facts").eq("variant_slug", variantSlug).eq("verification_status", "verified").eq("render_status", "render_verified_only").maybeSingle();
-  const { data: resources } = await supabase.from("variant_resources").select("resource_id, resource_type, title, url, file_format, language, publisher, display_order").eq("variant_id", variantId).eq("is_verified", true).eq("is_active", true).order("display_order", { ascending: true });
+  const { data: verifiedContent } = await supabase
+    .from("variant_verified_content")
+    .select("overview_sentence_1, overview_sentence_2, overview_sentence_3, overview_sentence_4, spec_facts, included_facts, required_facts")
+    .eq("variant_slug", variantSlug)
+    .eq("verification_status", "verified")
+    .eq("render_status", "render_verified_only")
+    .maybeSingle();
+
+  const { data: resources } = await supabase
+    .from("variant_resources")
+    .select("resource_id, resource_type, title, url, file_format, language, publisher, display_order")
+    .eq("variant_id", variantId)
+    .eq("is_verified", true)
+    .eq("is_active", true)
+    .order("display_order", { ascending: true });
 
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
@@ -285,7 +346,10 @@ export default async function VariantPage({ params }: PageProps) {
       ? Math.abs(trendRows[trendRows.length - 1].median - trendRows[trendRows.length - 2].median)
       : null;
 
-  const totalPartsCount = partsData?.length ?? 0;
+  // Parts with verified purchase links only
+  const verifiedParts = (partsData ?? []).filter(
+    (p: any) => (p.purchase_link_count ?? 0) > 0
+  );
 
   const productSchema = {
     "@context": "https://schema.org",
@@ -327,6 +391,10 @@ export default async function VariantPage({ params }: PageProps) {
       ? "Estimate"
       : "Limited Data";
 
+  // Pin product_page resources to top of resources list
+  const pinnedResources = (resources ?? []).filter((r: any) => r.resource_type === "product_page");
+  const otherResources = (resources ?? []).filter((r: any) => r.resource_type !== "product_page");
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
@@ -364,9 +432,36 @@ export default async function VariantPage({ params }: PageProps) {
               {[verifiedContent.overview_sentence_1, verifiedContent.overview_sentence_2, verifiedContent.overview_sentence_3, verifiedContent.overview_sentence_4].filter(Boolean).map((s, i) => (
                 <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-3" : ""}`}>{s}</p>
               ))}
-              {Array.isArray(verifiedContent.spec_facts) && verifiedContent.spec_facts.length > 0 && (<div className="mt-6"><h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Key Facts</h3><ul className="space-y-1 text-sm text-slate-300">{verifiedContent.spec_facts.map((f: any, i: number) => (<li key={i}>• {typeof f === "object" ? `${f.label}: ${f.value}${f.qualifier ? ` (${f.qualifier})` : ""}` : f}</li>))}</ul></div>)}
-              {Array.isArray(verifiedContent.included_facts) && verifiedContent.included_facts.length > 0 && (<div className="mt-6"><h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What&apos;s Included</h3><ul className="space-y-1 text-sm text-slate-300">{verifiedContent.included_facts.map((f: any, i: number) => (<li key={i}>• {typeof f === "object" ? f.value : f}</li>))}</ul></div>)}
-              {Array.isArray(verifiedContent.required_facts) && verifiedContent.required_facts.length > 0 && (<div className="mt-6"><h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What You&apos;ll Need</h3><ul className="space-y-1 text-sm text-slate-300">{verifiedContent.required_facts.map((f: any, i: number) => (<li key={i}>• {typeof f === "object" ? f.value : f}</li>))}</ul></div>)}
+              {Array.isArray(verifiedContent.spec_facts) && verifiedContent.spec_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Key Facts</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.spec_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? `${f.label}: ${f.value}${f.qualifier ? ` (${f.qualifier})` : ""}` : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray(verifiedContent.included_facts) && verifiedContent.included_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What&apos;s Included</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.included_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray(verifiedContent.required_facts) && verifiedContent.required_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What You&apos;ll Need</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.required_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </section>
           )}
 
@@ -504,89 +599,149 @@ export default async function VariantPage({ params }: PageProps) {
           )}
 
           {resources && resources.length > 0 && (
-            <CollapsibleSection title="Resources">
-              {RESOURCE_ORDER.map((type) => {
-                const group = (resources as any[]).filter(r => r.resource_type === type);
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+              <h2 className="text-xl font-semibold text-white mb-1">Official Resources</h2>
+              <p className="text-xs text-slate-500 mb-5">Verified manufacturer documentation and support links</p>
+
+              {pinnedResources.length > 0 && (
+                <div className="mb-5">
+                  {pinnedResources.map((r: any) => (
+                    <a
+                      key={r.resource_id}
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-amber-800/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-200 hover:border-amber-700/60 transition mb-2"
+                    >
+                      <div>
+                        <div className="font-medium">{r.title}</div>
+                        {r.publisher && <div className="text-xs text-amber-400/70 mt-0.5">{r.publisher}</div>}
+                      </div>
+                      <span className="ml-4 text-xs text-amber-400 flex-shrink-0">Official site →</span>
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {RESOURCE_ORDER.filter((t) => t !== "product_page").map((type) => {
+                const group = otherResources.filter((r: any) => r.resource_type === type);
                 if (group.length === 0) return null;
                 return (
-                  <div key={type} className="mb-6 last:mb-0">
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">{RESOURCE_LABEL[type]}</h3>
+                  <div key={type} className="mb-5 last:mb-0">
+                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{RESOURCE_LABEL[type]}</h3>
                     <div className="space-y-2">
                       {group.map((r: any) => (
-                        <a key={r.resource_id} href={r.url} target="_blank" rel="noopener noreferrer" className="block rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-300 hover:border-slate-600 transition">
-                          <div className="flex justify-between items-center"><span>{r.title}</span><div className="flex gap-2 text-xs text-slate-400 ml-4 flex-shrink-0">{r.file_format && <span className="px-2 py-0.5 border border-slate-700 rounded">{r.file_format}</span>}{r.language && r.language !== "en" && <span>{r.language.toUpperCase()}</span>}</div></div>
-                          {r.publisher && <div className="text-xs text-slate-500 mt-1">{r.publisher}</div>}
+                        <a
+                          key={r.resource_id}
+                          href={r.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-300 hover:border-slate-600 transition"
+                        >
+                          <div>
+                            <span>{r.title}</span>
+                            {r.publisher && <div className="text-xs text-slate-500 mt-0.5">{r.publisher}</div>}
+                          </div>
+                          <div className="flex gap-2 text-xs text-slate-400 ml-4 flex-shrink-0">
+                            {r.file_format && <span className="px-2 py-0.5 border border-slate-700 rounded">{r.file_format}</span>}
+                            {r.language && r.language !== "en" && <span>{r.language.toUpperCase()}</span>}
+                          </div>
                         </a>
                       ))}
                     </div>
                   </div>
                 );
               })}
-            </CollapsibleSection>
+            </section>
           )}
 
           {listingsData && listingsData.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm text-slate-200">
-                  <thead className="text-slate-400">
-                    <tr>
-                      <th className="pb-3 pr-4">Price</th>
-                      <th className="pb-3 pr-4">Date</th>
-                      <th className="pb-3 pr-4">Source</th>
-                      <th className="pb-3">Title</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listingsData.map((listing, i) => (
-                      <tr key={i} className="border-t border-slate-800">
-                        <td className="py-3 pr-4 font-medium text-amber-400">{fmt(listing.sale_price)}</td>
-                        <td className="py-3 pr-4">{fmtDate(listing.observed_at)}</td>
-                        <td className="py-3 pr-4 uppercase text-slate-400">{listing.source}</td>
-                        <td className="py-3">{listing.listing_title?.slice(0, 50)}…</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-3">
+                {listingsData.map((listing: any, i: number) => (
+                  <div key={i} className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="text-sm text-slate-300 leading-5 truncate">
+                          {listing.listing_title ?? "Sold listing"}
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+                          <span>{listingSourceLabel(listing.source)}</span>
+                          <span>·</span>
+                          <span>{fmtDate(listing.observed_at)}</span>
+                          {listing.condition_grade_id && (
+                            <>
+                              <span>·</span>
+                              <span className="capitalize">{listing.condition_grade_id}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-base font-semibold text-amber-400 flex-shrink-0">
+                        {fmt(listing.sale_price)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Sold listing data sourced from eBay completed listings. Prices reflect actual transaction values.
+              </p>
             </CollapsibleSection>
           )}
 
-          {partsData && partsData.length > 0 && (
+          {verifiedParts.length > 0 && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-2xl font-semibold text-white">Parts &amp; Upgrades</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {totalPartsCount} part{totalPartsCount !== 1 ? "s" : ""} available — OEM + aftermarket
+                  <h2 className="text-xl font-semibold text-white">Verified Parts &amp; Fitment</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Only showing parts with confirmed fitment and a verified purchase link
                   </p>
                 </div>
                 <Link
                   href={`/rc/${mfrSlug}/${familySlug}/${variantSlug}/parts`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 transition hover:bg-amber-400"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
                 >
                   View all parts
                 </Link>
               </div>
-              <div className="grid gap-3">
-                {partsData.map((part) => (
-                  <div
-                    key={part.part_id}
-                    className="rounded-xl border border-slate-800 bg-slate-950 p-3 flex items-center justify-between"
-                  >
-                    <div>
-                      <span className="text-sm text-white">{part.name}</span>
-                      <span className="ml-2 text-xs text-slate-500">#{part.part_number}</span>
+              <div className="space-y-3">
+                {verifiedParts.map((part: any) => {
+                  const buyUrl = getPartPrimaryUrl(part);
+                  return (
+                    <div key={part.part_id} className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-white leading-5">{part.part_name}</div>
+                          <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+                            {part.part_number && <span>#{part.part_number}</span>}
+                            {part.is_oem && <span className="text-emerald-400">OEM</span>}
+                            {part.fitment_type && <span className="capitalize">{part.fitment_type}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {(part.best_price ?? part.msrp) && (
+                            <span className="text-sm font-semibold text-amber-400">
+                              {fmt(part.best_price ?? part.msrp)}
+                            </span>
+                          )}
+                          {buyUrl && (
+                            <a
+                              href={buyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer sponsored"
+                              className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400"
+                            >
+                              Buy
+                            </a>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    {part.oem_price && (
-                      <span className="text-sm font-semibold text-amber-400">{fmt(part.oem_price)}</span>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              {totalPartsCount > 3 && (
-                <p className="mt-3 text-xs text-slate-500">{totalPartsCount - 3} more parts available →</p>
-              )}
             </section>
           )}
 

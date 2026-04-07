@@ -660,31 +660,40 @@ export default async function VariantPage({ params }: PageProps) {
           {listingsData && listingsData.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
               <div className="space-y-3">
-                {listingsData.map((listing: any, i: number) => (
-                  <div key={i} className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="text-sm text-slate-300 leading-5 truncate">
-                          {listing.listing_title ?? "Sold listing"}
+                {listingsData.map((listing: any, i: number) => {
+                  const Wrapper = listing.listing_url ? "a" : "div";
+                  const wrapperProps = listing.listing_url
+                    ? { href: listing.listing_url, target: "_blank", rel: "noopener noreferrer" }
+                    : {};
+                  return (
+                    <Wrapper key={i} {...wrapperProps} className="block rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 hover:border-slate-500 transition-colors cursor-pointer">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="text-sm text-slate-300 leading-5 truncate">
+                            {listing.listing_title ?? "Sold listing"}
+                          </div>
+                          <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
+                            <span>{listingSourceLabel(listing.source)}</span>
+                            <span>·</span>
+                            <span>{fmtDate(listing.observed_at)}</span>
+                            {listing.condition_grade_id && (
+                              <>
+                                <span>·</span>
+                                <span className="capitalize">{listing.condition_grade_id}</span>
+                              </>
+                            )}
+                            {listing.listing_url && (
+                              <span className="text-amber-400">View on eBay →</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
-                          <span>{listingSourceLabel(listing.source)}</span>
-                          <span>·</span>
-                          <span>{fmtDate(listing.observed_at)}</span>
-                          {listing.condition_grade_id && (
-                            <>
-                              <span>·</span>
-                              <span className="capitalize">{listing.condition_grade_id}</span>
-                            </>
-                          )}
+                        <div className="text-base font-semibold text-amber-400 flex-shrink-0">
+                          {fmt(listing.sale_price)}
                         </div>
                       </div>
-                      <div className="text-base font-semibold text-amber-400 flex-shrink-0">
-                        {fmt(listing.sale_price)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    </Wrapper>
+                  );
+                })}
               </div>
               <p className="mt-3 text-xs text-slate-500">
                 Sold listing data sourced from eBay completed listings. Prices reflect actual transaction values.

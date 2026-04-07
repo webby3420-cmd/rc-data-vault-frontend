@@ -4,6 +4,8 @@ import CollapsibleSection from "@/components/CollapsibleSection";
 import PriceAlertSignup from "@/components/PriceAlertSignup";
 import RecentlyViewedVariants from "@/components/RecentlyViewedVariants";
 import Link from "next/link";
+import ResourceSection from "@/components/resources/ResourceSection";
+import ToolsBlock from "@/components/tools/ToolsBlock";
 
 export const dynamic = "force-dynamic";
 
@@ -308,6 +310,8 @@ export default async function VariantPage({ params }: PageProps) {
     .eq("is_active", true)
     .order("display_order", { ascending: true });
 
+  const { data: resourceData } = await supabase.rpc("get_variant_resources", { p_variant_id: variantData.variant_id });
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -600,62 +604,8 @@ export default async function VariantPage({ params }: PageProps) {
             </CollapsibleSection>
           )}
 
-          {resources && resources.length > 0 && (
-            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              <h2 className="text-xl font-semibold text-white mb-1">Official Resources</h2>
-              <p className="text-xs text-slate-500 mb-5">Verified manufacturer documentation and support links</p>
-
-              {pinnedResources.length > 0 && (
-                <div className="mb-5">
-                  {pinnedResources.map((r: any) => (
-                    <a
-                      key={r.resource_id}
-                      href={r.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-xl border border-amber-800/40 bg-amber-950/20 px-4 py-3 text-sm text-amber-200 hover:border-amber-700/60 transition mb-2"
-                    >
-                      <div>
-                        <div className="font-medium">{r.title}</div>
-                        {r.publisher && <div className="text-xs text-amber-400/70 mt-0.5">{r.publisher}</div>}
-                      </div>
-                      <span className="ml-4 text-xs text-amber-400 flex-shrink-0">Official site →</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-
-              {RESOURCE_ORDER.filter((t) => t !== "product_page").map((type) => {
-                const group = otherResources.filter((r: any) => r.resource_type === type);
-                if (group.length === 0) return null;
-                return (
-                  <div key={type} className="mb-5 last:mb-0">
-                    <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">{RESOURCE_LABEL[type]}</h3>
-                    <div className="space-y-2">
-                      {group.map((r: any) => (
-                        <a
-                          key={r.resource_id}
-                          href={r.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-300 hover:border-slate-600 transition"
-                        >
-                          <div>
-                            <span>{r.title}</span>
-                            {r.publisher && <div className="text-xs text-slate-500 mt-0.5">{r.publisher}</div>}
-                          </div>
-                          <div className="flex gap-2 text-xs text-slate-400 ml-4 flex-shrink-0">
-                            {r.file_format && <span className="px-2 py-0.5 border border-slate-700 rounded">{r.file_format}</span>}
-                            {r.language && r.language !== "en" && <span>{r.language.toUpperCase()}</span>}
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </section>
-          )}
+          <ResourceSection resources={resourceData ?? []} />
+          <ToolsBlock />
 
           {listingsData && listingsData.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">

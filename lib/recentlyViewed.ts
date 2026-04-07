@@ -7,12 +7,31 @@ export type RecentlyViewedItem = {
 const STORAGE_KEY = 'rcdv_recently_viewed'
 const MAX_ITEMS = 6
 
+function isValidItem(v: unknown): v is RecentlyViewedItem {
+  return (
+    typeof v === 'object' &&
+    v !== null &&
+    typeof (v as any).canonicalPath === 'string' &&
+    typeof (v as any).fullName === 'string' &&
+    typeof (v as any).manufacturerName === 'string'
+  )
+}
+
 export function getRecentlyViewed(): RecentlyViewedItem[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) throw new Error('not an array')
+    const valid = parsed.filter(isValidItem)
+    if (valid.length !== parsed.length) {
+      // Some items were corrupt — rewrite with only valid ones
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(valid))
+    }
+    return valid
   } catch {
+    try { window.localStorage.removeItem(STORAGE_KEY) } catch { /* noop */ }
     return []
   }
 }

@@ -25,6 +25,7 @@ export default function HomepageSearch() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const lastResolvedQueryRef = useRef('')
   const zeroResultTrackedForQueryRef = useRef<string | null>(null)
@@ -56,51 +57,31 @@ export default function HomepageSearch() {
     }
 
     debounceRef.current = setTimeout(async () => {
+      const controller = new AbortController()
+      abortRef.current = controller
       setLoading(true)
-
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`)
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        })
         const json = await res.json()
-        const nextResults = json.results ?? []
-
+        const nextResults = Array.isArray(json.results) ? json.results : []
         setResults(nextResults)
         setOpen(true)
         lastResolvedQueryRef.current = q
-
-        if (nextResults.length > 0) {
-          zeroResultTrackedForQueryRef.current = null
-        } else if (zeroResultTrackedForQueryRef.current !== q) {
-          trackSearchEvent({
-            type: 'search_zero_results',
-            query: q,
-            query_length: q.length,
-            source: 'homepage',
-            pathname: window.location.pathname,
-          })
-          zeroResultTrackedForQueryRef.current = q
-        }
-      } catch {
+      } catch (error) {
+        if ((error as Error).name === "AbortError") return
         setResults([])
         setOpen(true)
-        lastResolvedQueryRef.current = q
-
-        if (zeroResultTrackedForQueryRef.current !== q) {
-          trackSearchEvent({
-            type: 'search_zero_results',
-            query: q,
-            query_length: q.length,
-            source: 'homepage',
-            pathname: window.location.pathname,
-          })
-          zeroResultTrackedForQueryRef.current = q
-        }
       } finally {
+        if (abortRef.current === controller) abortRef.current = null
         setLoading(false)
       }
     }, 250)
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (abortRef.current) abortRef.current.abort()
     }
   }, [query])
 
@@ -130,6 +111,10 @@ export default function HomepageSearch() {
   }
 
   function handleSelect(result: SearchResult, index: number) {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
     const q = query.trim()
 
     trackSearchEvent({

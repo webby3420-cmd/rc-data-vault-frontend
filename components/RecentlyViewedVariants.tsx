@@ -9,6 +9,19 @@ type ViewedVariant = {
   viewedAt: number;
 };
 
+const STORAGE_KEY = "rcdv_recently_viewed";
+
+function readRecentlyViewed(): ViewedVariant[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function RecentlyViewedVariants({
   canonicalPath,
   fullName,
@@ -21,14 +34,18 @@ export default function RecentlyViewedVariants({
   const [viewed, setViewed] = useState<ViewedVariant[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("rcdv_recently_viewed");
-    const existing: ViewedVariant[] = stored ? JSON.parse(stored) : [];
+    const existing = readRecentlyViewed();
     const updated = [
       { path: canonicalPath, name: fullName, manufacturer: manufacturerName, viewedAt: Date.now() },
       ...existing.filter((v) => v.path !== canonicalPath),
     ].slice(0, 5);
-    localStorage.setItem("rcdv_recently_viewed", JSON.stringify(updated));
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // safe fallback
+    }
     setViewed(updated.filter((v) => v.path !== canonicalPath));
+    return () => { setViewed([]); };
   }, [canonicalPath, fullName, manufacturerName]);
 
   if (viewed.length === 0) return null;
@@ -38,12 +55,8 @@ export default function RecentlyViewedVariants({
       <h2 className="text-base font-semibold text-white mb-3">Recently viewed</h2>
       <div className="grid gap-2">
         {viewed.map((v) => (
-          <Link
-            key={v.path}
-            href={v.path}
-            className="text-sm text-slate-300 hover:text-white transition"
-          >
-            <span className="text-slate-500">{v.manufacturer}</span>{" "}{v.name}
+          <Link key={v.path} href={v.path} className="text-sm text-slate-300 hover:text-white transition">
+            <span className="text-slate-500">{v.manufacturer}</span> {v.name}
           </Link>
         ))}
       </div>

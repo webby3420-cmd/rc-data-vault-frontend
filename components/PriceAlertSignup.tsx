@@ -1,5 +1,11 @@
 "use client";
 import { useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function PriceAlertSignup({
   variantId,
@@ -13,18 +19,68 @@ export default function PriceAlertSignup({
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     if (!email || !price) return;
+
+    const targetPrice = parseFloat(price);
+    if (isNaN(targetPrice) || targetPrice <= 0) {
+      setError("Please enter a valid target price.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const { error: insertError } = await supabase
+      .from("alert_subscriptions")
+      .insert({
+        subscriber_email: email.trim().toLowerCase(),
+        variant_id: variantId,
+        slug: variantSlug,
+        alert_name: `Price alert for ${modelName}`,
+        max_total_price: targetPrice,
+        is_active: true,
+      });
+
+    setLoading(false);
+
+    if (insertError) {
+      // Unique constraint = already subscribed
+      if (insertError.code === "23505") {
+        setSubmitted(true);
+        return;
+      }
+      setError("Something went wrong. Please try again.");
+      console.error("Alert insert error:", insertError);
+      return;
+    }
+
     setSubmitted(true);
   }
 
   if (submitted) {
     return (
-      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-        <p className="text-slate-300">
-          Alert set. We will email you when {modelName} drops below ${price}.
-        </p>
+      <section className="rounded-2xl border border-emerald-800/40 bg-emerald-950/20 p-6">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex-shrink-0 text-emerald-400">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-emerald-200">Price alert set</p>
+            <p className="mt-1 text-sm text-slate-400">
+              We will email <span className="text-slate-300">{email}</span> when {modelName} drops below{" "}
+              <span className="text-slate-300">${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              You can unsubscribe anytime via the link in any alert email.
+            </p>
+          </div>
+        </div>
       </section>
     );
   }
@@ -49,6 +105,7 @@ export default function PriceAlertSignup({
             className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-amber-500"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
           />
         </label>
         <label className="block">
@@ -64,16 +121,24 @@ export default function PriceAlertSignup({
               className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-8 pr-4 text-sm text-white outline-none transition focus:border-amber-500"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              disabled={loading}
             />
           </div>
         </label>
         <button
           onClick={handleSubmit}
+          disabled={loading || !email || !price}
           className="inline-flex h-[46px] items-center justify-center rounded-xl bg-amber-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Create alert
+          {loading ? "Saving…" : "Create alert"}
         </button>
       </div>
+      {error && (
+        <p className="mt-3 text-xs text-red-400">{error}</p>
+      )}
+      <p className="mt-3 text-xs text-slate-500">
+        No account required. Unsubscribe anytime via your alert email.
+      </p>
     </section>
   );
 }

@@ -24,7 +24,7 @@ async function searchEbayActive(token: string, query: string, limit = 20): Promi
   const params = new URLSearchParams({
     q: query,
     limit: String(limit),
-    "filter": "buyingOptions:{FIXED_PRICE},price:[50..5000],priceCurrency:USD",
+    "filter": "buyingOptions:{FIXED_PRICE},price:[80..5000],priceCurrency:USD",
     "sort": "price",
     "fieldgroups": "MATCHING_ITEMS",
   });

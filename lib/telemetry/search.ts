@@ -134,7 +134,7 @@ export function logSearchEvent(payload: SearchEventPayload): void {
       session_id: getOrCreateSessionId(),
       device_type: getDeviceType(),
       page_path: payload.page_path ?? window.location.pathname,
-      referrer_path: payload.referrer_path ?? document.referrer || undefined,
+      referrer_path: payload.referrer_path ?? (document.referrer || undefined),
       user_agent: navigator.userAgent,
       occurred_at: new Date().toISOString(),
     };

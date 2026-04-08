@@ -316,7 +316,7 @@ export default async function VariantPage({ params }: PageProps) {
 
   const { data: resourceData } = await supabase.rpc("get_variant_resources", { p_variant_id: variantData.variant_id });
 
-  const { data: marketIntel } = await (supabase.rpc as any)("get_variant_market_intel_by_slug", { p_slug: variant });
+  const { data: marketIntel } = await (supabase.rpc as any)("get_variant_market_intel_by_slug", { p_slug: variantSlug });
 
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;

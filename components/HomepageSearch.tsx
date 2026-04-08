@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { trackSearchEvent } from '@/lib/telemetry/search'
+import { trackSearchEvent, logSearchPerformed, logSearchClick, logZeroResults } from '@/lib/telemetry/search'
 
 interface SearchResult {
   variant_id: string
@@ -29,6 +29,8 @@ export default function HomepageSearch() {
 
   const lastResolvedQueryRef = useRef('')
   const zeroResultTrackedForQueryRef = useRef<string | null>(null)
+  const searchRequestIdRef = useRef('')
+  const searchStartRef = useRef(0)
 
   const router = useRouter()
 
@@ -60,6 +62,8 @@ export default function HomepageSearch() {
       const controller = new AbortController()
       abortRef.current = controller
       setLoading(true)
+      searchStartRef.current = Date.now()
+      searchRequestIdRef.current = crypto.randomUUID()
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
           signal: controller.signal,
@@ -69,6 +73,19 @@ export default function HomepageSearch() {
         setResults(nextResults)
         setOpen(true)
         lastResolvedQueryRef.current = q
+
+        const latencyMs = Date.now() - searchStartRef.current
+        const telemetryParams = {
+          query_raw: q,
+          results_count: nextResults.length,
+          search_request_id: searchRequestIdRef.current,
+          search_latency_ms: latencyMs,
+          page_type: 'homepage',
+        }
+        logSearchPerformed(telemetryParams)
+        if (nextResults.length === 0) {
+          logZeroResults(telemetryParams)
+        }
       } catch (error) {
         if ((error as Error).name === "AbortError") return
         setResults([])
@@ -127,6 +144,17 @@ export default function HomepageSearch() {
       variant_id: result.variant_id,
       canonical_path: result.canonical_path,
       pathname: window.location.pathname,
+    })
+
+    logSearchClick({
+      search_request_id: searchRequestIdRef.current,
+      query_raw: q,
+      results_count: results.length,
+      result_variant_id: result.variant_id,
+      result_slug: result.canonical_path,
+      result_rank: index + 1,
+      result_type: 'variant',
+      page_type: 'homepage',
     })
 
     setOpen(false)

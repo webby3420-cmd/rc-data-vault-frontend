@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { logSearchPerformed, logSearchClick, logZeroResults } from "@/lib/telemetry/search";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +25,7 @@ export default function RCSearch() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const startTimeRef = useRef<number>(0);
+  const searchRequestIdRef = useRef<string>("");
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -33,6 +35,7 @@ export default function RCSearch() {
     setLoading(true);
     setSearched(true);
     startTimeRef.current = Date.now();
+    searchRequestIdRef.current = crypto.randomUUID();
 
     const { data, error } = await supabase.rpc("search_rc", {
       p_query: q,
@@ -44,41 +47,34 @@ export default function RCSearch() {
     setResults(rows);
     setLoading(false);
 
-    // Fire-and-forget telemetry
-    try {
-      await supabase.rpc("log_search_event", {
-        p_query_text: q,
-        p_normalized_query: q.toLowerCase().trim(),
-        p_result_count: rows.length,
-        p_latency_ms: latencyMs,
-        p_top_result_variant_id: rows[0]?.variant_id ?? null,
-        p_top_result_slug: rows[0]?.variant_slug ?? null,
-        p_top_5_slugs: rows.slice(0, 5).map((r) => r.variant_slug),
-        p_source_surface: "search_box",
-      });
-    } catch {
-      // Telemetry never breaks UX
+    const telemetryParams = {
+      query_raw: q,
+      results_count: rows.length,
+      search_request_id: searchRequestIdRef.current,
+      search_latency_ms: latencyMs,
+      page_type: "search_page",
+    };
+
+    logSearchPerformed(telemetryParams);
+
+    if (rows.length === 0) {
+      logZeroResults(telemetryParams);
     }
   }
 
-  async function handleClick(result: SearchResult) {
+  function handleClick(result: SearchResult, index: number) {
     const url = `/rc/${result.manufacturer_slug}/${result.family_slug}/${result.variant_slug}`;
 
-    // Log the click before navigating
-    try {
-      await supabase.rpc("log_search_event", {
-        p_query_text: query.trim(),
-        p_normalized_query: query.toLowerCase().trim(),
-        p_result_count: results.length,
-        p_clicked_variant_id: result.variant_id,
-        p_clicked_slug: result.variant_slug,
-        p_top_result_slug: results[0]?.variant_slug ?? null,
-        p_top_5_slugs: results.slice(0, 5).map((r) => r.variant_slug),
-        p_source_surface: "search_click",
-      });
-    } catch {
-      // Telemetry never blocks navigation
-    }
+    logSearchClick({
+      search_request_id: searchRequestIdRef.current,
+      query_raw: query.trim(),
+      results_count: results.length,
+      result_variant_id: result.variant_id,
+      result_slug: result.variant_slug,
+      result_rank: index + 1,
+      result_type: "variant",
+      page_type: "search_page",
+    });
 
     window.location.href = url;
   }
@@ -111,10 +107,10 @@ export default function RCSearch() {
 
       {!loading && results.length > 0 && (
         <ul className="mt-4 grid gap-2">
-          {results.map((r) => (
+          {results.map((r, index) => (
             <li key={r.variant_id}>
               <button
-                onClick={() => handleClick(r)}
+                onClick={() => handleClick(r, index)}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-left transition-colors hover:border-amber-500"
               >
                 <span className="font-medium text-white">{r.display_name}</span>

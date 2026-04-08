@@ -5,6 +5,7 @@ import ResourceSection from "@/components/resources/ResourceSection";
 import ToolsBlock from "@/components/tools/ToolsBlock";
 import FamilyMarketBand from "@/components/family/FamilyMarketBand";
 import FamilyBestPicks from "@/components/family/FamilyBestPicks";
+import FamilyWatchCTA from "@/components/family/FamilyWatchCTA";
 
 export const dynamic = "force-dynamic";
 
@@ -151,6 +152,19 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
               mostActiveName={mostActiveName}
               manufacturerSlug={page.manufacturer_slug}
               familySlug={page.family_slug}
+            />
+          </div>
+        )}
+
+        {fms && fms.total_variants >= 2 && (
+          <div className="mb-6">
+            <FamilyWatchCTA
+              familyName={page.family_name}
+              manufacturerName={page.manufacturer_name}
+              modelFamilyId={page.model_family_id}
+              familySlug={page.family_slug}
+              manufacturerSlug={page.manufacturer_slug}
+              totalVariants={fms.total_variants}
             />
           </div>
         )}

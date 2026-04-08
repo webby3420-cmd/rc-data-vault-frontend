@@ -13,12 +13,14 @@ export default function PriceAlertSignup({
   modelName,
   mfrSlug,
   familySlug,
+  modelFamilyId,
 }: {
   variantId: string;
   variantSlug: string;
   modelName: string;
   mfrSlug?: string;
   familySlug?: string;
+  modelFamilyId?: string;
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
@@ -47,6 +49,7 @@ export default function PriceAlertSignup({
         alert_name: `Price alert for ${modelName}`,
         max_total_price: targetPrice,
         is_active: true,
+        ...(modelFamilyId ? { model_family_id: modelFamilyId } : {}),
       })
       .select("unsubscribe_token")
       .single();

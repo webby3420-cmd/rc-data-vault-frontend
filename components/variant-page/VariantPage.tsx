@@ -52,13 +52,13 @@ export function VariantPage({ payload }: { payload: VariantPagePayload }) {
         "@type": "ListItem",
         position: 1,
         name: payload.identity.manufacturer_name,
-        item: `https://rcbluebook.com/rc/${payload.identity.manufacturer_slug}`,
+        item: `https://rcdatavault.com/rc/${payload.identity.manufacturer_slug}`,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: payload.identity.model_family_name,
-        item: `https://rcbluebook.com/rc/${payload.identity.manufacturer_slug}/${payload.identity.model_family_slug}`,
+        item: `https://rcdatavault.com/rc/${payload.identity.manufacturer_slug}/${payload.identity.model_family_slug}`,
       },
       {
         "@type": "ListItem",

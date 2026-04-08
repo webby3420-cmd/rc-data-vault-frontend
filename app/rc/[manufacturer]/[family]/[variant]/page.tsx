@@ -6,6 +6,10 @@ import RecentlyViewedVariants from "@/components/RecentlyViewedVariants";
 import Link from "next/link";
 import ResourceSection from "@/components/resources/ResourceSection";
 import ToolsBlock from "@/components/tools/ToolsBlock";
+import MarketStateBar from "@/components/market/MarketStateBar";
+import SoldTrendBlock from "@/components/market/SoldTrendBlock";
+import ActiveDealsStrip from "@/components/market/ActiveDealsStrip";
+import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 
 export const dynamic = "force-dynamic";
 
@@ -312,6 +316,8 @@ export default async function VariantPage({ params }: PageProps) {
 
   const { data: resourceData } = await supabase.rpc("get_variant_resources", { p_variant_id: variantData.variant_id });
 
+  const { data: marketIntel } = await (supabase.rpc as any)("get_variant_market_intel_by_slug", { p_slug: variant });
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -508,16 +514,77 @@ export default async function VariantPage({ params }: PageProps) {
                 <span>Updated {fmtDate(valuation.last_observation_at)}</span>
               </div>
               <div className="mt-2 text-xs text-slate-500">Source: eBay sold listings</div>
+
+              <div className="mt-4 space-y-4">
+                <ConfidenceExplainer
+                  confidenceLabel={confidenceLabel}
+                  valuationStatus={valuation.confidence ?? "no_data"}
+                  observationCount={valuation.total_observation_count ?? 0}
+                  hasOutliersPresent={false}
+                />
+
+                {marketIntel?.market_state && (
+                  <MarketStateBar
+                    marketState={marketIntel.market_state}
+                    marketStateLabel={marketIntel.market_state_label ?? ""}
+                    marketStateDescription={marketIntel.market_state_description ?? ""}
+                    alertCTAUrgency={marketIntel.alert_cta_urgency ?? "low"}
+                  />
+                )}
+
+                {marketIntel?.sold_trend && (
+                  <SoldTrendBlock
+                    median30d={marketIntel.sold_trend.median_30d}
+                    median90d={marketIntel.sold_trend.median_90d}
+                    count30d={marketIntel.sold_trend.count_30d ?? 0}
+                    count90d={marketIntel.sold_trend.count_90d ?? 0}
+                    trendPct={marketIntel.sold_trend.trend_pct}
+                    trendDirection={marketIntel.sold_trend.trend_direction ?? "insufficient"}
+                    lastSaleDaysAgo={marketIntel.sold_trend.last_sale_days_ago}
+                  />
+                )}
+
+                {marketIntel?.active_market && (
+                  <ActiveDealsStrip
+                    qualifyingDeals={marketIntel.active_market.qualifying_deals ?? 0}
+                    bestDealPrice={marketIntel.active_market.best_deal_price}
+                    bestDealScore={marketIntel.active_market.best_deal_score}
+                    bestDealUrl={marketIntel.active_market.best_deal_url}
+                    soldMedian90d={marketIntel.active_market.sold_median_90d}
+                  />
+                )}
+              </div>
             </section>
           )}
 
-          <PriceAlertSignup
-            variantId={variantData.variant_id}
-            variantSlug={variantSlug}
-            modelName={variantData.full_name}
-            mfrSlug={mfrSlug}
-            familySlug={familySlug}
-          />
+          {marketIntel?.alert_cta_urgency === "high" && (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-400">
+                {marketIntel.market_state === "hot" || marketIntel.market_state === "rising"
+                  ? "Prices are moving — get alerted when a deal appears"
+                  : marketIntel.active_market?.qualifying_deals > 0
+                    ? "There are qualifying deals active right now"
+                    : "Prices are moving — get alerted when a deal appears"}
+              </p>
+              <PriceAlertSignup
+                variantId={variantData.variant_id}
+                variantSlug={variantSlug}
+                modelName={variantData.full_name}
+                mfrSlug={mfrSlug}
+                familySlug={familySlug}
+              />
+            </div>
+          )}
+
+          {marketIntel?.alert_cta_urgency !== "high" && (
+            <PriceAlertSignup
+              variantId={variantData.variant_id}
+              variantSlug={variantSlug}
+              modelName={variantData.full_name}
+              mfrSlug={mfrSlug}
+              familySlug={familySlug}
+            />
+          )}
 
           {intelligence && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 mt-8">

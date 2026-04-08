@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import ResourceSection from "@/components/resources/ResourceSection";
+import ToolsBlock from "@/components/tools/ToolsBlock";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ type Variant = {
 };
 
 type PageData = {
+  model_family_id: string;
   manufacturer_slug: string;
   manufacturer_name: string;
   family_slug: string;
@@ -56,6 +59,10 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
     notFound();
   }
 
+  const { data: resourceData } = await supabase.rpc("get_family_resources", {
+    p_family_id: page.model_family_id,
+  });
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
@@ -68,6 +75,10 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
         </nav>
         <h1 className="mb-4 text-3xl font-semibold text-white">{page.manufacturer_name} {page.family_name} Value &amp; Price Guide</h1>
         <p className="mb-10 max-w-2xl text-slate-400 leading-7">Browse used {page.manufacturer_name} {page.family_name} values by variant. All values are based on real sold listings from eBay.</p>
+        <div className="mb-10 space-y-6">
+          <ResourceSection resources={resourceData ?? []} />
+          <ToolsBlock />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {page.variants.map((v) => (
             <a key={v.variant_slug} href={`/rc/${page.manufacturer_slug}/${page.family_slug}/${v.variant_slug}`} className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500">

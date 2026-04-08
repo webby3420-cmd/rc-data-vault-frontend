@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import ResourceSection from "@/components/resources/ResourceSection";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ type Family = {
 };
 
 type PageData = {
+  manufacturer_id: string;
   manufacturer_slug: string;
   manufacturer_name: string;
   families: Family[];
@@ -217,6 +219,10 @@ export default async function ManufacturerPage({
       .eq("render_status", "render_verified_only")
       .maybeSingle(),
   ]);
+
+  const { data: resourceData } = await supabase.rpc("get_manufacturer_resources", {
+    p_manufacturer_id: page.manufacturer_id,
+  });
 
   const familyIntelMap = new Map<string, FamilyIntel>();
 
@@ -433,6 +439,10 @@ export default async function ManufacturerPage({
             </div>
           )}
         </header>
+
+        <div className="mt-8">
+          <ResourceSection resources={resourceData ?? []} />
+        </div>
 
         {(highestMedianFamily || mostActiveFamily || strongestDepthFamily) && (
           <section className="mt-8">

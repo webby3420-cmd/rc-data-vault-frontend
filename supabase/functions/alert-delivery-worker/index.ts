@@ -14,6 +14,8 @@ interface Job {
   frequency: string;
   criteria: Record<string, unknown> | null;
   last_sent_at: string | null;
+  max_attempts: number;
+  attempt_count: number;
 }
 
 interface Deal {
@@ -120,7 +122,7 @@ async function sendResendEmail(
 }
 
 Deno.serve(async (_req) => {
-  const stats = { processed: 0, sent: 0, skipped: 0, failed: 0 };
+  const stats = { processed: 0, sent: 0, skipped: 0, failed: 0, failed_permanent: 0, errors: [] as string[] };
 
   try {
     const supabase = createClient(
@@ -198,8 +200,17 @@ Deno.serve(async (_req) => {
         const sendResult = await sendResendEmail(resendKey, job.email, subject, html);
 
         if (sendResult.error) {
-          console.error(`Send failed for job ${job.job_id}: ${sendResult.error}`);
-          stats.failed++;
+          const reason = `resend_error: ${sendResult.error}`.slice(0, 500);
+          await supabase.rpc("mark_alert_job_failed", {
+            p_job_id: job.job_id,
+            p_failure_reason: reason,
+          });
+          if (job.attempt_count + 1 >= job.max_attempts) {
+            stats.failed_permanent++;
+          } else {
+            stats.failed++;
+          }
+          stats.errors.push(`job ${job.job_id}: ${reason}`);
           continue;
         }
 
@@ -243,24 +254,36 @@ Deno.serve(async (_req) => {
         });
 
         stats.sent++;
-      } catch (err) {
-        console.error(`Job ${job.job_id} error:`, err);
-        stats.failed++;
+      } catch (err: any) {
+        const reason = `exception: ${err?.message ?? String(err)}`.slice(0, 500);
+        try {
+          await supabase.rpc("mark_alert_job_failed", {
+            p_job_id: job.job_id,
+            p_failure_reason: reason,
+          });
+        } catch {
+          // If marking failed also fails, just log it
+          console.error(`Failed to mark job ${job.job_id} as failed:`, reason);
+        }
+        if (job.attempt_count + 1 >= job.max_attempts) {
+          stats.failed_permanent++;
+        } else {
+          stats.failed++;
+        }
+        stats.errors.push(`job ${job.job_id}: ${reason}`);
       }
 
       // Politeness delay between sends
       await new Promise((r) => setTimeout(r, 300));
     }
 
-    return new Response(JSON.stringify({ success: true, ...stats }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (err) {
-    console.error("alert-delivery-worker error:", err);
-    return new Response(JSON.stringify({ success: false, error: String(err), ...stats }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    // Falls through to final return
+  } catch (err: any) {
+    stats.errors.push(`worker_error: ${err?.message ?? String(err)}`);
   }
+
+  return new Response(JSON.stringify(stats), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 });

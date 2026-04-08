@@ -17,11 +17,26 @@ type Family = {
   variant_count: number;
 };
 
+type HubStats = {
+  total_observations: number;
+  families_with_data: number;
+  total_variants: number;
+  total_families: number;
+  valued_variants: number;
+  min_value: number;
+  max_value: number;
+  typical_value: number;
+  deep_markets: number;
+  moderate_markets: number;
+  thin_markets: number;
+};
+
 type PageData = {
   manufacturer_id: string;
   manufacturer_slug: string;
   manufacturer_name: string;
   families: Family[];
+  hub_stats?: HubStats;
 };
 
 type FamilyIntel = {
@@ -33,6 +48,7 @@ type FamilyIntel = {
   marketDepth: string | null;
   observationCount: number;
   variantCount: number;
+  valuedVariantCount: number;
   trendDirection: string | null;
   topVariantSlug: string | null;
   topVariantName: string | null;
@@ -151,6 +167,10 @@ function normalizeFamilyIntel(row: Record<string, any>, family: Family): FamilyI
       toNumber(
         pickField(row, ["variant_count", "tracked_variant_count", "variants_tracked"])
       ) ?? family.variant_count,
+    valuedVariantCount:
+      toNumber(
+        pickField(row, ["valued_variant_count"])
+      ) ?? 0,
     trendDirection:
       normalizeTrend(
         String(
@@ -258,12 +278,14 @@ export default async function ManufacturerPage({
     0
   );
 
-  const totalObservations = familyRows.reduce(
+  const hubStats = page.hub_stats;
+
+  const totalObservations = hubStats?.total_observations ?? familyRows.reduce(
     (sum, family) => sum + (family.observationCount ?? 0),
     0
   );
 
-  const familiesWithMarketData = familyRows.filter(
+  const familiesWithMarketData = hubStats?.families_with_data ?? familyRows.filter(
     (family) => family.observationCount > 0
   ).length;
 
@@ -277,14 +299,22 @@ export default async function ManufacturerPage({
     familyMedians.length > 0 ? Math.max(...familyMedians) : null;
   const typicalFamilyMedian = median(familyMedians);
 
-  const depthCounts = familyRows.reduce(
-    (acc, family) => {
-      const depth = normalizeDepth(family.marketDepth);
-      if (depth) acc[depth] += 1;
-      return acc;
-    },
-    { deep: 0, moderate: 0, thin: 0 }
-  );
+  const depthCounts = hubStats
+    ? {
+        deep: hubStats.deep_markets ?? 0,
+        moderate: hubStats.moderate_markets ?? 0,
+        thin: hubStats.thin_markets ?? 0,
+      }
+    : familyRows.reduce(
+        (acc, family) => {
+          const vc = family.valuedVariantCount;
+          if (vc >= 2) acc.deep += 1;
+          else if (vc === 1) acc.moderate += 1;
+          else acc.thin += 1;
+          return acc;
+        },
+        { deep: 0, moderate: 0, thin: 0 }
+      );
 
   const highestMedianFamily =
     familyRows

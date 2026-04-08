@@ -155,7 +155,7 @@ export function logSearchEvent(payload: SearchEventPayload): void {
       }
 
       // Fallback: fire-and-forget RPC
-      sb.rpc("log_search_event", { p_payload: enriched }).then(() => {}, () => {});
+      (sb.rpc as any)("log_search_event", { p_payload: enriched }).then(() => {}, () => {});
       return;
     }
 

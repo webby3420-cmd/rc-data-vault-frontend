@@ -577,13 +577,26 @@ export default async function VariantPage({ params }: PageProps) {
           )}
 
           {marketIntel?.alert_cta_urgency !== "high" && (
-            <PriceAlertSignup
-              variantId={variantData.variant_id}
-              variantSlug={variantSlug}
-              modelName={variantData.full_name}
-              mfrSlug={mfrSlug}
-              familySlug={familySlug}
-            />
+            <div className="space-y-2">
+              {marketIntel?.active_market?.qualifying_deals > 0 &&
+                marketIntel?.active_market?.sell_through_ratio >= 5 ? (
+                <p className="text-sm text-amber-400">
+                  Listings move fast for this model — get alerted before deals disappear
+                </p>
+              ) : marketIntel?.sold_trend?.trend_direction === "rising" &&
+                marketIntel?.sold_trend?.count_30d >= 5 ? (
+                <p className="text-sm text-emerald-400">
+                  Prices are trending up — track this model before values increase
+                </p>
+              ) : null}
+              <PriceAlertSignup
+                variantId={variantData.variant_id}
+                variantSlug={variantSlug}
+                modelName={variantData.full_name}
+                mfrSlug={mfrSlug}
+                familySlug={familySlug}
+              />
+            </div>
           )}
 
           {intelligence && (

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { logSearchPerformed, logSearchClick, logZeroResults } from "@/lib/telemetry/search";
+import ZeroResultRecovery, { type ZeroResultSuggestion } from "@/components/search/ZeroResultRecovery";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +25,7 @@ export default function RCSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [suggestions, setSuggestions] = useState<ZeroResultSuggestion[]>([]);
   const startTimeRef = useRef<number>(0);
   const searchRequestIdRef = useRef<string>("");
 
@@ -45,6 +47,14 @@ export default function RCSearch() {
     const latencyMs = Date.now() - startTimeRef.current;
     const rows: SearchResult[] = error ? [] : (data ?? []);
     setResults(rows);
+
+    if (rows.length === 0) {
+      const { data: sugData } = await (supabase.rpc as any)("get_zero_result_suggestions", { p_query: q });
+      setSuggestions(Array.isArray(sugData) ? sugData : []);
+    } else {
+      setSuggestions([]);
+    }
+
     setLoading(false);
 
     const telemetryParams = {
@@ -102,7 +112,9 @@ export default function RCSearch() {
       )}
 
       {!loading && searched && results.length === 0 && (
-        <p className="mt-4 text-sm text-slate-400">No results found. Try a different search.</p>
+        <div className="mt-4">
+          <ZeroResultRecovery query={query} suggestions={suggestions ?? []} />
+        </div>
       )}
 
       {!loading && results.length > 0 && (

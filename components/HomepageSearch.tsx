@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 import { trackSearchEvent, logSearchPerformed, logSearchClick, logZeroResults } from '@/lib/telemetry/search'
+import ZeroResultRecovery, { type ZeroResultSuggestion } from '@/components/search/ZeroResultRecovery'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface SearchResult {
   variant_id: string
@@ -22,6 +29,7 @@ export default function HomepageSearch() {
   const [results, setResults] = useState<SearchResult[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [suggestions, setSuggestions] = useState<ZeroResultSuggestion[]>([])
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -73,6 +81,13 @@ export default function HomepageSearch() {
         setResults(nextResults)
         setOpen(true)
         lastResolvedQueryRef.current = q
+
+        if (nextResults.length === 0) {
+          const { data } = await (supabase.rpc as any)('get_zero_result_suggestions', { p_query: q })
+          setSuggestions(Array.isArray(data) ? data : [])
+        } else {
+          setSuggestions([])
+        }
 
         const latencyMs = Date.now() - searchStartRef.current
         const telemetryParams = {
@@ -231,8 +246,8 @@ export default function HomepageSearch() {
       )}
 
       {open && !loading && results.length === 0 && query.trim().length >= 2 && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-slate-400 shadow-xl">
-          No results for &ldquo;{query}&rdquo;
+        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-4 shadow-xl">
+          <ZeroResultRecovery query={query} suggestions={suggestions ?? []} />
         </div>
       )}
     </div>

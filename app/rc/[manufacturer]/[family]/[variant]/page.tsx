@@ -523,6 +523,16 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               </div>
               <div className="mt-2 text-xs text-slate-500">Source: eBay sold listings</div>
 
+              <div className="mt-3 flex items-center gap-3 text-sm">
+                <a href={`/tools?tool=deal&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                  Check a price &rarr;
+                </a>
+                <span className="text-slate-600">|</span>
+                <a href={`/tools?tool=compare&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                  Compare models &rarr;
+                </a>
+              </div>
+
               <div className="mt-4 space-y-4">
                 <ConfidenceExplainer
                   confidenceLabel={confidenceLabel}

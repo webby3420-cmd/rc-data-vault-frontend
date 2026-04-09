@@ -35,6 +35,8 @@ type Part = {
   link_count: number
   description: string | null
   spec_notes: string | null
+  image_url: string | null
+  thumbnail_url: string | null
   purchase_links: PurchaseLink[]
 }
 
@@ -58,6 +60,28 @@ function fmt(n: number | null) {
   return '$' + Math.round(n).toLocaleString('en-US')
 }
 
+const CATEGORY_ICON: Record<string, string> = {
+  motors: '\u26A1',
+  escs: '\uD83C\uDFDB\uFE0F',
+  chassis: '\uD83D\uDD29',
+  shocks: '\uD83D\uDEE0\uFE0F',
+  'suspension-arms': '\u2195\uFE0F',
+  driveshafts: '\uD83D\uDD04',
+  differentials: '\u2699\uFE0F',
+  tires: '\uD83D\uDD18',
+  wheels: '\u2B55',
+  batteries: '\uD83D\uDD0B',
+  servos: '\uD83C\uDFAE',
+  bearings: '\uD83D\uDD35',
+  'gear-sets': '\u2699\uFE0F',
+  'body-exterior': '\uD83D\uDE97',
+  radio: '\uD83D\uDCE1',
+  'screws-fasteners': '\uD83D\uDD29',
+  'tools-accessories': '\uD83E\uDDF0',
+  'axles-hubs': '\u2699\uFE0F',
+  'wheel-accessories': '\u2B55',
+}
+
 const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
   oem: { cls: 'bg-blue-900/40 text-blue-300', label: 'OEM' },
   aftermarket_upgrade: { cls: 'bg-purple-900/40 text-purple-300', label: 'Upgrade' },
@@ -73,22 +97,32 @@ function PartTypeBadge({ part }: { part: Part }) {
   return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
 }
 
-function PartCard({ part }: { part: Part }) {
+function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) {
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const brand = part.manufacturer || part.aftermarket_brand
   const links = part.purchase_links.slice(0, 3)
+  const imgSrc = part.thumbnail_url || part.image_url
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 space-y-2">
       {/* Top row */}
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-sm font-medium text-white">{part.part_name}</span>
-        {priceDisplay ? (
-          <span className="flex-shrink-0 text-sm font-semibold text-amber-400">{priceDisplay}</span>
-        ) : msrpDisplay ? (
-          <span className="flex-shrink-0 text-xs text-slate-500">{msrpDisplay}</span>
-        ) : null}
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-slate-800 flex items-center justify-center">
+          {imgSrc ? (
+            <img src={imgSrc} alt={part.part_name} className="w-full h-full object-cover" loading="lazy" />
+          ) : (
+            <span className="text-lg">{CATEGORY_ICON[categorySlug] ?? '\uD83D\uDD27'}</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+          <span className="text-sm font-medium text-white">{part.part_name}</span>
+          {priceDisplay ? (
+            <span className="flex-shrink-0 text-sm font-semibold text-amber-400">{priceDisplay}</span>
+          ) : msrpDisplay ? (
+            <span className="flex-shrink-0 text-xs text-slate-500">{msrpDisplay}</span>
+          ) : null}
+        </div>
       </div>
 
       {/* Middle row */}
@@ -200,7 +234,7 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
 
             <div className="grid gap-3 md:grid-cols-2">
               {cat.parts.map((part) => (
-                <PartCard key={part.part_id} part={part} />
+                <PartCard key={part.part_id} part={part} categorySlug={cat.category_slug} />
               ))}
             </div>
           </div>

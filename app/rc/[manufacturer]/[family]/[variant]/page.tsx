@@ -10,6 +10,7 @@ import MarketStateBar from "@/components/market/MarketStateBar";
 import SoldTrendBlock from "@/components/market/SoldTrendBlock";
 import ActiveDealsStrip from "@/components/market/ActiveDealsStrip";
 import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
+import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ const supabase = createClient(
 
 type PageProps = {
   params: Promise<{ manufacturer: string; family: string; variant: string }>;
+  searchParams: Promise<{ src?: string; alert_context?: string; alert_scope?: string }>;
 };
 
 function getApprovedPrimaryImage(payloadRow: any): {
@@ -214,8 +216,10 @@ const RESOURCE_LABEL: Record<string, string> = {
 };
 const RESOURCE_ORDER = ["product_page", "manual", "exploded_view", "parts_list", "setup_sheet", "spare_parts_page", "video", "other"];
 
-export default async function VariantPage({ params }: PageProps) {
+export default async function VariantPage({ params, searchParams }: PageProps) {
   const { manufacturer, family, variant: variantSlug } = await params;
+  const sp = await searchParams;
+  const isAlertTraffic = sp.src === "alert";
 
   const { data: variantData } = await supabase
     .from("variants")
@@ -420,6 +424,10 @@ export default async function VariantPage({ params }: PageProps) {
           <span>{variantData.full_name}</span>
         </nav>
 
+        {isAlertTraffic && (
+          <AlertReturnBanner scope="variant" contextLabel={sp.alert_context} />
+        )}
+
         <header className="mb-8">
           <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
             {variantData.full_name}
@@ -557,46 +565,52 @@ export default async function VariantPage({ params }: PageProps) {
             </section>
           )}
 
-          {marketIntel?.alert_cta_urgency === "high" && (
-            <div className="space-y-2">
-              <p className="text-sm text-slate-400">
-                {marketIntel.market_state === "hot" || marketIntel.market_state === "rising"
-                  ? "Prices are moving — get alerted when a deal appears"
-                  : marketIntel.active_market?.qualifying_deals > 0
-                    ? "There are qualifying deals active right now"
-                    : "Prices are moving — get alerted when a deal appears"}
-              </p>
-              <PriceAlertSignup
-                variantId={variantData.variant_id}
-                variantSlug={variantSlug}
-                modelName={variantData.full_name}
-                mfrSlug={mfrSlug}
-                familySlug={familySlug}
-              />
-            </div>
-          )}
+          {isAlertTraffic ? (
+            <p className="text-sm text-slate-500">Tracking active for this model</p>
+          ) : (
+            <>
+              {marketIntel?.alert_cta_urgency === "high" && (
+                <div className="space-y-2">
+                  <p className="text-sm text-slate-400">
+                    {marketIntel.market_state === "hot" || marketIntel.market_state === "rising"
+                      ? "Prices are moving — get alerted when a deal appears"
+                      : marketIntel.active_market?.qualifying_deals > 0
+                        ? "There are qualifying deals active right now"
+                        : "Prices are moving — get alerted when a deal appears"}
+                  </p>
+                  <PriceAlertSignup
+                    variantId={variantData.variant_id}
+                    variantSlug={variantSlug}
+                    modelName={variantData.full_name}
+                    mfrSlug={mfrSlug}
+                    familySlug={familySlug}
+                  />
+                </div>
+              )}
 
-          {marketIntel?.alert_cta_urgency !== "high" && (
-            <div className="space-y-2">
-              {marketIntel?.active_market?.qualifying_deals > 0 &&
-                marketIntel?.active_market?.sell_through_ratio >= 5 ? (
-                <p className="text-sm text-amber-400">
-                  Listings move fast for this model — get alerted before deals disappear
-                </p>
-              ) : marketIntel?.sold_trend?.trend_direction === "rising" &&
-                marketIntel?.sold_trend?.count_30d >= 5 ? (
-                <p className="text-sm text-emerald-400">
-                  Prices are trending up — track this model before values increase
-                </p>
-              ) : null}
-              <PriceAlertSignup
-                variantId={variantData.variant_id}
-                variantSlug={variantSlug}
-                modelName={variantData.full_name}
-                mfrSlug={mfrSlug}
-                familySlug={familySlug}
-              />
-            </div>
+              {marketIntel?.alert_cta_urgency !== "high" && (
+                <div className="space-y-2">
+                  {marketIntel?.active_market?.qualifying_deals > 0 &&
+                    marketIntel?.active_market?.sell_through_ratio >= 5 ? (
+                    <p className="text-sm text-amber-400">
+                      Listings move fast for this model — get alerted before deals disappear
+                    </p>
+                  ) : marketIntel?.sold_trend?.trend_direction === "rising" &&
+                    marketIntel?.sold_trend?.count_30d >= 5 ? (
+                    <p className="text-sm text-emerald-400">
+                      Prices are trending up — track this model before values increase
+                    </p>
+                  ) : null}
+                  <PriceAlertSignup
+                    variantId={variantData.variant_id}
+                    variantSlug={variantSlug}
+                    modelName={variantData.full_name}
+                    mfrSlug={mfrSlug}
+                    familySlug={familySlug}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {intelligence && (

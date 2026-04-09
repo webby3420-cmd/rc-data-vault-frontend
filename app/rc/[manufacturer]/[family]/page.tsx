@@ -6,6 +6,7 @@ import ToolsBlock from "@/components/tools/ToolsBlock";
 import FamilyMarketBand from "@/components/family/FamilyMarketBand";
 import FamilyBestPicks from "@/components/family/FamilyBestPicks";
 import FamilyWatchCTA from "@/components/family/FamilyWatchCTA";
+import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -81,8 +82,10 @@ const DEPTH_BADGE: Record<string, { text: string; cls: string }> = {
   thin: { text: "Thin", cls: "bg-slate-800 text-slate-400" },
 };
 
-export default async function FamilyPage({ params }: { params: Promise<{ manufacturer: string; family: string }> }) {
+export default async function FamilyPage({ params, searchParams }: { params: Promise<{ manufacturer: string; family: string }>; searchParams: Promise<{ src?: string; alert_context?: string }> }) {
   const { manufacturer, family } = await params;
+  const sp = await searchParams;
+  const isAlertTraffic = sp.src === "alert";
 
   const { data, error } = await (supabase.rpc as any)("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
 
@@ -118,6 +121,11 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
           <span className="mx-2">/</span>
           <span>{page.family_name}</span>
         </nav>
+
+        {isAlertTraffic && (
+          <AlertReturnBanner scope="family" contextLabel={sp.alert_context} />
+        )}
+
         <h1 className="mb-4 text-3xl font-semibold text-white">{page.manufacturer_name} {page.family_name} Value &amp; Price Guide</h1>
         <p className="mb-6 max-w-2xl text-slate-400 leading-7">Browse used {page.manufacturer_name} {page.family_name} values by variant. All values are based on real sold listings from eBay.</p>
 
@@ -158,14 +166,18 @@ export default async function FamilyPage({ params }: { params: Promise<{ manufac
 
         {fms && fms.total_variants >= 2 && (
           <div className="mb-6">
-            <FamilyWatchCTA
-              familyName={page.family_name}
-              manufacturerName={page.manufacturer_name}
-              modelFamilyId={page.model_family_id}
-              familySlug={page.family_slug}
-              manufacturerSlug={page.manufacturer_slug}
-              totalVariants={fms.total_variants}
-            />
+            {isAlertTraffic ? (
+              <p className="text-sm text-slate-500">Tracking active for this family</p>
+            ) : (
+              <FamilyWatchCTA
+                familyName={page.family_name}
+                manufacturerName={page.manufacturer_name}
+                modelFamilyId={page.model_family_id}
+                familySlug={page.family_slug}
+                manufacturerSlug={page.manufacturer_slug}
+                totalVariants={fms.total_variants}
+              />
+            )}
           </div>
         )}
 

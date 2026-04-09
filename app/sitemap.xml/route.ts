@@ -20,7 +20,12 @@ export async function GET() {
   let urls = `
   <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${base}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
-  <url><loc>${base}/market</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
+  <url><loc>${base}/market</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>${base}/best/rc-trucks-under-1000</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${base}/best/rc-cars-under-500</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${base}/best/rc-bashers</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${base}/best/rc-cars-for-speed</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>${base}/best/rc-cars-for-resale-value</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>`
 
   if (pages) {
     for (const p of pages as any[]) {

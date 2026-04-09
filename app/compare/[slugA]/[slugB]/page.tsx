@@ -46,33 +46,46 @@ const CONFIDENCE_STYLE: Record<string, { cls: string; label: string }> = {
   insufficient: { cls: "text-slate-400 bg-slate-800", label: "Insufficient" },
 };
 
+// All 25 comparison pairs for related-links lookup.
+// Each slug maps to the comparison pages it participates in.
 const RELATED_COMPARISONS: Record<string, Array<{ slugA: string; slugB: string; label: string }>> = {
   "traxxas-x-maxx-8s-brushless-rtr": [
-    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Kraton 6S EXB" },
-    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Kraton 6S" },
-    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Typhon 6S" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx 8S vs Kraton 6S EXB" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx 8S vs Kraton 6S" },
+    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx 8S vs Typhon 6S" },
   ],
   "arrma-kraton-6s-blx-exb-rtr": [
     { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr", label: "Kraton 6S EXB vs Typhon 6S" },
-    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Kraton 6S EXB vs X-Maxx" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Kraton 6S EXB vs X-Maxx 8S" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "losi-lmt-bog-hog-rtr", label: "Kraton 6S EXB vs LMT Bog Hog" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-maxx-widemaxx-rtr", label: "Kraton 6S EXB vs Maxx WideMaxx" },
   ],
   "arrma-typhon-6s-blx-4x4-rtr": [
     { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr", label: "Typhon 6S vs Kraton 6S EXB" },
-    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Typhon 6S vs X-Maxx" },
+    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Typhon 6S vs X-Maxx 8S" },
+  ],
+  "arrma-kraton-brushless-1-8-4x4-rtr-6s": [
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Kraton 6S vs X-Maxx 8S" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "losi-lmt-tuned-kit-1-8-4x4-tlr", label: "Kraton 6S vs LMT Tuned Kit" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-maxx-widemaxx-rtr", label: "Kraton 6S vs Maxx WideMaxx" },
   ],
   "traxxas-sledge": [
     { slugA: "arrma-kraton-4s-v2-blx-1-10-rtr", slugB: "traxxas-sledge", label: "Sledge vs Kraton 4S V2" },
     { slugA: "traxxas-maxx-widemaxx-rtr", slugB: "traxxas-sledge", label: "Sledge vs Maxx WideMaxx" },
+    { slugA: "arrma-kraton-6s-exb-v6-rtr", slugB: "traxxas-sledge", label: "Sledge vs Kraton 6S V6" },
+    { slugA: "arrma-kraton-8s-blx-1-5-rtr", slugB: "traxxas-sledge", label: "Sledge vs Kraton 8S 1/5" },
   ],
   "arrma-mojave-brushless-1-7-4x4-rtr-6s": [
     { slugA: "arrma-felony-6s-blx-1-7-rtr", slugB: "arrma-mojave-brushless-1-7-4x4-rtr-6s", label: "Mojave 6S vs Felony 6S" },
     { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey-2-0", label: "Mojave 6S vs Super Baja Rey 2.0" },
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey", label: "Mojave 6S vs Super Baja Rey" },
   ],
   "traxxas-xrt": [
     { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-xrt", label: "XRT vs Kraton 8S EXB" },
   ],
   "arrma-kraton-8s-blx-exb-rtr": [
     { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-xrt", label: "Kraton 8S EXB vs XRT" },
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-x-maxx", label: "Kraton 8S EXB vs X-Maxx" },
   ],
   "losi-super-baja-rey-2-0": [
     { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey-2-0", label: "Super Baja Rey 2.0 vs Mojave 6S" },
@@ -85,6 +98,60 @@ const RELATED_COMPARISONS: Record<string, Array<{ slugA: string; slugB: string; 
   ],
   "arrma-fury-blx-2wd-rtr": [
     { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4-vxl", label: "Fury BLX vs Slash 4X4 VXL" },
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4", label: "Fury BLX vs Slash 4X4" },
+  ],
+  "arrma-kraton-4s-v2-blx-1-10-rtr": [
+    { slugA: "arrma-kraton-4s-v2-blx-1-10-rtr", slugB: "traxxas-sledge", label: "Kraton 4S V2 vs Sledge" },
+  ],
+  "traxxas-maxx-widemaxx-rtr": [
+    { slugA: "traxxas-maxx-widemaxx-rtr", slugB: "traxxas-sledge", label: "Maxx WideMaxx vs Sledge" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-maxx-widemaxx-rtr", label: "Maxx WideMaxx vs Kraton 6S EXB" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-maxx-widemaxx-rtr", label: "Maxx WideMaxx vs Kraton 6S" },
+    { slugA: "losi-lmt-bog-hog-rtr", slugB: "traxxas-maxx-widemaxx-rtr", label: "Maxx WideMaxx vs LMT Bog Hog" },
+    { slugA: "losi-lmt-tuned-kit-1-8-4x4-tlr", slugB: "traxxas-maxx-widemaxx-rtr", label: "Maxx WideMaxx vs LMT Tuned Kit" },
+  ],
+  "traxxas-slash-4x4": [
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4", label: "Slash 4X4 vs Fury BLX" },
+  ],
+  "arrma-granite-3s-blx-4x4-rtr": [
+    { slugA: "arrma-granite-3s-blx-4x4-rtr", slugB: "losi-lmt-mega", label: "Granite 3S vs LMT Mega" },
+  ],
+  "losi-lmt-mega": [
+    { slugA: "arrma-granite-3s-blx-4x4-rtr", slugB: "losi-lmt-mega", label: "LMT Mega vs Granite 3S" },
+    { slugA: "arrma-mini-kraton-3s-blx-rtr", slugB: "losi-lmt-mega", label: "LMT Mega vs Mini Kraton 3S" },
+  ],
+  "losi-lmt-bog-hog-rtr": [
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "losi-lmt-bog-hog-rtr", label: "LMT Bog Hog vs Kraton 6S EXB" },
+    { slugA: "losi-lmt-bog-hog-rtr", slugB: "traxxas-maxx-widemaxx-rtr", label: "LMT Bog Hog vs Maxx WideMaxx" },
+  ],
+  "arrma-kraton-6s-exb-v6-rtr": [
+    { slugA: "arrma-kraton-6s-exb-v6-rtr", slugB: "traxxas-sledge", label: "Kraton 6S V6 vs Sledge" },
+  ],
+  "arrma-kraton-8s-blx-1-5-rtr": [
+    { slugA: "arrma-kraton-8s-blx-1-5-rtr", slugB: "traxxas-sledge", label: "Kraton 8S 1/5 vs Sledge" },
+  ],
+  "traxxas-x-maxx": [
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-x-maxx", label: "X-Maxx vs Kraton 8S EXB" },
+  ],
+  "losi-lmt-tuned-kit-1-8-4x4-tlr": [
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "losi-lmt-tuned-kit-1-8-4x4-tlr", label: "LMT Tuned Kit vs Kraton 6S" },
+    { slugA: "losi-lmt-tuned-kit-1-8-4x4-tlr", slugB: "traxxas-maxx-widemaxx-rtr", label: "LMT Tuned Kit vs Maxx WideMaxx" },
+  ],
+  "arrma-mini-kraton-1-16-rtr": [
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "arrma-mojave-brushless-223s-1-16-grom-4x4-rtr", label: "Mini Kraton 1/16 vs Mojave Grom" },
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "losi-mini-lmt-megalodon-1-18", label: "Mini Kraton 1/16 vs Mini LMT" },
+  ],
+  "arrma-mojave-brushless-223s-1-16-grom-4x4-rtr": [
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "arrma-mojave-brushless-223s-1-16-grom-4x4-rtr", label: "Mojave Grom vs Mini Kraton 1/16" },
+  ],
+  "losi-mini-lmt-megalodon-1-18": [
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "losi-mini-lmt-megalodon-1-18", label: "Mini LMT vs Mini Kraton 1/16" },
+  ],
+  "arrma-mini-kraton-3s-blx-rtr": [
+    { slugA: "arrma-mini-kraton-3s-blx-rtr", slugB: "losi-lmt-mega", label: "Mini Kraton 3S vs LMT Mega" },
+  ],
+  "losi-super-baja-rey": [
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey", label: "Super Baja Rey vs Mojave 6S" },
   ],
 };
 
@@ -98,17 +165,35 @@ function ConfidenceBadge({ confidence }: { confidence: string | null }) {
 }
 
 export async function generateStaticParams() {
+  // All 25 pairs in canonical alphabetical order (slugA < slugB)
   return [
-    { slugA: "traxxas-x-maxx-8s-brushless-rtr", slugB: "arrma-kraton-6s-blx-exb-rtr" },
-    { slugA: "traxxas-x-maxx-8s-brushless-rtr", slugB: "arrma-kraton-brushless-1-8-4x4-rtr-6s" },
-    { slugA: "traxxas-x-maxx-8s-brushless-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr" },
+    // Original 10
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-x-maxx-8s-brushless-rtr" },
+    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr" },
     { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr" },
-    { slugA: "traxxas-slash-4x4-vxl", slugB: "arrma-fury-blx-2wd-rtr" },
-    { slugA: "traxxas-sledge", slugB: "arrma-kraton-4s-v2-blx-1-10-rtr" },
-    { slugA: "traxxas-sledge", slugB: "traxxas-maxx-widemaxx-rtr" },
-    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "arrma-felony-6s-blx-1-7-rtr" },
-    { slugA: "traxxas-xrt", slugB: "arrma-kraton-8s-blx-exb-rtr" },
-    { slugA: "losi-super-baja-rey-2-0", slugB: "arrma-mojave-brushless-1-7-4x4-rtr-6s" },
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4-vxl" },
+    { slugA: "arrma-kraton-4s-v2-blx-1-10-rtr", slugB: "traxxas-sledge" },
+    { slugA: "traxxas-maxx-widemaxx-rtr", slugB: "traxxas-sledge" },
+    { slugA: "arrma-felony-6s-blx-1-7-rtr", slugB: "arrma-mojave-brushless-1-7-4x4-rtr-6s" },
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-xrt" },
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey-2-0" },
+    // 15 new pairs
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4" },
+    { slugA: "arrma-granite-3s-blx-4x4-rtr", slugB: "losi-lmt-mega" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "losi-lmt-bog-hog-rtr" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-maxx-widemaxx-rtr" },
+    { slugA: "arrma-kraton-6s-exb-v6-rtr", slugB: "traxxas-sledge" },
+    { slugA: "arrma-kraton-8s-blx-1-5-rtr", slugB: "traxxas-sledge" },
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-x-maxx" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "losi-lmt-tuned-kit-1-8-4x4-tlr" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-maxx-widemaxx-rtr" },
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "arrma-mojave-brushless-223s-1-16-grom-4x4-rtr" },
+    { slugA: "arrma-mini-kraton-1-16-rtr", slugB: "losi-mini-lmt-megalodon-1-18" },
+    { slugA: "arrma-mini-kraton-3s-blx-rtr", slugB: "losi-lmt-mega" },
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey" },
+    { slugA: "losi-lmt-bog-hog-rtr", slugB: "traxxas-maxx-widemaxx-rtr" },
+    { slugA: "losi-lmt-tuned-kit-1-8-4x4-tlr", slugB: "traxxas-maxx-widemaxx-rtr" },
   ];
 }
 

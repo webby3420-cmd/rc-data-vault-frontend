@@ -532,6 +532,10 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 <a href={`/tools?tool=compare&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
                   Compare models &rarr;
                 </a>
+                <span className="text-slate-600">|</span>
+                <a href={`/tools/vehicle-evaluator?model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                  Evaluate your build &rarr;
+                </a>
               </div>
 
               <div className="mt-4 space-y-4">

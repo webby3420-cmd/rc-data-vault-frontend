@@ -109,6 +109,11 @@ export default async function ComparePage({ params }: PageProps) {
 
   if (error) console.error("[compare] RPC error:", JSON.stringify(error));
 
+  const { data: winnerData } = await (supabase.rpc as any)(
+    "get_comparison_winner_signals",
+    { p_slug_a: slugA, p_slug_b: slugB }
+  );
+
   const variants = data as ComparisonVariant[] | null;
   if (!variants || variants.length < 2) notFound();
 
@@ -182,6 +187,30 @@ export default async function ComparePage({ params }: PageProps) {
         {/* H1 */}
         <h1 className="mb-2 text-3xl font-semibold text-white">{nameA} vs {nameB}</h1>
         <p className="mb-8 text-slate-400">Side-by-side price and market comparison based on real sold listings</p>
+
+        {/* Quick Summary */}
+        {winnerData && (winnerData.best_for_value_label || winnerData.best_for_data_confidence_label) && (
+          <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900/60 p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Quick Summary</h2>
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <span className="text-green-400 mt-0.5">&#x1F4B0;</span>
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wide">Best for Value</span>
+                  <p className="text-sm text-white mt-0.5">{winnerData.best_for_value_label ?? "Insufficient data"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-blue-400 mt-0.5">&#x1F4CA;</span>
+                <div>
+                  <span className="text-xs text-slate-500 uppercase tracking-wide">More Market Data</span>
+                  <p className="text-sm text-white mt-0.5">{winnerData.best_for_data_confidence_label ?? "Insufficient data"}</p>
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-slate-600">Based on real sold listing data only. Use the tools below to dig deeper before deciding.</p>
+          </div>
+        )}
 
         {/* Comparison table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-700 bg-slate-900">

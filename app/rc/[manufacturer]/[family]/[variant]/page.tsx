@@ -584,6 +584,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     modelName={variantData.full_name}
                     mfrSlug={mfrSlug}
                     familySlug={familySlug}
+                    signupSource="variant_page"
                   />
                 </div>
               )}
@@ -607,6 +608,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     modelName={variantData.full_name}
                     mfrSlug={mfrSlug}
                     familySlug={familySlug}
+                    signupSource="variant_page"
                   />
                 </div>
               )}

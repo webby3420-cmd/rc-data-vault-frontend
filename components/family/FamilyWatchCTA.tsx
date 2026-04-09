@@ -52,6 +52,7 @@ export default function FamilyWatchCTA({
             mfrSlug={manufacturerSlug}
             familySlug={familySlug}
             modelFamilyId={modelFamilyId}
+            signupSource="family_page"
           />
         </div>
       )}

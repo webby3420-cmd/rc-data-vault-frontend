@@ -14,6 +14,7 @@ export default function PriceAlertSignup({
   mfrSlug,
   familySlug,
   modelFamilyId,
+  signupSource,
 }: {
   variantId: string;
   variantSlug: string;
@@ -21,6 +22,7 @@ export default function PriceAlertSignup({
   mfrSlug?: string;
   familySlug?: string;
   modelFamilyId?: string;
+  signupSource?: string;
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
@@ -52,6 +54,7 @@ export default function PriceAlertSignup({
         frequency,
         is_active: true,
         ...(modelFamilyId ? { model_family_id: modelFamilyId } : {}),
+        criteria: { source: signupSource ?? "unknown" },
       })
       .select("unsubscribe_token")
       .single();

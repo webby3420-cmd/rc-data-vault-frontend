@@ -241,13 +241,13 @@ export default async function ComparePage({ params }: PageProps) {
     { p_slug_a: slugA, p_slug_b: slugB }
   );
 
-  // Fetch images for both variants
+  // Fetch images via v2 payload RPC
   const [{ data: payloadA }, { data: payloadB }] = await Promise.all([
-    supabase.from("mv_variant_payload").select("primary_image_url, primary_image_alt").eq("variant_slug", slugA).single(),
-    supabase.from("mv_variant_payload").select("primary_image_url, primary_image_alt").eq("variant_slug", slugB).single(),
+    (supabase.rpc as any)("get_variant_page_payload_v2", { p_variant_slug: slugA }),
+    (supabase.rpc as any)("get_variant_page_payload_v2", { p_variant_slug: slugB }),
   ]);
-  const imgA = { url: payloadA?.primary_image_url ?? null, alt: payloadA?.primary_image_alt ?? null };
-  const imgB = { url: payloadB?.primary_image_url ?? null, alt: payloadB?.primary_image_alt ?? null };
+  const imgA = { url: payloadA?.identity?.primary_image_url ?? null, alt: payloadA?.identity?.primary_image_alt ?? null };
+  const imgB = { url: payloadB?.identity?.primary_image_url ?? null, alt: payloadB?.identity?.primary_image_alt ?? null };
 
   const variants = data as ComparisonVariant[] | null;
   if (!variants || variants.length < 2) notFound();

@@ -29,13 +29,15 @@ export default async function Page() {
     .sort((a: any, b: any) => (b.top_speed_mph ?? 0) - (a.top_speed_mph ?? 0))
     .slice(0, 8);
 
-  const slugs = variants.map((v: any) => v.variant_slug).filter(Boolean);
-  const { data: payloads } = slugs.length > 0
-    ? await supabase.from("mv_variant_payload").select("variant_slug, primary_image_url").in("variant_slug", slugs)
-    : { data: [] };
   const imageMap: Record<string, string> = {};
-  for (const p of payloads ?? []) {
-    if (p.primary_image_url) imageMap[p.variant_slug] = p.primary_image_url;
+  if (variants.length > 0) {
+    const payloads = await Promise.all(
+      variants.map((v: any) => (supabase.rpc as any)("get_variant_page_payload_v2", { p_variant_slug: v.variant_slug }))
+    );
+    for (let i = 0; i < variants.length; i++) {
+      const url = payloads[i]?.data?.identity?.primary_image_url;
+      if (url) imageMap[variants[i].variant_slug] = url;
+    }
   }
 
   return (

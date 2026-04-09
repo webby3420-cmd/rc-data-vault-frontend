@@ -334,10 +334,33 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
   const familyName: string = (variantData.model_families as any)?.name ?? family;
   const familySlug = family;
 
-  const valuation = valuationData;
+  // Prefer live valuation from v_variant_valuations_clean; fall back to payload estimates
+  const payloadVal = payloadData?.valuation as any;
+  const valuation = valuationData ?? (payloadVal?.estimated_value_mid ? {
+    fair_value: payloadVal.estimated_value_mid,
+    low_value: payloadVal.estimated_value_low,
+    high_value: payloadVal.estimated_value_high,
+    confidence: payloadVal.confidence ?? null,
+    total_observation_count: payloadVal.observation_count ?? 0,
+    last_observation_at: payloadVal.last_observation_at ?? null,
+    _source: "payload_estimate" as const,
+  } : null);
   const specs = specsData;
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
+
+  // Sold listings: prefer live v_price_observations, fall back to payload.recent_sales
+  const recentSales = (payloadData?.recent_sales as any[]) ?? [];
+  const soldListings: any[] = (listingsData && listingsData.length > 0)
+    ? listingsData
+    : recentSales.map((s: any) => ({
+        listing_title: s.title ?? s.listing_title ?? "Sold listing",
+        sale_price: s.price ?? s.sale_price,
+        observed_at: s.sold_at ?? s.observed_at,
+        source: s.source ?? "ebay",
+        condition_grade_id: s.condition ?? s.condition_grade_id ?? null,
+        listing_url: s.url ?? s.listing_url ?? null,
+      }));
 
   const monthlyMap = new Map<string, number[]>();
   for (const obs of trendData ?? []) {
@@ -527,7 +550,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 <span>{valuation.total_observation_count} sold listings</span>
                 <span>Updated {fmtDate(valuation.last_observation_at)}</span>
               </div>
-              <div className="mt-2 text-xs text-slate-500">Source: eBay sold listings</div>
+              <div className="mt-2 text-xs text-slate-500">
+                {(valuation as any)?._source === "payload_estimate"
+                  ? "Estimated from MSRP and market heuristics — no sold listings yet"
+                  : "Source: eBay sold listings"}
+              </div>
 
               <div className="mt-3 flex items-center gap-3 text-sm">
                 <a href={`/tools?tool=deal&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
@@ -727,10 +754,10 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           <ResourceSection resources={resourceData ?? []} />
           <ToolsBlock />
 
-          {listingsData && listingsData.length > 0 && (
+          {soldListings.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
               <div className="space-y-3">
-                {listingsData.map((listing: any, i: number) => {
+                {soldListings.map((listing: any, i: number) => {
                   const Wrapper = listing.listing_url ? "a" : "div";
                   const wrapperProps = listing.listing_url
                     ? { href: listing.listing_url, target: "_blank", rel: "noopener noreferrer" }

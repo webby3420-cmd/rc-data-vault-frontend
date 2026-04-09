@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import PriceAlertSignup from "@/components/PriceAlertSignup";
 
@@ -84,14 +84,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const nameA = `${a.manufacturer_name} ${a.variant_name}`;
   const nameB = `${b.manufacturer_name} ${b.variant_name}`;
 
+  const canA = slugA <= slugB ? slugA : slugB;
+  const canB = slugA <= slugB ? slugB : slugA;
+
   return {
     title: `${nameA} vs ${nameB} — Price Comparison | RC Data Vault`,
     description: `Compare the ${a.variant_name} and ${b.variant_name} side by side. Real market values from sold eBay listings. Fair value, price range, and availability.`,
+    alternates: {
+      canonical: `https://rcdatavault.com/compare/${canA}/${canB}`,
+    },
   };
 }
 
 export default async function ComparePage({ params }: PageProps) {
   const { slugA, slugB } = await params;
+
+  if (slugA > slugB) {
+    redirect(`/compare/${slugB}/${slugA}`);
+  }
 
   const { data, error } = await (supabase.rpc as any)("get_variant_comparison", {
     p_slugs: [slugA, slugB],

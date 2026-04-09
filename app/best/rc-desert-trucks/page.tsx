@@ -25,6 +25,15 @@ export default async function Page() {
 
   const variants = data?.variants ?? [];
 
+  const slugs = variants.map((v: any) => v.variant_slug).filter(Boolean);
+  const { data: payloads } = slugs.length > 0
+    ? await supabase.from("mv_variant_payload").select("variant_slug, primary_image_url").in("variant_slug", slugs)
+    : { data: [] };
+  const imageMap: Record<string, string> = {};
+  for (const p of payloads ?? []) {
+    if (p.primary_image_url) imageMap[p.variant_slug] = p.primary_image_url;
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -39,7 +48,7 @@ export default async function Page() {
         {variants.length > 0 ? (
           <div className="space-y-4">
             {variants.map((v: any, i: number) => (
-              <BestOfCard key={v.variant_slug} variant={v} rank={i + 1} signupSource="best_of_desert_trucks" />
+              <BestOfCard key={v.variant_slug} variant={v} rank={i + 1} signupSource="best_of_desert_trucks" imageUrl={imageMap[v.variant_slug]} />
             ))}
           </div>
         ) : (

@@ -89,12 +89,15 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
 
   const { data, error } = await (supabase.rpc as any)("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
 
-  if (error) console.error("[family page] RPC error:", JSON.stringify(error));
-
   const page = data as PageData | null;
 
+  // Distinguish RPC failure (transient → 500) from genuinely missing route (→ 404)
+  if (error && !page) {
+    console.error("[family page] RPC error (returning 500, not 404):", JSON.stringify(error));
+    throw new Error(`Family page RPC failed for ${manufacturer}/${family}`);
+  }
+
   if (!page || !page.variants?.length) {
-    console.error("[family page] notFound — manufacturer:", manufacturer, "family:", family, "data:", JSON.stringify(data));
     notFound();
   }
 

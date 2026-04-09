@@ -38,6 +38,13 @@ const TOOLS = [
     icon: "🔋",
     tags: ["Battery", "Runtime"],
   },
+  {
+    href: "/tools/vehicle-evaluator",
+    title: "Vehicle Evaluator",
+    description: "Estimate what your RC is worth based on its condition and upgrades installed.",
+    icon: "🚗",
+    tags: ["Valuation", "Upgrades"],
+  },
 ];
 
 export default function ToolsPage() {

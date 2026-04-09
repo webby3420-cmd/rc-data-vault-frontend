@@ -7,6 +7,7 @@ import FamilyMarketBand from "@/components/family/FamilyMarketBand";
 import FamilyBestPicks from "@/components/family/FamilyBestPicks";
 import FamilyWatchCTA from "@/components/family/FamilyWatchCTA";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
+import FamilyEcosystemBlock from "@/components/family/FamilyEcosystemBlock";
 
 export const dynamic = "force-dynamic";
 
@@ -101,9 +102,10 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     notFound();
   }
 
-  const { data: resourceData } = await (supabase.rpc as any)("get_family_resources", {
-    p_family_id: page.model_family_id,
-  });
+  const [{ data: resourceData }, { data: ecosystemData }] = await Promise.all([
+    (supabase.rpc as any)("get_family_resources", { p_family_id: page.model_family_id }),
+    (supabase.rpc as any)("get_family_ecosystem", { p_family_slug: page.family_slug }),
+  ]);
 
   const fms = page.family_market_summary;
 
@@ -242,6 +244,10 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
               </a>
             );
           })}
+        </div>
+
+        <div className="mt-8">
+          <FamilyEcosystemBlock ecosystem={ecosystemData ?? null} />
         </div>
       </div>
     </main>

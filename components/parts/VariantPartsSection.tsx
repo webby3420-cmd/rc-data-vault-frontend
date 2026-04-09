@@ -25,6 +25,7 @@ type Part = {
   part_slug: string
   part_number: string | null
   part_type: 'oem_replacement' | 'aftermarket_upgrade' | 'universal_fitment'
+  fitment_type?: string
   is_oem: boolean
   is_collectible: boolean
   part_era: 'modern' | 'vintage' | null
@@ -106,7 +107,6 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 space-y-2">
-      {/* Top row */}
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-slate-800 flex items-center justify-center">
           {imgSrc ? (
@@ -125,7 +125,6 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
         </div>
       </div>
 
-      {/* Middle row */}
       <div className="flex flex-wrap items-center gap-1.5">
         <PartTypeBadge part={part} />
         {brand && <span className="text-xs text-slate-500 ml-1">{brand}</span>}
@@ -134,12 +133,10 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
         )}
       </div>
 
-      {/* Description */}
       {part.description && (
         <p className="text-xs text-slate-500 line-clamp-2">{part.description}</p>
       )}
 
-      {/* Buy links */}
       {links.length > 0 ? (
         <div className="flex flex-wrap gap-1.5 pt-1">
           {links.map((link, i) => (
@@ -167,6 +164,84 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
   )
 }
 
+// ─── Type group helpers ──────────────────────────────────────────────
+
+type TypeGroup = {
+  key: string
+  label: string
+  parts: Part[]
+}
+
+function getPartTypeKey(part: Part): string {
+  if (part.is_oem || part.part_type === 'oem_replacement') return 'oem'
+  if (part.part_type === 'aftermarket_upgrade') return 'upgrade'
+  return 'universal'
+}
+
+function groupByPartType(categories: Category[]): TypeGroup[] {
+  const allParts = categories.flatMap((c) => c.parts)
+  const groups: Record<string, Part[]> = { oem: [], upgrade: [], universal: [] }
+
+  for (const part of allParts) {
+    groups[getPartTypeKey(part)].push(part)
+  }
+
+  // Sort parts alphabetically within each group
+  for (const key of Object.keys(groups)) {
+    groups[key].sort((a, b) => a.part_name.localeCompare(b.part_name))
+  }
+
+  const result: TypeGroup[] = []
+  if (groups.oem.length > 0) result.push({ key: 'oem', label: 'OEM Replacement', parts: groups.oem })
+  if (groups.upgrade.length > 0) result.push({ key: 'upgrade', label: 'Aftermarket Upgrades', parts: groups.upgrade })
+  if (groups.universal.length > 0) result.push({ key: 'universal', label: 'Universal', parts: groups.universal })
+  return result
+}
+
+function getSupportLabel(total: number): string {
+  if (total > 50) return 'Broad ecosystem support'
+  if (total > 20) return 'Solid parts availability'
+  if (total > 5) return 'Core parts covered'
+  return 'Limited parts coverage'
+}
+
+// ─── Collapsible type group ──────────────────────────────────────────
+
+function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpen: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between py-2 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-medium text-white">{group.label}</h3>
+          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+            {group.parts.length}
+          </span>
+        </div>
+        <svg
+          className={`h-4 w-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="grid gap-3 md:grid-cols-2 mt-2">
+          {group.parts.map((part) => (
+            <PartCard key={part.part_id} part={part} categorySlug="" />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main component ──────────────────────────────────────────────────
+
 interface VariantPartsSectionProps {
   variantSlug: string
   variantName: string
@@ -175,6 +250,7 @@ interface VariantPartsSectionProps {
 export default function VariantPartsSection({ variantSlug, variantName }: VariantPartsSectionProps) {
   const [data, setData] = useState<PartsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sectionOpen, setSectionOpen] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -182,7 +258,13 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
         'get_variant_parts',
         { p_variant_slug: variantSlug }
       )
-      setData(result ?? null)
+      const d = result as PartsData | null
+      setData(d ?? null)
+      // Default open for small parts sets
+      if (d) {
+        const categoryCount = d.categories.length
+        setSectionOpen(d.total_parts <= 20 && categoryCount <= 3)
+      }
       setLoading(false)
     })()
   }, [variantSlug])
@@ -199,47 +281,56 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
 
   if (!data || data.total_parts === 0) return null
 
-  const sortedCategories = [...data.categories].sort((a, b) =>
-    a.sort_order.localeCompare(b.sort_order)
-  )
+  const typeGroups = groupByPartType(data.categories)
+  const oemCount = typeGroups.find((g) => g.key === 'oem')?.parts.length ?? 0
+  const upgradeCount = typeGroups.find((g) => g.key === 'upgrade')?.parts.length ?? 0
+  const universalCount = typeGroups.find((g) => g.key === 'universal')?.parts.length ?? 0
+  const supportLabel = getSupportLabel(data.total_parts)
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold text-white">
-          Parts &amp; Upgrades for {variantName}
-        </h2>
-        <p className="mt-1 text-sm text-slate-400">
-          {data.total_parts} parts from {data.parts_with_links} sources
-        </p>
-      </div>
-
-      {sortedCategories.map((cat) => {
-        const hasVintage = cat.parts.some((p) => p.part_era === 'vintage' || p.is_collectible)
-
-        return (
-          <div key={cat.category_slug}>
-            <div className="flex items-center gap-2 mb-3">
-              <h3 className="text-base font-medium text-white">{cat.category_name}</h3>
-              <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-                {cat.part_count}
-              </span>
-            </div>
-
-            {hasVintage && data.has_vintage && (
-              <p className="mb-3 text-xs text-amber-500/70">
-                These are vintage/collectible parts. Values vary significantly.
-              </p>
-            )}
-
-            <div className="grid gap-3 md:grid-cols-2">
-              {cat.parts.map((part) => (
-                <PartCard key={part.part_id} part={part} categorySlug={cat.category_slug} />
-              ))}
-            </div>
+    <div className="rounded-2xl border border-slate-700 bg-slate-900 overflow-hidden">
+      {/* Summary bar — always visible */}
+      <button
+        onClick={() => setSectionOpen(!sectionOpen)}
+        className="flex w-full items-center justify-between px-6 py-4 text-left"
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-white">Parts &amp; Upgrades</h2>
+            <span className="text-xs text-slate-500">{supportLabel}</span>
           </div>
-        )
-      })}
+          <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">
+            <span>{data.total_parts} parts across {typeGroups.length} categories</span>
+            {oemCount > 0 && <span className="text-blue-400">OEM: {oemCount}</span>}
+            {upgradeCount > 0 && <span className="text-purple-400">Upgrades: {upgradeCount}</span>}
+            {universalCount > 0 && <span className="text-slate-400">Universal: {universalCount}</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          <span className="text-xs text-slate-500">
+            {sectionOpen ? 'Show less' : `Show all ${data.total_parts}`}
+          </span>
+          <svg
+            className={`h-4 w-4 text-slate-500 transition-transform ${sectionOpen ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Expanded content */}
+      {sectionOpen && (
+        <div className="px-6 pb-6 space-y-6 border-t border-slate-800 pt-4">
+          {typeGroups.map((group) => (
+            <TypeGroupSection
+              key={group.key}
+              group={group}
+              defaultOpen={data.total_parts <= 20}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

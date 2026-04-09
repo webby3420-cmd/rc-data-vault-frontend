@@ -24,6 +24,7 @@ export default function PriceAlertSignup({
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
+  const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,7 @@ export default function PriceAlertSignup({
         slug: variantSlug,
         alert_name: `Price alert for ${modelName}`,
         max_total_price: targetPrice,
+        frequency,
         is_active: true,
         ...(modelFamilyId ? { model_family_id: modelFamilyId } : {}),
       })
@@ -159,6 +161,32 @@ export default function PriceAlertSignup({
         >
           {loading ? "Saving…" : "Create alert"}
         </button>
+      </div>
+      <div className="mt-4 flex gap-4">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="frequency"
+            value="daily"
+            checked={frequency === "daily"}
+            onChange={() => setFrequency("daily")}
+            className="accent-amber-500"
+            disabled={loading}
+          />
+          <span className="text-sm text-slate-300">Daily — get alerts when new deals appear</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="frequency"
+            value="weekly"
+            checked={frequency === "weekly"}
+            onChange={() => setFrequency("weekly")}
+            className="accent-amber-500"
+            disabled={loading}
+          />
+          <span className="text-sm text-slate-300">Weekly — get a summary of the week&apos;s best deals</span>
+        </label>
       </div>
       {error && (
         <p className="mt-3 text-xs text-red-400">{error}</p>

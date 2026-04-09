@@ -12,6 +12,7 @@ Deno.serve(async (_req) => {
     .select('entity_id, image_url, image_id')
     .eq('entity_type', 'variant')
     .eq('status', 'pending')
+    .order('priority', { ascending: true })
     .limit(20)
 
   if (!queue?.length) {

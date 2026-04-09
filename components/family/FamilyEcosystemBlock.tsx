@@ -35,7 +35,7 @@ export default function FamilyEcosystemBlock({ ecosystem }: FamilyEcosystemBlock
   if (!ecosystem || ecosystem.total_listings < 3) return null;
 
   const topCats = (ecosystem.top_categories ?? [])
-    .filter((c) => c.count > 0)
+    .filter((c): c is { type: string; count: number } => c != null && c.count > 0)
     .slice(0, 3);
 
   return (

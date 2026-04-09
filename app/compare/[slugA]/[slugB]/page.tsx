@@ -250,6 +250,9 @@ export default async function ComparePage({ params }: PageProps) {
                 </div>
               </div>
             </div>
+            {winnerData.data_tier === "baseline" && (
+              <p className="mt-3 text-xs text-amber-500/80">Pricing based on MSRP reference — no sold listing data available yet.</p>
+            )}
             <p className="mt-3 text-xs text-slate-600">Based on real sold listing data only. Use the tools below to dig deeper before deciding.</p>
           </div>
         )}

@@ -45,6 +45,13 @@ const TOOLS = [
     icon: "🚗",
     tags: ["Valuation", "Upgrades"],
   },
+  {
+    href: "/tools/identify",
+    title: "Identify by Photo",
+    description: "Upload a photo of an RC vehicle and we'll identify the model using image matching against our catalog.",
+    icon: "📷",
+    tags: ["Image", "Identification"],
+  },
 ];
 
 export default function ToolsPage() {

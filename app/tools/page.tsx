@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import DealValueCalculator from "@/components/tools/DealValueCalculator";
+import ModelComparison from "@/components/tools/ModelComparison";
 
 export const metadata: Metadata = {
   title: "RC Tools — Deal Calculator, Model Comparison & Setup Tools | RC Data Vault",
@@ -48,6 +49,14 @@ export default function ToolsPage() {
         <p className="text-sm text-slate-400 mb-4">See if a listing price is a deal, fair, or overpriced — based on real sold data</p>
         <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}>
           <DealValueCalculator />
+        </Suspense>
+      </section>
+
+      <section className="mb-12">
+        <h2 className="text-xl font-semibold text-white mb-1">Model Comparison</h2>
+        <p className="text-sm text-slate-400 mb-4">Compare up to 3 models by price, market activity, and value</p>
+        <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}>
+          <ModelComparison />
         </Suspense>
       </section>
 

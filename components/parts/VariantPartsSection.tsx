@@ -321,18 +321,27 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
 
   useEffect(() => {
     ;(async () => {
-      const { data: result } = await (supabase.rpc as any)(
-        'get_variant_parts',
-        { p_variant_slug: variantSlug }
-      )
-      const d = result as PartsData | null
-      setData(d ?? null)
-      // Default open for small parts sets
-      if (d) {
-        const categoryCount = d.categories.length
-        setSectionOpen(d.total_parts <= 20 && categoryCount <= 3)
+      try {
+        const { data: result, error } = await (supabase.rpc as any)(
+          'get_variant_parts',
+          { p_variant_slug: variantSlug }
+        )
+        if (error) {
+          console.error('[VariantPartsSection] RPC error:', error)
+          setLoading(false)
+          return
+        }
+        const d = result as PartsData | null
+        setData(d ?? null)
+        if (d) {
+          const categoryCount = d.categories.length
+          setSectionOpen(d.total_parts <= 20 && categoryCount <= 3)
+        }
+      } catch (err) {
+        console.error('[VariantPartsSection] fetch error:', err)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     })()
   }, [variantSlug])
 

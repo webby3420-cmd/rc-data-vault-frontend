@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import DealValueCalculator from "@/components/tools/DealValueCalculator";
 
 export const metadata: Metadata = {
-  title: "RC Setup Tools | RC Data Vault",
-  description: "Free RC calculators for gear ratio, top speed estimation, and gearing comparisons. Built for hobbyists who want real numbers.",
+  title: "RC Tools — Deal Calculator, Model Comparison & Setup Tools | RC Data Vault",
+  description: "Check if a listing is a deal, compare models side by side, and use free RC calculators for gear ratio, top speed, and gearing.",
 };
 
 const TOOLS = [
@@ -41,6 +43,15 @@ export default function ToolsPage() {
           Built for hobbyists who want real numbers, not guesswork.
         </p>
       </div>
+      <section className="mb-12">
+        <h2 className="text-xl font-semibold text-white mb-1">Deal Value Calculator</h2>
+        <p className="text-sm text-slate-400 mb-4">See if a listing price is a deal, fair, or overpriced — based on real sold data</p>
+        <Suspense fallback={<div className="text-sm text-slate-500">Loading...</div>}>
+          <DealValueCalculator />
+        </Suspense>
+      </section>
+
+      <h2 className="text-xl font-semibold text-white mb-4">Setup Calculators</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {TOOLS.map(tool => (
           <Link

@@ -259,6 +259,14 @@ export default function VehicleEvaluator() {
             <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 space-y-5">
               <h3 className="text-lg font-semibold text-white">{result.variant_name} — Adjusted Valuation</h3>
 
+              {result.valuation_source === 'msrp_baseline' && (
+                <div className="rounded-lg border border-amber-800/40 bg-amber-950/30 px-4 py-2.5">
+                  <p className="text-xs text-amber-400/80">
+                    No sold listing data yet for this model. Values are estimated from MSRP ({result.base_fair_value ? '$' + Math.round(result.base_fair_value).toLocaleString() : 'unknown'}). Actual resale prices may vary significantly.
+                  </p>
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Adjusted Value</div>

@@ -156,7 +156,7 @@ Deno.serve(async (_req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SB_SERVICE_KEY")!
     );
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) throw new Error("Missing RESEND_API_KEY");

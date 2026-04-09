@@ -143,18 +143,6 @@ function specsAreIndividuallyVerified(specs: any) {
 }
 
 // Extracts the best purchase URL from a part's purchase_links JSON array
-function getPartPrimaryUrl(part: any): string | null {
-  if (!part?.purchase_links) return null;
-  const links: any[] = Array.isArray(part.purchase_links) ? part.purchase_links : [];
-  if (links.length === 0) return null;
-  // Prefer Amazon, then AMain, then first available
-  const amazon = links.find((l) => l.retailer_slug === "amazon" && l.url);
-  if (amazon) return amazon.url;
-  const amain = links.find((l) => l.retailer_slug === "amain" && l.url);
-  if (amain) return amain.url;
-  const first = links.find((l) => l.url);
-  return first?.url ?? null;
-}
 
 // Returns a human-readable source label for a sold listing
 function listingSourceLabel(source: string | null | undefined): string {
@@ -261,22 +249,12 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     valuation: siblingValMap[s.variant_id] ?? null,
   }));
 
-  // Step 1: get compatible part_ids
-  const { data: compatParts } = await supabase
-    .from("v_parts_with_compat")
-    .select("part_id")
-    .contains("compatible_variant_ids", [variantId])
-    .limit(20);
-
-  const compatPartIds = (compatParts ?? []).map((p: any) => p.part_id);
-
   const [
     { data: specsData },
     { data: valuationData },
     { data: trendData },
     { data: listingsData },
     { data: payloadData },
-    { data: partsData },
   ] = await Promise.all([
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
@@ -297,15 +275,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
       .order("observed_at", { ascending: false })
       .limit(12),
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
-    // Step 2: get full purchase data for compatible parts
-    compatPartIds.length > 0
-      ? supabase
-          .from("v_parts_with_purchase_options")
-          .select("part_id, part_name, part_number, part_type, fitment_type, is_oem, msrp, best_price, purchase_link_count, purchase_links")
-          .in("part_id", compatPartIds)
-          .gt("purchase_link_count", 0)
-          .limit(3)
-      : Promise.resolve({ data: [] }),
   ]);
 
   const { data: verifiedContent } = await supabase
@@ -388,11 +357,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     trendRows.length >= 2
       ? Math.abs(trendRows[trendRows.length - 1].median - trendRows[trendRows.length - 2].median)
       : null;
-
-  // Parts with verified purchase links only
-  const verifiedParts = (partsData ?? []).filter(
-    (p: any) => (p.purchase_link_count ?? 0) > 0
-  );
 
   const productSchema = {
     "@context": "https://schema.org",
@@ -796,61 +760,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 Sold listing data sourced from eBay completed listings. Prices reflect actual transaction values.
               </p>
             </CollapsibleSection>
-          )}
-
-          {verifiedParts.length > 0 && (
-            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Verified Parts &amp; Fitment</h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Only showing parts with confirmed fitment and a verified purchase link
-                  </p>
-                </div>
-                <Link
-                  href={`/rc/${mfrSlug}/${familySlug}/${variantSlug}/parts`}
-                  className="inline-flex items-center gap-1 rounded-xl border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"
-                >
-                  View all parts
-                </Link>
-              </div>
-              <div className="space-y-3">
-                {verifiedParts.map((part: any) => {
-                  const buyUrl = getPartPrimaryUrl(part);
-                  return (
-                    <div key={part.part_id} className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-white leading-5">{part.part_name}</div>
-                          <div className="mt-1 flex flex-wrap gap-2 text-xs text-slate-500">
-                            {part.part_number && <span>#{part.part_number}</span>}
-                            {part.is_oem && <span className="text-emerald-400">OEM</span>}
-                            {part.fitment_type && <span className="capitalize">{part.fitment_type}</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {(part.best_price ?? part.msrp) && (
-                            <span className="text-sm font-semibold text-amber-400">
-                              {fmt(part.best_price ?? part.msrp)}
-                            </span>
-                          )}
-                          {buyUrl && (
-                            <a
-                              href={buyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer sponsored"
-                              className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400"
-                            >
-                              Buy
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
           )}
 
           {valuation && (

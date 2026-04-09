@@ -207,8 +207,12 @@ function getSupportLabel(total: number): string {
 
 // ─── Collapsible type group ──────────────────────────────────────────
 
+const PREVIEW_LIMIT = 5
+
 function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpen: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [showAll, setShowAll] = useState(group.parts.length <= PREVIEW_LIMIT)
+  const visibleParts = showAll ? group.parts : group.parts.slice(0, PREVIEW_LIMIT)
 
   return (
     <div>
@@ -230,10 +234,20 @@ function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpe
         </svg>
       </button>
       {open && (
-        <div className="grid gap-3 md:grid-cols-2 mt-2">
-          {group.parts.map((part) => (
-            <PartCard key={part.part_id} part={part} categorySlug="" />
-          ))}
+        <div>
+          <div className="grid gap-3 md:grid-cols-2 mt-2">
+            {visibleParts.map((part) => (
+              <PartCard key={part.part_id} part={part} categorySlug="" />
+            ))}
+          </div>
+          {!showAll && group.parts.length > PREVIEW_LIMIT && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="mt-3 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+            >
+              Show all {group.parts.length} →
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -296,7 +310,7 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-white">Parts &amp; Upgrades</h2>
+            <h2 className="text-lg font-semibold text-white">Parts Intelligence &amp; Fitment</h2>
             <span className="text-xs text-slate-500">{supportLabel}</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">

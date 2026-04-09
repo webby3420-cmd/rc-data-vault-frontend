@@ -101,10 +101,21 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error
 
+    const results = (matches ?? []).map((m: any) => ({
+      variant_id: m.variant_id,
+      variant_slug: m.variant_slug,
+      variant_name: m.full_name,
+      manufacturer_name: m.manufacturer,
+      canonical_url: m.canonical_url,
+      image_url: m.primary_image_url,
+      confidence: m.similarity,
+      fair_value: m.fair_value,
+    }))
+
     return NextResponse.json({
-      results: matches ?? [],
+      results,
       description,
-      embedding_coverage: (matches?.length ?? 0) > 0 ? 'active' : 'limited',
+      embedding_coverage: results.length > 0 ? 'active' : 'limited',
     })
   } catch (err) {
     console.error('[identify] error:', err)

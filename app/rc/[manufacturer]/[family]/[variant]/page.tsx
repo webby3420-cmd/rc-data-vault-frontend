@@ -11,6 +11,7 @@ import SoldTrendBlock from "@/components/market/SoldTrendBlock";
 import ActiveDealsStrip from "@/components/market/ActiveDealsStrip";
 import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
+import VariantPartsSection from "@/components/parts/VariantPartsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -709,6 +710,10 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               )}
             </CollapsibleSection>
           )}
+
+          <section id="parts" className="mt-10">
+            <VariantPartsSection variantSlug={variantSlug} variantName={variantData.full_name} />
+          </section>
 
           <ResourceSection resources={resourceData ?? []} />
           <ToolsBlock />

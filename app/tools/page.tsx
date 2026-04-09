@@ -31,6 +31,13 @@ const TOOLS = [
     icon: "🔄",
     tags: ["Gearing", "Tuning"],
   },
+  {
+    href: "/tools/battery-runtime",
+    title: "Battery Runtime Calculator",
+    description: "Estimate how long your battery will last based on capacity (mAh) and current draw. Useful for planning run sessions.",
+    icon: "🔋",
+    tags: ["Battery", "Runtime"],
+  },
 ];
 
 export default function ToolsPage() {

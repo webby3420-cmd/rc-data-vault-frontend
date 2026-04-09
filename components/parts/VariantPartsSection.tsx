@@ -205,6 +205,59 @@ function getSupportLabel(total: number): string {
   return 'Limited parts coverage'
 }
 
+// ─── Top upgrades selection ──────────────────────────────────────────
+
+function selectTopUpgrades(categories: Category[]): Part[] {
+  const allParts = categories.flatMap((c) => c.parts)
+  const upgrades = allParts.filter(
+    (p) => p.part_type === 'aftermarket_upgrade' && p.purchase_links && p.purchase_links.length > 0
+  )
+
+  if (upgrades.length < 3) return []
+
+  const scored = upgrades.map((p) => {
+    let score = 0
+    const nameLower = p.part_name.toLowerCase()
+
+    if (/\b(esc|speed control|mamba|ezrun|hobbywing|castle)\b/.test(nameLower)) score += 40
+    if (/\b(motor|kv|brushless)\b/.test(nameLower)) score += 35
+    if (/\b(combo|system|kit)\b/.test(nameLower)) score += 20
+    if (/\b(tire|tyre|wheel)\b/.test(nameLower)) score += 25
+    if (/\b(shock|damper|suspension|spring)\b/.test(nameLower)) score += 20
+    if (/\b(diff|differential|gear|drivetrain|driveshaft|cvd)\b/.test(nameLower)) score += 20
+    if (/\b(servo|steering|receiver)\b/.test(nameLower)) score += 15
+    if (/\b(chassis|brace|skid|armor)\b/.test(nameLower)) score += 10
+    if (/\b(arm|link|knuckle|hub)\b/.test(nameLower)) score += 8
+
+    score += Math.min(p.purchase_links.length * 10, 20)
+
+    const price = p.purchase_links[0]?.price_usd ?? p.msrp ?? 0
+    if (price >= 200) score += 15
+    else if (price >= 100) score += 10
+    else if (price >= 50) score += 5
+
+    if (/\b(castle|hobbywing|vitavon|m2c|hot racing|scorched)\b/.test(nameLower)) score += 15
+
+    return { part: p, score }
+  })
+
+  scored.sort((a, b) => b.score - a.score)
+
+  const results: Part[] = []
+  const seen = new Set<string>()
+
+  for (const { part } of scored) {
+    const key = part.part_name.toLowerCase().split(' ').slice(0, 3).join(' ')
+    if (!seen.has(key)) {
+      seen.add(key)
+      results.push(part)
+    }
+    if (results.length >= 5) break
+  }
+
+  return results
+}
+
 // ─── Collapsible type group ──────────────────────────────────────────
 
 const PREVIEW_LIMIT = 5
@@ -300,6 +353,7 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
   const upgradeCount = typeGroups.find((g) => g.key === 'upgrade')?.parts.length ?? 0
   const universalCount = typeGroups.find((g) => g.key === 'universal')?.parts.length ?? 0
   const supportLabel = getSupportLabel(data.total_parts)
+  const topUpgrades = selectTopUpgrades(data.categories)
 
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 overflow-hidden">
@@ -332,6 +386,50 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           </svg>
         </div>
       </button>
+
+      {/* Top upgrades — always visible when present */}
+      {topUpgrades.length > 0 && (
+        <div className="px-6 pb-4 border-t border-slate-800 pt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+            Top Upgrades for This Model
+          </h3>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {topUpgrades.map((part) => {
+              const bestLink = [...part.purchase_links].sort(
+                (a, b) => (a.priority ?? 99) - (b.priority ?? 99)
+              )[0]
+              const price = bestLink?.price_usd ?? part.msrp
+              return (
+                <div
+                  key={part.part_id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-white leading-5 truncate">
+                      {part.part_name}
+                    </div>
+                    {price != null && (
+                      <div className="text-xs text-amber-400 mt-0.5">
+                        ${Number(price).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                  {bestLink?.url && (
+                    <a
+                      href={bestLink.url}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400"
+                    >
+                      Buy
+                    </a>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Expanded content */}
       {sectionOpen && (

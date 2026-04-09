@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { proxyImageUrl } from '@/lib/imageProxy'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -104,7 +103,7 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const brand = part.manufacturer || part.aftermarket_brand
   const links = part.purchase_links.slice(0, 3)
-  const imgSrc = proxyImageUrl(part.thumbnail_url || part.image_url)
+  const imgSrc = part.thumbnail_url || part.image_url
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 space-y-2">
@@ -415,9 +414,9 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
                   className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    {proxyImageUrl(part.thumbnail_url || part.image_url) && (
+                    {(part.thumbnail_url || part.image_url) && (
                       <img
-                        src={proxyImageUrl(part.thumbnail_url || part.image_url)!}
+                        src={(part.thumbnail_url || part.image_url)!}
                         alt={part.part_name}
                         className="w-12 h-12 object-contain rounded-lg bg-slate-800 flex-shrink-0"
                         loading="lazy"

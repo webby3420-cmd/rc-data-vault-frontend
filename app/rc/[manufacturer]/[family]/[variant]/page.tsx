@@ -12,7 +12,6 @@ import ActiveDealsStrip from "@/components/market/ActiveDealsStrip";
 import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
-import { proxyImageUrl } from "@/lib/imageProxy";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +31,7 @@ function getApprovedPrimaryImage(payloadRow: any): {
 } {
   if (!payloadRow) return { url: null, alt: null };
   return {
-    url: proxyImageUrl(payloadRow.primary_image_url) ?? null,
+    url: payloadRow.primary_image_url ?? null,
     alt: payloadRow.primary_image_alt ?? null,
   };
 }

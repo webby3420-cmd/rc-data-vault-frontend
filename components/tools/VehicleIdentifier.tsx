@@ -21,9 +21,9 @@ function formatValue(v: number | null): string {
 
 function confidenceLabel(score: number | null): { text: string; cls: string } | null {
   if (score == null) return null;
-  if (score >= 0.85) return { text: "Strong match", cls: "text-emerald-400" };
-  if (score >= 0.7) return { text: "Good match", cls: "text-amber-400" };
-  if (score >= 0.5) return { text: "Possible match", cls: "text-slate-400" };
+  if (score >= 0.75) return { text: "Strong match", cls: "text-emerald-400" };
+  if (score >= 0.55) return { text: "Good match", cls: "text-amber-400" };
+  if (score >= 0.4) return { text: "Possible match", cls: "text-slate-400" };
   return { text: "Weak match", cls: "text-slate-500" };
 }
 
@@ -33,6 +33,8 @@ export default function VehicleIdentifier() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [description, setDescription] = useState<string | null>(null);
+  const [coverage, setCoverage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function handleFile(file: File) {
@@ -65,6 +67,8 @@ export default function VehicleIdentifier() {
     setLoading(true);
     setError(null);
     setMatches([]);
+    setDescription(null);
+    setCoverage(null);
     setSearched(true);
 
     try {
@@ -76,11 +80,13 @@ export default function VehicleIdentifier() {
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        setError("Identification is being set up — check back soon.");
+        setError(data.message ?? "Identification failed — try a different photo.");
         return;
       }
 
-      setMatches(data.matches ?? []);
+      setMatches(data.results ?? []);
+      setDescription(data.description ?? null);
+      setCoverage(data.embedding_coverage ?? null);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -117,6 +123,8 @@ export default function VehicleIdentifier() {
                   setMatches([]);
                   setSearched(false);
                   setError(null);
+                  setDescription(null);
+                  setCoverage(null);
                 }}
                 className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
               >
@@ -186,6 +194,9 @@ export default function VehicleIdentifier() {
 
       {matches.length > 0 && (
         <div className="space-y-3">
+          {description && (
+            <p className="text-xs text-slate-500">Identified as: {description}</p>
+          )}
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             {matches.length} possible match{matches.length !== 1 ? "es" : ""}
           </p>

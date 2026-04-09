@@ -91,10 +91,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const name = variant.full_name;
 
+  const { data: indexMeta } = await (supabase.rpc as any)("get_variant_indexing_metadata", {
+    p_variant_slug: variantSlug,
+  });
+  const shouldIndex = indexMeta?.should_index !== false;
+
   return {
     title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
     description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
-    robots: "index,follow",
+    robots: shouldIndex ? "index,follow" : "noindex,follow",
     alternates: {
       canonical: `https://rcdatavault.com/rc/${(variant.model_families as any)?.manufacturers?.name?.toLowerCase()}/${(variant.model_families as any)?.name?.toLowerCase().replace(/\s+/g, "-")}/${variantSlug}`,
     },

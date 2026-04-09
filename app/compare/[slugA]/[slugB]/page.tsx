@@ -46,6 +46,48 @@ const CONFIDENCE_STYLE: Record<string, { cls: string; label: string }> = {
   insufficient: { cls: "text-slate-400 bg-slate-800", label: "Insufficient" },
 };
 
+const RELATED_COMPARISONS: Record<string, Array<{ slugA: string; slugB: string; label: string }>> = {
+  "traxxas-x-maxx-8s-brushless-rtr": [
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Kraton 6S EXB" },
+    { slugA: "arrma-kraton-brushless-1-8-4x4-rtr-6s", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Kraton 6S" },
+    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "X-Maxx vs Typhon 6S" },
+  ],
+  "arrma-kraton-6s-blx-exb-rtr": [
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr", label: "Kraton 6S EXB vs Typhon 6S" },
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Kraton 6S EXB vs X-Maxx" },
+  ],
+  "arrma-typhon-6s-blx-4x4-rtr": [
+    { slugA: "arrma-kraton-6s-blx-exb-rtr", slugB: "arrma-typhon-6s-blx-4x4-rtr", label: "Typhon 6S vs Kraton 6S EXB" },
+    { slugA: "arrma-typhon-6s-blx-4x4-rtr", slugB: "traxxas-x-maxx-8s-brushless-rtr", label: "Typhon 6S vs X-Maxx" },
+  ],
+  "traxxas-sledge": [
+    { slugA: "arrma-kraton-4s-v2-blx-1-10-rtr", slugB: "traxxas-sledge", label: "Sledge vs Kraton 4S V2" },
+    { slugA: "traxxas-maxx-widemaxx-rtr", slugB: "traxxas-sledge", label: "Sledge vs Maxx WideMaxx" },
+  ],
+  "arrma-mojave-brushless-1-7-4x4-rtr-6s": [
+    { slugA: "arrma-felony-6s-blx-1-7-rtr", slugB: "arrma-mojave-brushless-1-7-4x4-rtr-6s", label: "Mojave 6S vs Felony 6S" },
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey-2-0", label: "Mojave 6S vs Super Baja Rey 2.0" },
+  ],
+  "traxxas-xrt": [
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-xrt", label: "XRT vs Kraton 8S EXB" },
+  ],
+  "arrma-kraton-8s-blx-exb-rtr": [
+    { slugA: "arrma-kraton-8s-blx-exb-rtr", slugB: "traxxas-xrt", label: "Kraton 8S EXB vs XRT" },
+  ],
+  "losi-super-baja-rey-2-0": [
+    { slugA: "arrma-mojave-brushless-1-7-4x4-rtr-6s", slugB: "losi-super-baja-rey-2-0", label: "Super Baja Rey 2.0 vs Mojave 6S" },
+  ],
+  "arrma-felony-6s-blx-1-7-rtr": [
+    { slugA: "arrma-felony-6s-blx-1-7-rtr", slugB: "arrma-mojave-brushless-1-7-4x4-rtr-6s", label: "Felony 6S vs Mojave 6S" },
+  ],
+  "traxxas-slash-4x4-vxl": [
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4-vxl", label: "Slash 4X4 VXL vs Fury BLX" },
+  ],
+  "arrma-fury-blx-2wd-rtr": [
+    { slugA: "arrma-fury-blx-2wd-rtr", slugB: "traxxas-slash-4x4-vxl", label: "Fury BLX vs Slash 4X4 VXL" },
+  ],
+};
+
 function ConfidenceBadge({ confidence }: { confidence: string | null }) {
   const style = CONFIDENCE_STYLE[confidence ?? ""] ?? CONFIDENCE_STYLE.insufficient;
   return (
@@ -252,7 +294,34 @@ export default async function ComparePage({ params }: PageProps) {
           >
             Check a price for {b.variant_name} &rarr;
           </a>
+          <a
+            href={`/tools/vehicle-evaluator?model=${a.variant_slug}`}
+            className="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+          >
+            Evaluate a {a.variant_name} build &rarr;
+          </a>
+          <a
+            href={`/tools/vehicle-evaluator?model=${b.variant_slug}`}
+            className="inline-flex items-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+          >
+            Evaluate a {b.variant_name} build &rarr;
+          </a>
         </div>
+
+        {/* Parts & Upgrade Ecosystems */}
+        <section className="mt-6">
+          <h3 className="text-sm font-semibold text-white mb-2">Parts &amp; Upgrade Ecosystems</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <a href={`${a.canonical_url}#parts`} className="rounded-lg border border-slate-700 bg-slate-900 p-4 hover:border-amber-500/50 transition-colors">
+              <p className="text-xs text-slate-400">{a.manufacturer_name} {a.variant_name}</p>
+              <p className="text-sm text-amber-400 font-medium mt-1">View parts &amp; upgrades &rarr;</p>
+            </a>
+            <a href={`${b.canonical_url}#parts`} className="rounded-lg border border-slate-700 bg-slate-900 p-4 hover:border-amber-500/50 transition-colors">
+              <p className="text-xs text-slate-400">{b.manufacturer_name} {b.variant_name}</p>
+              <p className="text-sm text-amber-400 font-medium mt-1">View parts &amp; upgrades &rarr;</p>
+            </a>
+          </div>
+        </section>
 
         {/* Variant links */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -299,6 +368,30 @@ export default async function ComparePage({ params }: PageProps) {
             />
           </div>
         </div>
+
+        {/* Related Comparisons */}
+        {(() => {
+          const related = [
+            ...(RELATED_COMPARISONS[slugA] ?? []),
+            ...(RELATED_COMPARISONS[slugB] ?? []),
+          ]
+            .filter((r) => !(r.slugA === slugA && r.slugB === slugB) && !(r.slugA === slugB && r.slugB === slugA))
+            .filter((r, i, arr) => arr.findIndex((x) => x.slugA === r.slugA && x.slugB === r.slugB) === i)
+            .slice(0, 3);
+          if (related.length === 0) return null;
+          return (
+            <div className="mt-8">
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-2">Related Comparisons</p>
+              <div className="flex flex-wrap gap-2">
+                {related.map((r) => (
+                  <a key={r.label} href={`/compare/${r.slugA}/${r.slugB}`} className="text-xs text-slate-400 hover:text-amber-400 border border-slate-700 rounded px-3 py-1.5 transition-colors">
+                    {r.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </main>
   );

@@ -333,11 +333,12 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           setLoading(false)
           return
         }
-        const d = result as PartsData | null
-        setData(d ?? null)
-        if (d) {
-          const categoryCount = d.categories.length
-          setSectionOpen(d.total_parts <= 20 && categoryCount <= 3)
+        // RPC returns JSONB — supabase-js may wrap scalar in array
+        const raw = Array.isArray(result) ? result[0] : result
+        const d = (raw && typeof raw === 'object' && 'categories' in raw) ? raw as PartsData : null
+        setData(d)
+        if (d && d.categories) {
+          setSectionOpen(d.total_parts <= 20 && d.categories.length <= 3)
         }
       } catch (err) {
         console.error('[VariantPartsSection] fetch error:', err)
@@ -357,7 +358,7 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
     )
   }
 
-  if (!data || data.total_parts === 0) return null
+  if (!data || data.total_parts === 0 || !data.categories) return null
 
   const typeGroups = groupByPartType(data.categories)
   const oemCount = typeGroups.find((g) => g.key === 'oem')?.parts.length ?? 0

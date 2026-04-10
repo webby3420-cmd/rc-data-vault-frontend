@@ -93,7 +93,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: indexMeta } = await (supabase.rpc as any)("get_variant_indexing_metadata", {
     p_variant_slug: variantSlug,
-  });
+  }).maybeSingle();
   const shouldIndex = indexMeta?.should_index !== false;
 
   return {

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import Image from 'next/image'
-import Script from 'next/script'
 import './globals.css'
 
 
@@ -26,11 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* AvantLink site verification — temporary */}
-        <Script
-          src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=8a9d40e3468fa9bdd6a367a5a407d0f015162941"
-          strategy="beforeInteractive"
-        />
        
         <header className="border-b border-slate-800 bg-slate-950 relative z-50">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">

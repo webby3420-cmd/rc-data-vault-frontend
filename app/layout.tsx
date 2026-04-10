@@ -24,6 +24,10 @@ const MANUFACTURERS = [
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* AvantLink site verification — temporary */}
+        <script type="text/javascript" src="http://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=8a9d40e3468fa9bdd6a367a5a407d0f015162941" />
+      </head>
       <body className={inter.className}>
        
         <header className="border-b border-slate-800 bg-slate-950 relative z-50">

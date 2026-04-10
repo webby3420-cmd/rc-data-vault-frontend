@@ -4,6 +4,7 @@ const TOOLS = [
   { href: "/tools/gear-ratio", label: "Gear Ratio Calculator", desc: "Calculate FDR from spur, pinion, and internal drive ratio" },
   { href: "/tools/speed-estimator", label: "Speed Estimator", desc: "Estimate top speed from motor KV, voltage, and gearing" },
   { href: "/tools/gear-change-comparator", label: "Gear Change Comparator", desc: "Compare current vs. proposed gearing setups" },
+  { href: "/tools/battery-runtime", label: "Battery Runtime Calculator", desc: "Estimate run time from battery capacity and motor draw" },
 ];
 
 export default function ToolsBlock() {

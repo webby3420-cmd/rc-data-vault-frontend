@@ -297,6 +297,13 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
   const { data: marketIntel } = await (supabase.rpc as any)("get_variant_market_intel_by_slug", { p_slug: variantSlug });
 
+  const { data: purchaseLinks } = await supabase
+    .from("variant_purchase_links")
+    .select("retailer_name, retailer_slug, retailer_type, affiliate_url, product_url, price_usd, in_stock, display_priority")
+    .eq("variant_id", variantId)
+    .eq("is_active", true)
+    .order("display_priority", { ascending: true });
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -709,6 +716,56 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 </p>
               )}
             </CollapsibleSection>
+          )}
+
+          {purchaseLinks && purchaseLinks.length > 0 && (
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 mt-10 mb-6">
+              <h2 className="text-lg font-semibold text-white mb-4">Where to Buy</h2>
+              <div className="space-y-2">
+                {purchaseLinks.map((link: any) => {
+                  const url = link.affiliate_url || link.product_url;
+                  const badge = ({
+                    manufacturer: { label: 'Brand', color: 'bg-blue-900/40 text-blue-400 border-blue-600/20' },
+                    hobby_specialist: { label: 'Hobby Shop', color: 'bg-emerald-900/40 text-emerald-400 border-emerald-600/20' },
+                    mass_market: { label: 'Retail', color: 'bg-slate-500/10 text-slate-400 border-slate-600/20' },
+                    marketplace: { label: 'Marketplace', color: 'bg-amber-900/40 text-amber-400 border-amber-600/20' },
+                    affiliate_network: { label: 'Shop', color: 'bg-slate-500/10 text-slate-400 border-slate-600/20' },
+                  } as Record<string, { label: string; color: string }>)[link.retailer_type] || { label: 'Shop', color: 'bg-slate-500/10 text-slate-400 border-slate-600/20' };
+
+                  return (
+                    <a
+                      key={link.retailer_slug}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer sponsored"
+                      className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 hover:border-slate-500 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+                            {link.retailer_name}
+                          </p>
+                          {link.price_usd && (
+                            <p className="text-xs text-amber-400 mt-0.5">${Number(link.price_usd).toFixed(2)}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${badge.color}`}>
+                          {badge.label}
+                        </span>
+                        <svg className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-slate-600 mt-3">
+                Links may be affiliate links. Prices shown where available — check retailer for current pricing.
+              </p>
+            </section>
           )}
 
           <section id="parts" className="mt-10">

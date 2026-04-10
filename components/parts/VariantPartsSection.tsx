@@ -258,14 +258,15 @@ function selectTopUpgrades(categories: Category[]): Part[] {
   return results
 }
 
-// ─── Collapsible type group ──────────────────────────────────────────
+// ─── Collapsible category section ───────────────────────────────────
 
 const PREVIEW_LIMIT = 5
 
-function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpen: boolean }) {
+function CategorySection({ category, defaultOpen }: { category: Category; defaultOpen: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
-  const [showAll, setShowAll] = useState(group.parts.length <= PREVIEW_LIMIT)
-  const visibleParts = showAll ? group.parts : group.parts.slice(0, PREVIEW_LIMIT)
+  const [showAll, setShowAll] = useState(category.parts.length <= PREVIEW_LIMIT)
+  const visibleParts = showAll ? category.parts : category.parts.slice(0, PREVIEW_LIMIT)
+  const icon = CATEGORY_ICON[category.category_slug] ?? '\uD83D\uDD27'
 
   return (
     <div>
@@ -274,9 +275,10 @@ function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpe
         className="flex w-full items-center justify-between py-2 text-left"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-medium text-white">{group.label}</h3>
+          <span className="text-base">{icon}</span>
+          <h3 className="text-base font-medium text-white">{category.category_name}</h3>
           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
-            {group.parts.length}
+            {category.parts.length}
           </span>
         </div>
         <svg
@@ -290,15 +292,15 @@ function TypeGroupSection({ group, defaultOpen }: { group: TypeGroup; defaultOpe
         <div>
           <div className="grid gap-3 md:grid-cols-2 mt-2">
             {visibleParts.map((part) => (
-              <PartCard key={part.part_id} part={part} categorySlug="" />
+              <PartCard key={part.part_id} part={part} categorySlug={category.category_slug} />
             ))}
           </div>
-          {!showAll && group.parts.length > PREVIEW_LIMIT && (
+          {!showAll && category.parts.length > PREVIEW_LIMIT && (
             <button
               onClick={() => setShowAll(true)}
               className="mt-3 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
             >
-              Show all {group.parts.length} →
+              Show all {category.parts.length} →
             </button>
           )}
         </div>
@@ -450,13 +452,13 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
         </div>
       )}
 
-      {/* Expanded content */}
+      {/* Expanded content — grouped by category */}
       {sectionOpen && (
         <div className="px-6 pb-6 space-y-6 border-t border-slate-800 pt-4">
-          {typeGroups.map((group) => (
-            <TypeGroupSection
-              key={group.key}
-              group={group}
+          {data.categories.map((cat) => (
+            <CategorySection
+              key={cat.category_slug}
+              category={cat}
               defaultOpen={data.total_parts <= 20}
             />
           ))}

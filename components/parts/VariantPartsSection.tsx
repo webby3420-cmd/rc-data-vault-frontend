@@ -98,33 +98,38 @@ function PartTypeBadge({ part }: { part: Part }) {
   return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
 }
 
-function reorderLinks(purchaseLinks: PurchaseLink[], partName: string, partSlug: string): PurchaseLink[] {
+function ensureAmazonTag(url: string): string {
+  if (!url) return url
+  const tag = 'rcdatavault-20'
+  if (url.includes('tag=')) return url
+  return url + (url.includes('?') ? '&' : '?') + `tag=${tag}`
+}
+
+function buildPartLinks(purchaseLinks: PurchaseLink[], partName: string, partSlug: string): PurchaseLink[] {
   const encodedName = encodeURIComponent(partName)
   const encodedSlug = encodeURIComponent(partSlug)
 
-  // Separate eBay/Amazon from others
-  const ebay = purchaseLinks.filter((l) => l.retailer_slug?.toLowerCase() === 'ebay')
-  const amazon = purchaseLinks.filter((l) => l.retailer_slug?.toLowerCase() === 'amazon')
-  const others = purchaseLinks.filter((l) => {
-    const s = l.retailer_slug?.toLowerCase()
-    return s !== 'ebay' && s !== 'amazon'
-  })
+  // Categorize existing DB links
+  const amazonLinks: PurchaseLink[] = []
+  const amainLinks: PurchaseLink[] = []
+  const otherLinks: PurchaseLink[] = []
 
-  // Add affiliate search fallbacks if not present
-  if (ebay.length === 0) {
-    ebay.push({
-      link_id: `ebay-search-${partSlug}`,
-      retailer_name: 'eBay',
-      retailer_slug: 'ebay',
-      retailer_type: 'marketplace',
-      url: `https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodedSlug}&type=2&kw=${encodedName}`,
-      price_usd: null,
-      in_stock: true,
-      priority: 0,
-    })
+  for (const link of purchaseLinks) {
+    if (!link.url) continue
+    const slug = (link.retailer_slug ?? '').toLowerCase()
+    const url = link.url.toLowerCase()
+    if (slug === 'amazon' || url.includes('amazon.com')) {
+      amazonLinks.push({ ...link, retailer_name: 'Amazon', url: ensureAmazonTag(link.url) })
+    } else if (slug === 'amain' || slug === 'amain-hobbies' || url.includes('amainhobbies.com')) {
+      amainLinks.push({ ...link, retailer_name: 'AMain Hobbies' })
+    } else {
+      otherLinks.push(link)
+    }
   }
-  if (amazon.length === 0) {
-    amazon.push({
+
+  // Amazon fallback: search link if no stored URL
+  if (amazonLinks.length === 0) {
+    amazonLinks.push({
       link_id: `amazon-search-${partSlug}`,
       retailer_name: 'Amazon',
       retailer_slug: 'amazon',
@@ -136,22 +141,62 @@ function reorderLinks(purchaseLinks: PurchaseLink[], partName: string, partSlug:
     })
   }
 
-  return [...ebay, ...amazon, ...others]
+  // eBay: always a generated affiliate search link
+  const ebayLink: PurchaseLink = {
+    link_id: `ebay-search-${partSlug}`,
+    retailer_name: 'eBay',
+    retailer_slug: 'ebay',
+    retailer_type: 'marketplace',
+    url: `https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodedSlug}&type=2&kw=${encodedName}`,
+    price_usd: null,
+    in_stock: true,
+    priority: 2,
+  }
+
+  // Order: Amazon (stored or fallback) → AMain (stored) → eBay (generated) → others
+  return [...amazonLinks, ...amainLinks, ebayLink, ...otherLinks]
+}
+
+function UpgradeCard({ part, bestLink, price }: { part: Part; bestLink: PurchaseLink | undefined; price: number | null }) {
+  const [imgErr, setImgErr] = useState(false)
+  const imgSrc = part.thumbnail_url || part.image_url
+  const showImg = imgSrc && !imgErr
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5">
+      <div className="flex items-center gap-3 min-w-0">
+        {showImg ? (
+          <img src={imgSrc} alt={part.part_name} className="w-12 h-12 object-contain rounded-lg bg-slate-800 flex-shrink-0" loading="lazy" onError={() => setImgErr(true)} />
+        ) : null}
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-white leading-5 truncate">{part.part_name}</div>
+          {price != null && <div className="text-xs text-amber-400 mt-0.5">${Number(price).toFixed(2)}</div>}
+        </div>
+      </div>
+      {bestLink?.url && (
+        <a href={bestLink.url} target="_blank" rel="noopener noreferrer sponsored" className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400">
+          Buy
+        </a>
+      )}
+    </div>
+  )
 }
 
 function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) {
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const brand = part.manufacturer || part.aftermarket_brand
-  const links = reorderLinks(part.purchase_links, part.part_name, part.part_slug).slice(0, 4)
+  const links = buildPartLinks(part.purchase_links ?? [], part.part_name, part.part_slug).slice(0, 4)
   const imgSrc = part.thumbnail_url || part.image_url
+  const [imgError, setImgError] = useState(false)
+  const showImg = imgSrc && !imgError
 
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 space-y-2">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-slate-800 flex items-center justify-center">
-          {imgSrc ? (
-            <img src={imgSrc} alt={part.part_name} className="w-full h-full object-cover" loading="lazy" />
+          {showImg ? (
+            <img src={imgSrc} alt={part.part_name} className="w-full h-full object-cover" loading="lazy" onError={() => setImgError(true)} />
           ) : (
             <span className="text-lg">{CATEGORY_ICON[categorySlug] ?? '\uD83D\uDD27'}</span>
           )}
@@ -448,46 +493,11 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {topUpgrades.map((part) => {
-              const bestLink = [...part.purchase_links].sort(
-                (a, b) => (a.priority ?? 99) - (b.priority ?? 99)
-              )[0]
+              const orderedLinks = buildPartLinks(part.purchase_links ?? [], part.part_name, part.part_slug)
+              const bestLink = orderedLinks[0]
               const price = bestLink?.price_usd ?? part.msrp
               return (
-                <div
-                  key={part.part_id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {(part.thumbnail_url || part.image_url) && (
-                      <img
-                        src={(part.thumbnail_url || part.image_url)!}
-                        alt={part.part_name}
-                        className="w-12 h-12 object-contain rounded-lg bg-slate-800 flex-shrink-0"
-                        loading="lazy"
-                      />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-white leading-5 truncate">
-                        {part.part_name}
-                      </div>
-                      {price != null && (
-                        <div className="text-xs text-amber-400 mt-0.5">
-                          ${Number(price).toFixed(2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {bestLink?.url && (
-                    <a
-                      href={bestLink.url}
-                      target="_blank"
-                      rel="noopener noreferrer sponsored"
-                      className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400"
-                    >
-                      Buy
-                    </a>
-                  )}
-                </div>
+                <UpgradeCard key={part.part_id} part={part} bestLink={bestLink} price={price} />
               )
             })}
           </div>

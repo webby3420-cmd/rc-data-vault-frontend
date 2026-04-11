@@ -775,6 +775,29 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           <ResourceSection resources={resourceData ?? []} />
           <ToolsBlock />
 
+          {/* Affiliate search buttons */}
+          <div className="mt-6 space-y-2">
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={`https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodeURIComponent(variantSlug)}&type=2&kw=${encodeURIComponent(variantData.full_name)}`}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[#E53238] hover:text-white"
+              >
+                Search eBay Listings
+              </a>
+              <a
+                href={`https://www.amazon.com/s?k=${encodeURIComponent(variantData.full_name)}&tag=rcdatavault-20`}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[#FF9900] hover:text-white"
+              >
+                Search Amazon
+              </a>
+            </div>
+            <p className="text-xs text-slate-600">Affiliate links — we may earn a commission</p>
+          </div>
+
           {soldListings.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">
               <div className="space-y-3">

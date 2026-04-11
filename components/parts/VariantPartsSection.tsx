@@ -98,11 +98,52 @@ function PartTypeBadge({ part }: { part: Part }) {
   return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
 }
 
+function reorderLinks(purchaseLinks: PurchaseLink[], partName: string, partSlug: string): PurchaseLink[] {
+  const encodedName = encodeURIComponent(partName)
+  const encodedSlug = encodeURIComponent(partSlug)
+
+  // Separate eBay/Amazon from others
+  const ebay = purchaseLinks.filter((l) => l.retailer_slug?.toLowerCase() === 'ebay')
+  const amazon = purchaseLinks.filter((l) => l.retailer_slug?.toLowerCase() === 'amazon')
+  const others = purchaseLinks.filter((l) => {
+    const s = l.retailer_slug?.toLowerCase()
+    return s !== 'ebay' && s !== 'amazon'
+  })
+
+  // Add affiliate search fallbacks if not present
+  if (ebay.length === 0) {
+    ebay.push({
+      link_id: `ebay-search-${partSlug}`,
+      retailer_name: 'eBay',
+      retailer_slug: 'ebay',
+      retailer_type: 'marketplace',
+      url: `https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodedSlug}&type=2&kw=${encodedName}`,
+      price_usd: null,
+      in_stock: true,
+      priority: 0,
+    })
+  }
+  if (amazon.length === 0) {
+    amazon.push({
+      link_id: `amazon-search-${partSlug}`,
+      retailer_name: 'Amazon',
+      retailer_slug: 'amazon',
+      retailer_type: 'mass_market',
+      url: `https://www.amazon.com/s?k=${encodedName}&tag=rcdatavault-20`,
+      price_usd: null,
+      in_stock: true,
+      priority: 1,
+    })
+  }
+
+  return [...ebay, ...amazon, ...others]
+}
+
 function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) {
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const brand = part.manufacturer || part.aftermarket_brand
-  const links = part.purchase_links.slice(0, 3)
+  const links = reorderLinks(part.purchase_links, part.part_name, part.part_slug).slice(0, 4)
   const imgSrc = part.thumbnail_url || part.image_url
 
   return (

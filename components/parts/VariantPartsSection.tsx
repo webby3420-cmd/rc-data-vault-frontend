@@ -98,64 +98,6 @@ function PartTypeBadge({ part }: { part: Part }) {
   return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
 }
 
-function ensureAmazonTag(url: string): string {
-  if (!url) return url
-  const tag = 'rcdatavault-20'
-  if (url.includes('tag=')) return url
-  return url + (url.includes('?') ? '&' : '?') + `tag=${tag}`
-}
-
-function buildPartLinks(purchaseLinks: PurchaseLink[], partName: string, partSlug: string): PurchaseLink[] {
-  const encodedName = encodeURIComponent(partName)
-  const encodedSlug = encodeURIComponent(partSlug)
-
-  // Categorize existing DB links
-  const amazonLinks: PurchaseLink[] = []
-  const amainLinks: PurchaseLink[] = []
-  const otherLinks: PurchaseLink[] = []
-
-  for (const link of purchaseLinks) {
-    if (!link.url) continue
-    const slug = (link.retailer_slug ?? '').toLowerCase()
-    const url = link.url.toLowerCase()
-    if (slug === 'amazon' || url.includes('amazon.com')) {
-      amazonLinks.push({ ...link, retailer_name: 'Amazon', url: ensureAmazonTag(link.url) })
-    } else if (slug === 'amain' || slug === 'amain-hobbies' || url.includes('amainhobbies.com')) {
-      amainLinks.push({ ...link, retailer_name: 'AMain Hobbies' })
-    } else {
-      otherLinks.push(link)
-    }
-  }
-
-  // Amazon fallback: search link if no stored URL
-  if (amazonLinks.length === 0) {
-    amazonLinks.push({
-      link_id: `amazon-search-${partSlug}`,
-      retailer_name: 'Amazon',
-      retailer_slug: 'amazon',
-      retailer_type: 'mass_market',
-      url: `https://www.amazon.com/s?k=${encodedName}&tag=rcdatavault-20`,
-      price_usd: null,
-      in_stock: true,
-      priority: 1,
-    })
-  }
-
-  // eBay: always a generated affiliate search link
-  const ebayLink: PurchaseLink = {
-    link_id: `ebay-search-${partSlug}`,
-    retailer_name: 'eBay',
-    retailer_slug: 'ebay',
-    retailer_type: 'marketplace',
-    url: `https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodedSlug}&type=2&kw=${encodedName}`,
-    price_usd: null,
-    in_stock: true,
-    priority: 2,
-  }
-
-  // Order: Amazon (stored or fallback) → AMain (stored) → eBay (generated) → others
-  return [...amazonLinks, ...amainLinks, ebayLink, ...otherLinks]
-}
 
 function UpgradeCard({ part, bestLink, price }: { part: Part; bestLink: PurchaseLink | undefined; price: number | null }) {
   const [imgErr, setImgErr] = useState(false)
@@ -186,7 +128,7 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const brand = part.manufacturer || part.aftermarket_brand
-  const links = buildPartLinks(part.purchase_links ?? [], part.part_name, part.part_slug).slice(0, 4)
+  const links = (part.purchase_links ?? []).slice(0, 3)
   const imgSrc = part.thumbnail_url || part.image_url
   const [imgError, setImgError] = useState(false)
   const showImg = imgSrc && !imgError
@@ -493,8 +435,7 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {topUpgrades.map((part) => {
-              const orderedLinks = buildPartLinks(part.purchase_links ?? [], part.part_name, part.part_slug)
-              const bestLink = orderedLinks[0]
+              const bestLink = (part.purchase_links ?? [])[0]
               const price = bestLink?.price_usd ?? part.msrp
               return (
                 <UpgradeCard key={part.part_id} part={part} bestLink={bestLink} price={price} />

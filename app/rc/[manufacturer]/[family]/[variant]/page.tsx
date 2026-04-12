@@ -765,7 +765,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                   <a
                     key={link.key}
                     href={link.url}
-                    target="_blank"
+                    target={link.key === 'ebay' ? '_self' : '_blank'}
                     rel="noopener noreferrer sponsored"
                     className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 hover:border-slate-500 transition-colors group"
                   >

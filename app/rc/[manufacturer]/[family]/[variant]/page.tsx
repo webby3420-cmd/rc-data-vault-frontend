@@ -13,7 +13,7 @@ import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -9,7 +9,7 @@ import FamilyWatchCTA from "@/components/family/FamilyWatchCTA";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import FamilyEcosystemBlock from "@/components/family/FamilyEcosystemBlock";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -731,7 +731,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                   {
                     key: "ebay",
                     name: "eBay",
-                    url: `https://rover.ebay.com/rover/1/711-53200-19255-0/1?campid=5339148894&toolid=10001&customid=${encodedSlug}&type=2&kw=${encodedName}`,
+                    url: `https://www.ebay.com/sch/i.html?_nkw=${encodedName}&_sacat=0&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339148896&customid=${encodedSlug}&toolid=10001&mkevt=1`,
                     badge: { label: "Marketplace", color: "bg-amber-900/40 text-amber-400 border-amber-600/20" },
                   },
                   {

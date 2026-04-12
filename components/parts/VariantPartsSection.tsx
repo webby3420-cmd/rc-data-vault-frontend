@@ -174,7 +174,7 @@ function UpgradeCard({ part, bestLink, price }: { part: Part; bestLink: Purchase
         </div>
       </div>
       {bestLink?.url && (
-        <a href={bestLink.url} target="_blank" rel="noopener noreferrer sponsored" className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400">
+        <a href={bestLink.url} target={bestLink.retailer_slug === 'ebay' ? '_self' : '_blank'} rel="noopener noreferrer sponsored" className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400">
           Buy
         </a>
       )}
@@ -229,7 +229,7 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
             <a
               key={link.link_id}
               href={link.url}
-              target="_blank"
+              target={link.retailer_slug === 'ebay' ? '_self' : '_blank'}
               rel="noopener noreferrer sponsored"
               className={`inline-flex items-center gap-1 px-3 py-1 rounded text-xs transition-colors ${
                 i === 0

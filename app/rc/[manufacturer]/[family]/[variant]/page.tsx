@@ -639,6 +639,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Total Sales</div>
                     <div className="text-3xl font-semibold text-slate-200">{intelligence.total_sales}</div>
                     <div className="text-sm text-slate-400 mt-0.5">observed</div>
+                    <div className="text-xs text-slate-500 mt-0.5">Verified sold listings used to calculate this estimate. Parts listings and outliers are excluded.</div>
                   </div>
                 )}
                 {intelligence.market_depth && (
@@ -646,6 +647,12 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Market Depth</div>
                     <div className="text-xl font-semibold text-slate-200 mt-1 capitalize">
                       {intelligence.market_depth}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {intelligence.market_depth === "deep" && "10+ verified sales — strong pricing confidence"}
+                      {intelligence.market_depth === "moderate" && "5–9 verified sales — reasonable estimate"}
+                      {intelligence.market_depth === "thin" && "3–4 verified sales — treat as directional only"}
+                      {intelligence.market_depth === "insufficient" && "Fewer than 3 sales — not enough to value reliably"}
                     </div>
                   </div>
                 )}
@@ -656,6 +663,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                   <div className="text-slate-200 capitalize">{intelligence.buyer_signal}</div>
                 </div>
               )}
+              <p className="text-xs text-slate-600 mt-4 pt-3 border-t border-slate-800">
+                Values are estimated from recent eBay sold listings. Parts listings, lot sales, and statistical outliers are excluded. Updated as new sales are recorded.
+              </p>
             </section>
           )}
 
@@ -856,16 +866,29 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                       ? "moderate"
                       : "developing"}
                   </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {(valuation.total_observation_count ?? 0) > 20
+                      ? "10+ verified sales — strong pricing confidence"
+                      : (valuation.total_observation_count ?? 0) > 10
+                      ? "5–9 verified sales — reasonable estimate"
+                      : "Fewer sales — treat as directional only"}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-slate-800 p-4">
                   <div className="text-sm text-slate-400">Trend</div>
                   <div className="mt-1 text-lg font-medium text-white">
                     {trendDirection === "up" ? "rising" : trendDirection === "down" ? "falling" : "stable"}
                   </div>
+                  <div className="text-xs text-slate-500 mt-0.5">
+                    {trendDirection === "up" && "Recent prices higher than 90-day average"}
+                    {trendDirection === "down" && "Recent prices lower than 90-day average"}
+                    {!trendDirection && "Prices have been consistent over time"}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-slate-800 p-4">
                   <div className="text-sm text-slate-400">Data points</div>
                   <div className="mt-1 text-lg font-medium text-white">{valuation.total_observation_count}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Spread between low and high sold comps in the dataset</div>
                 </div>
               </div>
             </CollapsibleSection>

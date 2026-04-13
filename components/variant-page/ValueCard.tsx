@@ -23,7 +23,7 @@ export function ValueCard({ payload }: { payload: VariantPagePayload }) {
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
       <div className="mb-2 text-sm uppercase tracking-wide text-slate-400">
-        Bluebook Value
+        Fair Market Value
       </div>
 
       <div className="text-5xl font-semibold text-amber-400">

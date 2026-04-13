@@ -445,69 +445,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
         <div className="grid gap-8">
 
-          {verifiedContent && (
-            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
-              {[verifiedContent.overview_sentence_1, verifiedContent.overview_sentence_2, verifiedContent.overview_sentence_3, verifiedContent.overview_sentence_4].filter(Boolean).map((s, i) => (
-                <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-3" : ""}`}>{s}</p>
-              ))}
-              {Array.isArray(verifiedContent.spec_facts) && verifiedContent.spec_facts.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Key Facts</h3>
-                  <ul className="space-y-1 text-sm text-slate-300">
-                    {verifiedContent.spec_facts.map((f: any, i: number) => (
-                      <li key={i}>• {typeof f === "object" ? `${f.label}: ${f.value}${f.qualifier ? ` (${f.qualifier})` : ""}` : f}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {Array.isArray(verifiedContent.included_facts) && verifiedContent.included_facts.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What&apos;s Included</h3>
-                  <ul className="space-y-1 text-sm text-slate-300">
-                    {verifiedContent.included_facts.map((f: any, i: number) => (
-                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {Array.isArray(verifiedContent.required_facts) && verifiedContent.required_facts.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What You&apos;ll Need</h3>
-                  <ul className="space-y-1 text-sm text-slate-300">
-                    {verifiedContent.required_facts.map((f: any, i: number) => (
-                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-          )}
-
-          {specRows.length > 0 && (
-            <CollapsibleSection title="Specifications">
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-                {specRows.map(({ label, value }) => (
-                  <div key={label}>
-                    <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
-                    <dd className="mt-0.5 text-sm font-medium text-slate-200">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {specsVerified ? (
-                <div className="mt-4 rounded-xl border border-emerald-800/60 bg-emerald-950/30 px-4 py-3">
-                  <p className="text-xs leading-6 text-emerald-200">
-                    Specs verified against a primary manufacturer source for this variant.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-4 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
-                  <p className="text-xs leading-6 text-amber-200">
-                    Specification disclosure: these specs are shown for research utility, but individual field verification is still in progress for this variant. Treat them as provisional until confirmed against a primary manufacturer source.
-                  </p>
-                </div>
-              )}
-            </CollapsibleSection>
-          )}
+          {/* ═══ LAYER 1: ABOVE-THE-FOLD DECISION LAYER ═══ */}
 
           {valuation && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
@@ -586,51 +524,82 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           {isAlertTraffic ? (
             <p className="text-sm text-slate-500">Tracking active for this model</p>
           ) : (
-            <>
-              {marketIntel?.alert_cta_urgency === "high" && (
-                <div className="space-y-2">
-                  <p className="text-sm text-slate-400">
-                    {marketIntel.market_state === "hot" || marketIntel.market_state === "rising"
-                      ? "Prices are moving — get alerted when a deal appears"
-                      : marketIntel.active_market?.qualifying_deals > 0
-                        ? "There are qualifying deals active right now"
-                        : "Prices are moving — get alerted when a deal appears"}
-                  </p>
-                  <PriceAlertSignup
-                    variantId={variantData.variant_id}
-                    variantSlug={variantSlug}
-                    modelName={variantData.full_name}
-                    mfrSlug={mfrSlug}
-                    familySlug={familySlug}
-                    signupSource="variant_page"
-                  />
-                </div>
-              )}
+            <PriceAlertSignup
+              variantId={variantData.variant_id}
+              variantSlug={variantSlug}
+              modelName={variantData.full_name}
+              mfrSlug={mfrSlug}
+              familySlug={familySlug}
+              signupSource="variant_page"
+            />
+          )}
 
-              {marketIntel?.alert_cta_urgency !== "high" && (
-                <div className="space-y-2">
-                  {marketIntel?.active_market?.qualifying_deals > 0 &&
-                    marketIntel?.active_market?.sell_through_ratio >= 5 ? (
-                    <p className="text-sm text-amber-400">
-                      Listings move fast for this model — get alerted before deals disappear
-                    </p>
-                  ) : marketIntel?.sold_trend?.trend_direction === "rising" &&
-                    marketIntel?.sold_trend?.count_30d >= 5 ? (
-                    <p className="text-sm text-emerald-400">
-                      Prices are trending up — track this model before values increase
-                    </p>
-                  ) : null}
-                  <PriceAlertSignup
-                    variantId={variantData.variant_id}
-                    variantSlug={variantSlug}
-                    modelName={variantData.full_name}
-                    mfrSlug={mfrSlug}
-                    familySlug={familySlug}
-                    signupSource="variant_page"
-                  />
+          <div className="border-t border-slate-800 my-8" />
+
+          {/* ═══ LAYER 2: MID-PAGE CONTEXT + CONVERSION LAYER ═══ */}
+
+          {verifiedContent && (
+            <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+              {[verifiedContent.overview_sentence_1, verifiedContent.overview_sentence_2, verifiedContent.overview_sentence_3, verifiedContent.overview_sentence_4].filter(Boolean).map((s, i) => (
+                <p key={i} className={`text-slate-300 leading-7${i > 0 ? " mt-3" : ""}`}>{s}</p>
+              ))}
+              {Array.isArray(verifiedContent.spec_facts) && verifiedContent.spec_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">Key Facts</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.spec_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? `${f.label}: ${f.value}${f.qualifier ? ` (${f.qualifier})` : ""}` : f}</li>
+                    ))}
+                  </ul>
                 </div>
               )}
-            </>
+              {Array.isArray(verifiedContent.included_facts) && verifiedContent.included_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What&apos;s Included</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.included_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Array.isArray(verifiedContent.required_facts) && verifiedContent.required_facts.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide mb-2">What You&apos;ll Need</h3>
+                  <ul className="space-y-1 text-sm text-slate-300">
+                    {verifiedContent.required_facts.map((f: any, i: number) => (
+                      <li key={i}>• {typeof f === "object" ? f.value : f}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
+          {specRows.length > 0 && (
+            <CollapsibleSection title="Specifications">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+                {specRows.map(({ label, value }) => (
+                  <div key={label}>
+                    <dt className="text-xs uppercase tracking-wide text-slate-500">{label}</dt>
+                    <dd className="mt-0.5 text-sm font-medium text-slate-200">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {specsVerified ? (
+                <div className="mt-4 rounded-xl border border-emerald-800/60 bg-emerald-950/30 px-4 py-3">
+                  <p className="text-xs leading-6 text-emerald-200">
+                    Specs verified against a primary manufacturer source for this variant.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-amber-800/60 bg-amber-950/30 px-4 py-3">
+                  <p className="text-xs leading-6 text-amber-200">
+                    Specification disclosure: these specs are shown for research utility, but individual field verification is still in progress for this variant. Treat them as provisional until confirmed against a primary manufacturer source.
+                  </p>
+                </div>
+              )}
+            </CollapsibleSection>
           )}
 
           {intelligence && (
@@ -795,6 +764,10 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
           <ResourceSection resources={resourceData ?? []} />
           <ToolsBlock />
+
+          <div className="border-t border-slate-800 my-8" />
+
+          {/* ═══ LAYER 3: BOTTOM PROOF LAYER ═══ */}
 
           {soldListings.length > 0 && (
             <CollapsibleSection title="Recent Sold Listings">

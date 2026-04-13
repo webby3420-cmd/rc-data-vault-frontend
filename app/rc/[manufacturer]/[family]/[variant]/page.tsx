@@ -12,6 +12,7 @@ import ActiveDealsStrip from "@/components/market/ActiveDealsStrip";
 import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
+import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 
 export const dynamic = "force-dynamic";
 
@@ -480,6 +481,10 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               </div>
 
               <div className="mt-4 space-y-4">
+                <div className="mb-3">
+                  <h2 className="text-base font-semibold text-slate-200">Market Trend</h2>
+                </div>
+
                 <ConfidenceExplainer
                   confidenceLabel={confidenceLabel}
                   valuationStatus={valuation.confidence ?? "no_data"}
@@ -495,6 +500,8 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     alertCTAUrgency={marketIntel.alert_cta_urgency ?? "low"}
                   />
                 )}
+
+                <PriceHistoryChart trendRows={trendRows} />
 
                 {marketIntel?.sold_trend && (
                   <SoldTrendBlock
@@ -770,6 +777,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           {/* ═══ LAYER 3: BOTTOM PROOF LAYER ═══ */}
 
           {soldListings.length > 0 && (
+            <div className="border-t border-slate-800 pt-8 mt-4">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold text-slate-200">Recent Sold Listings</h2>
+                <p className="text-sm text-slate-500 mt-1">Individual sales used to calculate the estimated value above.</p>
+              </div>
             <CollapsibleSection title="Recent Sold Listings">
               <div className="space-y-3">
                 {soldListings.map((listing: any, i: number) => {
@@ -811,6 +823,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 Sold listing data sourced from eBay completed listings. Prices reflect actual transaction values.
               </p>
             </CollapsibleSection>
+            </div>
           )}
 
           {valuation && (

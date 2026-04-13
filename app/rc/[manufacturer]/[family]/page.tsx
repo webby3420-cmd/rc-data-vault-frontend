@@ -8,6 +8,8 @@ import FamilyBestPicks from "@/components/family/FamilyBestPicks";
 import FamilyWatchCTA from "@/components/family/FamilyWatchCTA";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import FamilyEcosystemBlock from "@/components/family/FamilyEcosystemBlock";
+import FamilyVariantCoverage from "@/components/family/FamilyVariantCoverage";
+import FamilyMarketOpportunitySlot from "@/components/family/FamilyMarketOpportunitySlot";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -73,16 +75,7 @@ export async function generateMetadata({ params }: { params: Promise<{ manufactu
   };
 }
 
-function formatValue(v: number | null) {
-  if (!v) return null;
-  return `$${Math.round(v).toLocaleString()}`;
-}
 
-const DEPTH_BADGE: Record<string, { text: string; cls: string }> = {
-  deep: { text: "Deep", cls: "bg-emerald-900/40 text-emerald-400" },
-  moderate: { text: "Moderate", cls: "bg-amber-900/40 text-amber-400" },
-  thin: { text: "Thin", cls: "bg-slate-800 text-slate-400" },
-};
 
 export default async function FamilyPage({ params, searchParams }: { params: Promise<{ manufacturer: string; family: string }>; searchParams: Promise<{ src?: string; alert_context?: string }> }) {
   const { manufacturer, family } = await params;
@@ -187,69 +180,18 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {page.variants.map((v) => {
-            const depthBadge = v.market_depth ? DEPTH_BADGE[v.market_depth] : null;
-
-            return (
-              <a
-                key={v.variant_slug}
-                href={v.canonical_url ?? `/rc/${page.manufacturer_slug}/${page.family_slug}/${v.variant_slug}`}
-                className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="text-lg font-medium text-white">{v.variant_name}</div>
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    {v.is_best_data && (
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">Most Data</span>
-                    )}
-                    {v.is_most_active && v.obs_30d >= 3 && (
-                      <span className="rounded-full bg-emerald-900/40 px-2 py-0.5 text-xs text-emerald-400">Most Active</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-2 flex items-center gap-3">
-                  {v.fair_value ? (
-                    <span className="text-xl font-semibold text-amber-400">{formatValue(v.fair_value)}</span>
-                  ) : (
-                    <span className="text-sm text-slate-500">No valuation yet</span>
-                  )}
-                  {v.low != null && v.high != null && (
-                    <span className="text-sm text-slate-400">{formatValue(v.low)} – {formatValue(v.high)}</span>
-                  )}
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  {depthBadge && (
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${depthBadge.cls}`}>
-                      {depthBadge.text}
-                    </span>
-                  )}
-                  {v.has_sufficient_data && v.confidence && (
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${
-                      v.confidence === "reliable"
-                        ? "bg-emerald-900/40 text-emerald-400"
-                        : "bg-amber-900/40 text-amber-400"
-                    }`}>
-                      {v.confidence === "reliable" ? "High Confidence" : "Est."}
-                    </span>
-                  )}
-                  {v.obs_30d > 0 && (
-                    <span className="text-xs text-slate-500">{v.obs_30d} sales · 30d</span>
-                  )}
-                  {v.obs_count != null && v.obs_count > 0 && (
-                    <span className="text-xs text-slate-500">{v.obs_count} total</span>
-                  )}
-                </div>
-              </a>
-            );
-          })}
-        </div>
+        <FamilyVariantCoverage
+          variants={page.variants}
+          summary={fms ?? { family_state: "no_data", total_variants: 0 }}
+          manufacturerSlug={page.manufacturer_slug}
+          familySlug={page.family_slug}
+        />
 
         <div className="mt-8">
           <FamilyEcosystemBlock ecosystem={ecosystemData ?? null} />
         </div>
+
+        <FamilyMarketOpportunitySlot />
       </div>
     </main>
   );

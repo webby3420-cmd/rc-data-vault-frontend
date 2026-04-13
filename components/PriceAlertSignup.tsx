@@ -30,6 +30,11 @@ export default function PriceAlertSignup({
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deliveryPref, setDeliveryPref] = useState<"shipping_only" | "shipping_or_local" | "local_only">("shipping_or_local");
+  const [userZip, setUserZip] = useState("");
+  const [userCountry, setUserCountry] = useState("US");
+  const [userRadiusMiles, setUserRadiusMiles] = useState(50);
+  const [allowInternational, setAllowInternational] = useState(false);
 
   async function handleSubmit() {
     if (!email || !price) return;
@@ -55,6 +60,15 @@ export default function PriceAlertSignup({
         is_active: true,
         ...(modelFamilyId ? { model_family_id: modelFamilyId } : {}),
         criteria: { source: signupSource ?? "unknown" },
+        delivery_pref: deliveryPref,
+        user_zip: deliveryPref !== "shipping_only" && userZip ? userZip : null,
+        user_country: userCountry,
+        user_radius_miles: deliveryPref !== "shipping_only" ? userRadiusMiles : 50,
+        buyer_country: userCountry,
+        location_type: deliveryPref !== "shipping_only" && userZip ? "zip" : "none",
+        require_shipping: deliveryPref !== "local_only",
+        require_local: deliveryPref === "local_only",
+        allow_international: allowInternational,
       })
       .select("unsubscribe_token")
       .single();
@@ -191,6 +205,99 @@ export default function PriceAlertSignup({
           <span className="text-sm text-slate-300">Weekly — get a summary of the week&apos;s best deals</span>
         </label>
       </div>
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-slate-200 mb-2">Delivery Preference</label>
+        <div className="flex gap-2">
+          {([
+            { value: "shipping_only" as const, label: "Shipping Only" },
+            { value: "shipping_or_local" as const, label: "Local + Shipping" },
+            { value: "local_only" as const, label: "Local Only" },
+          ]).map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setDeliveryPref(value)}
+              className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${
+                deliveryPref === value
+                  ? "bg-amber-500 text-slate-950 border-amber-500 font-semibold"
+                  : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
+              }`}
+              disabled={loading}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500 mt-1">
+          {deliveryPref === "shipping_only" && "Alerts for listings that ship to you"}
+          {deliveryPref === "shipping_or_local" && "Alerts for any accessible listing"}
+          {deliveryPref === "local_only" && "Alerts for pickup listings near you"}
+        </p>
+      </div>
+
+      {deliveryPref !== "shipping_only" && (
+        <div className="mt-3 space-y-3">
+          <label className="block">
+            <span className="block text-xs font-medium text-slate-300 mb-1">ZIP Code</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={10}
+              value={userZip}
+              onChange={(e) => setUserZip(e.target.value)}
+              placeholder="e.g. 90210"
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
+              disabled={loading}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="block text-xs font-medium text-slate-300 mb-1">Country</span>
+              <select
+                value={userCountry}
+                onChange={(e) => setUserCountry(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
+                disabled={loading}
+              >
+                <option value="US">United States</option>
+                <option value="CA">Canada</option>
+                <option value="GB">United Kingdom</option>
+                <option value="AU">Australia</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="block text-xs font-medium text-slate-300 mb-1">Search Radius</span>
+              <select
+                value={userRadiusMiles}
+                onChange={(e) => setUserRadiusMiles(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
+                disabled={loading}
+              >
+                <option value={25}>25 miles</option>
+                <option value={50}>50 miles</option>
+                <option value={100}>100 miles</option>
+                <option value={200}>200 miles</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-start gap-2">
+        <input
+          id="allow-international"
+          type="checkbox"
+          checked={allowInternational}
+          onChange={(e) => setAllowInternational(e.target.checked)}
+          className="mt-0.5 accent-amber-500"
+          disabled={loading}
+        />
+        <label htmlFor="allow-international" className="text-xs text-slate-400">
+          Include international listings
+          <span className="block text-slate-500">Allow listings from outside your country (shipping eligibility may vary)</span>
+        </label>
+      </div>
+
       {error && (
         <p className="mt-3 text-xs text-red-400">{error}</p>
       )}

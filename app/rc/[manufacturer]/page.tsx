@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import ResourceSection from "@/components/resources/ResourceSection";
 
 export const revalidate = 3600;
+export const dynamicParams = true;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

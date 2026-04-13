@@ -10,6 +10,7 @@ import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import FamilyEcosystemBlock from "@/components/family/FamilyEcosystemBlock";
 
 export const revalidate = 3600;
+export const dynamicParams = true;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

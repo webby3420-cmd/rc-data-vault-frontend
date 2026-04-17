@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import ResourceSection from "@/components/resources/ResourceSection";
+import { ManufacturerFamilyOpportunities } from "@/components/manufacturer/ManufacturerFamilyOpportunities";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -665,6 +666,8 @@ export default async function ManufacturerPage({
             ))}
           </div>
         </section>
+
+        <ManufacturerFamilyOpportunities manufacturerSlug={manufacturer} />
 
         <section className="mt-8 rounded-2xl border border-slate-700 bg-slate-900 p-6">
           <div className="max-w-3xl">

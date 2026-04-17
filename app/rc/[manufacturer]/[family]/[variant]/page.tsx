@@ -16,6 +16,7 @@ import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import MarketInsightSection from "@/components/market/MarketInsightSection";
 import { BadgeDollarSign, ArrowLeftRight, Wrench, Activity, Flame, Users, BarChart3, Signal, ArrowUpRight, Search } from "lucide-react";
+import OpportunitySignals from "@/components/variant/OpportunitySignals";
 
 export const dynamic = "force-dynamic";
 
@@ -558,6 +559,20 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               recommendation={insightData.recommendation_text!}
             />
           )}
+
+          <OpportunitySignals
+            priceBand={insightData?.price_position_band ?? null}
+            dealScore={insightData?.deal_score_simple ?? null}
+            confidenceLabel={insightData?.confidence_label ?? null}
+            demandScore={intelligence?.demand_score ?? null}
+            demandLabel={intelligence?.demand_label ?? null}
+            marketDepth={intelligence?.market_depth ?? null}
+            buyerSignal={intelligence?.buyer_signal ?? null}
+            marketState={marketIntel?.market_state ?? null}
+            marketStateLabel={marketIntel?.market_state_label ?? null}
+            candidateCount={valuation?.total_observation_count ?? null}
+            valuationStatus={valuation?.confidence ?? null}
+          />
 
           {isAlertTraffic ? (
             <p className="text-sm text-slate-500">Tracking active for this model</p>

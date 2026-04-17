@@ -1,3 +1,6 @@
+import { ShieldCheck, Shield, ShieldAlert } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 interface FamilyMarketSummary {
   family_state: string;
   family_state_label: string;
@@ -17,12 +20,12 @@ interface FamilySummaryStripProps {
   summary: FamilyMarketSummary | undefined;
 }
 
-const CONFIDENCE_PILL: Record<string, string> = {
-  reliable: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20",
-  directional: "bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20",
-  limited: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20",
-  baseline: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20",
-  insufficient: "bg-slate-500/15 text-slate-400 ring-1 ring-slate-500/20",
+const CONFIDENCE_PILL: Record<string, { cls: string; icon: LucideIcon }> = {
+  reliable: { cls: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20", icon: ShieldCheck },
+  directional: { cls: "bg-blue-500/15 text-blue-400 ring-1 ring-blue-500/20", icon: Shield },
+  limited: { cls: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20", icon: ShieldAlert },
+  baseline: { cls: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20", icon: ShieldAlert },
+  insufficient: { cls: "bg-slate-500/15 text-slate-400 ring-1 ring-slate-500/20", icon: ShieldAlert },
 };
 
 function fmt(v: number | null): string | null {
@@ -44,7 +47,8 @@ export default function FamilySummaryStrip({ summary }: FamilySummaryStripProps)
       <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-sm mb-6">
         <div className="flex items-center gap-2.5 mb-3">
           <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">MSRP Reference</h2>
-          <span className={`rounded-full px-2 py-0.5 text-xs ${CONFIDENCE_PILL.baseline}`}>
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${CONFIDENCE_PILL.baseline.cls}`}>
+            <ShieldAlert className="h-3.5 w-3.5" />
             {summary.family_confidence_label}
           </span>
         </div>
@@ -83,9 +87,12 @@ export default function FamilySummaryStrip({ summary }: FamilySummaryStripProps)
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-sm mb-6">
       <div className="flex items-center gap-2.5 mb-3">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Family Overview</h2>
-        <span className={`rounded-full px-2 py-0.5 text-xs ${confPill}`}>
-          {summary.family_confidence_label}
-        </span>
+        {(() => { const ConfIcon = confPill.icon; return (
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${confPill.cls}`}>
+            <ConfIcon className="h-3.5 w-3.5" />
+            {summary.family_confidence_label}
+          </span>
+        ); })()}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {tiles.map((tile) => (

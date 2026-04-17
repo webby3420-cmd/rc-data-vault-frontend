@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wrench } from "lucide-react";
 
 const TOOLS = [
   { href: "/tools/gear-ratio", label: "Gear Ratio Calculator", desc: "Calculate FDR from spur, pinion, and internal drive ratio" },
@@ -11,7 +12,7 @@ export default function ToolsBlock() {
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Setup Tools</h2>
+        <h2 className="inline-flex items-center gap-2 text-lg font-semibold text-white"><Wrench className="h-5 w-5 text-slate-400" />Setup Tools</h2>
         <Link href="/tools" className="text-xs text-amber-400 hover:text-amber-300 transition-colors">
           All tools →
         </Link>

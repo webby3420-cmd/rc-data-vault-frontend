@@ -15,6 +15,7 @@ import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import MarketInsightSection from "@/components/market/MarketInsightSection";
+import { BadgeDollarSign, ArrowLeftRight, Wrench, Activity, Flame, Users, BarChart3, Signal, ArrowUpRight, Search } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -490,13 +491,16 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               </div>
 
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                <a href={`/tools?tool=deal&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                <a href={`/tools?tool=deal&model=${variantSlug}`} className="inline-flex items-center gap-1.5 text-slate-400 underline hover:text-amber-400 transition-colors">
+                  <BadgeDollarSign className="h-3 w-3" />
                   Check a price &rarr;
                 </a>
-                <a href={`/tools?tool=compare&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                <a href={`/tools?tool=compare&model=${variantSlug}`} className="inline-flex items-center gap-1.5 text-slate-400 underline hover:text-amber-400 transition-colors">
+                  <ArrowLeftRight className="h-3 w-3" />
                   Compare models &rarr;
                 </a>
-                <a href={`/tools/vehicle-evaluator?model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
+                <a href={`/tools/vehicle-evaluator?model=${variantSlug}`} className="inline-flex items-center gap-1.5 text-slate-400 underline hover:text-amber-400 transition-colors">
+                  <Wrench className="h-3 w-3" />
                   Evaluate your build &rarr;
                 </a>
               </div>
@@ -636,14 +640,14 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
           {intelligence && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 mt-8">
-              <h2 className="mb-1 text-2xl font-semibold text-white">Market Intelligence</h2>
+              <h2 className="mb-1 inline-flex items-center gap-2 text-2xl font-semibold text-white"><Activity className="h-5 w-5 text-slate-400" />Market Intelligence</h2>
               {intelligence.era && (
                 <p className="mb-4 text-xs text-slate-500 uppercase tracking-wide">{intelligence.era}</p>
               )}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
                 {intelligence.popularity_score != null && (
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Popularity</div>
+                    <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-500 mb-1"><Flame className="h-3.5 w-3.5" />Popularity</div>
                     <div className="text-3xl font-semibold text-amber-400">{intelligence.popularity_score}</div>
                     {intelligence.popularity_label && (
                       <div className="text-sm text-slate-300 mt-0.5 capitalize">{intelligence.popularity_label}</div>
@@ -652,7 +656,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 )}
                 {intelligence.demand_score != null && (
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Demand</div>
+                    <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-500 mb-1"><Users className="h-3.5 w-3.5" />Demand</div>
                     <div className="text-2xl font-semibold text-slate-200">{intelligence.demand_score}</div>
                     {intelligence.demand_label && (
                       <div className="text-sm text-slate-300 mt-0.5 capitalize">{intelligence.demand_label}</div>
@@ -661,14 +665,14 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 )}
                 {intelligence.total_sales != null && (
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Total Sales</div>
+                    <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-500 mb-1"><BarChart3 className="h-3.5 w-3.5" />Total Sales</div>
                     <div className="text-3xl font-semibold text-slate-200">{intelligence.total_sales}</div>
                     <div className="text-sm text-slate-400 mt-0.5">observed</div>
                   </div>
                 )}
                 {intelligence.market_depth && (
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Market Depth</div>
+                    <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-500 mb-1"><Activity className="h-3.5 w-3.5" />Market Depth</div>
                     <div className="text-xl font-semibold text-slate-200 mt-1 capitalize">
                       {intelligence.market_depth}
                     </div>
@@ -683,7 +687,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               </div>
               {intelligence.buyer_signal && (
                 <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 text-sm">
-                  <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Buyer Signal</div>
+                  <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-500 mb-1"><Signal className="h-3.5 w-3.5" />Buyer Signal</div>
                   <div className="text-slate-200 capitalize">{intelligence.buyer_signal}</div>
                 </div>
               )}
@@ -786,9 +790,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                       <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${link.badge.color}`}>
                         {link.badge.label}
                       </span>
-                      <svg className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
+                      <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
                     </div>
                   </a>
                 ));
@@ -954,8 +956,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/"
-                  className="inline-flex items-center rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
                 >
+                  <Search className="h-4 w-4" />
                   Search another RC model
                 </Link>
                 <Link

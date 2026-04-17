@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { Bell } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -134,7 +135,8 @@ export default function PriceAlertSignup({
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-sm">
       <div className="max-w-2xl">
-        <h2 className="text-2xl font-semibold text-white">
+        <h2 className="inline-flex items-center gap-2 text-2xl font-semibold text-white">
+          <Bell className="h-5 w-5 text-amber-400" />
           Get notified when this model drops below your target price
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">

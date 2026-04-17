@@ -1,3 +1,5 @@
+import { Activity } from "lucide-react";
+
 interface Variant {
   obs_30d: number;
   market_depth: string | null;
@@ -68,7 +70,8 @@ export default function FamilyMarketActivity({ summary, variants }: FamilyMarket
     <section className={`rounded-2xl border ${style.border} ${style.bg} p-6 shadow-sm mt-6`}>
       <div className="flex items-center gap-2.5 mb-3">
         <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Market Activity</h2>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.pill}`}>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.pill}`}>
+          <Activity className="h-3.5 w-3.5" />
           {summary.family_state_label}
         </span>
       </div>

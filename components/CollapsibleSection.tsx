@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 export default function CollapsibleSection({
   title,
@@ -17,9 +18,7 @@ export default function CollapsibleSection({
         onClick={() => setOpen(!open)}
       >
         <h2 className="text-xl font-semibold text-white">{title}</h2>
-        <span className={`text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
-          ▼
-        </span>
+        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && <div className="px-6 pb-6">{children}</div>}
     </section>

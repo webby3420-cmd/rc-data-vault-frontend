@@ -75,30 +75,47 @@ export async function HomepageOpportunities() {
       pool: "below" as const,
     }));
 
-  // Pool A: Below Market, sorted by deal_score DESC, up to 4
-  const poolA = qualified
+  // Pool A: Below Market, sorted by deal_score DESC
+  const poolACandidates = qualified
     .filter((r) => r.price_position_band === "Below Market")
-    .sort((a, b) => b.deal_score_simple - a.deal_score_simple)
-    .slice(0, 4)
-    .map((r) => ({ ...r, pool: "below" as const }));
+    .sort((a, b) => b.deal_score_simple - a.deal_score_simple);
 
-  // Pool B: Fair + demand >= 60, sorted by demand then candidate_count, up to 3
-  const poolASlugSet = new Set(poolA.map((r) => r.variant_slug));
-  const poolB = qualified
+  // Pool B: Fair + demand >= 60, sorted by demand then candidate_count
+  const poolBCandidates = qualified
     .filter(
       (r) =>
         r.price_position_band === "Fair" &&
         r.demand_score != null &&
-        r.demand_score >= 60 &&
-        !poolASlugSet.has(r.variant_slug)
+        r.demand_score >= 60
     )
-    .sort((a, b) => (b.demand_score ?? 0) - (a.demand_score ?? 0) || b.candidate_count - a.candidate_count)
-    .slice(0, 3)
-    .map((r) => ({ ...r, pool: "fair" as const }));
+    .sort((a, b) => (b.demand_score ?? 0) - (a.demand_score ?? 0) || b.candidate_count - a.candidate_count);
 
-  const cards: OpportunityCard[] = [...poolA, ...poolB].slice(0, 6);
+  // Merge with per-manufacturer cap of 2 and dedup by slug
+  const mfrCount = new Map<string, number>();
+  const seenSlugs = new Set<string>();
+  const cards: OpportunityCard[] = [];
 
-  if (cards.length < 1) return null;
+  for (const candidate of poolACandidates) {
+    if (cards.length >= 6) break;
+    if (seenSlugs.has(candidate.variant_slug)) continue;
+    const count = mfrCount.get(candidate.manufacturer_slug) ?? 0;
+    if (count >= 2) continue;
+    mfrCount.set(candidate.manufacturer_slug, count + 1);
+    seenSlugs.add(candidate.variant_slug);
+    cards.push({ ...candidate, pool: "below" });
+  }
+
+  for (const candidate of poolBCandidates) {
+    if (cards.length >= 6) break;
+    if (seenSlugs.has(candidate.variant_slug)) continue;
+    const count = mfrCount.get(candidate.manufacturer_slug) ?? 0;
+    if (count >= 2) continue;
+    mfrCount.set(candidate.manufacturer_slug, count + 1);
+    seenSlugs.add(candidate.variant_slug);
+    cards.push({ ...candidate, pool: "fair" });
+  }
+
+  if (cards.length < 4) return null;
 
   return (
     <section className="border-t border-slate-800 bg-slate-950">

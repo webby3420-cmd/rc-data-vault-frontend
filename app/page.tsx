@@ -6,6 +6,7 @@ import { PopularModels } from '@/components/home/PopularModels'
 import { HomeCtaStrip } from '@/components/home/HomeCtaStrip'
 import { HomepageRecentlyResearchedVariants } from '@/components/home/HomepageRecentlyResearchedVariants'
 import { HomepageResearchPaths } from '@/components/home/HomepageResearchPaths'
+import { HomepageOpportunities } from '@/components/home/HomepageOpportunities'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
@@ -76,6 +77,7 @@ export default async function HomePage() {
       </div>
 
       <HomepageRecentlyResearchedVariants />
+      <HomepageOpportunities />
       <HomepageResearchPaths />
       <HowItWorks />
       <WhatYouSee />

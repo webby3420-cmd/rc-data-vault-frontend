@@ -298,7 +298,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
     supabase
       .from("v_variant_page_payload")
-      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text")
+      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price")
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
   ]);
@@ -584,6 +584,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               mfrSlug={mfrSlug}
               familySlug={familySlug}
               signupSource="variant_page"
+              priceBand={insightData?.price_position_band ?? null}
+              medianPrice={insightData?.valuation_median_price ? Number(insightData.valuation_median_price) : null}
+              demandLabel={intelligence?.demand_label ?? null}
             />
           )}
 

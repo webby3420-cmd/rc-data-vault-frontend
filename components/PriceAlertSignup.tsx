@@ -1,12 +1,48 @@
 "use client";
 import { useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { Bell } from "lucide-react";
+import { Bell, CheckCircle2, ChevronDown, Sparkles } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+function getFraming(priceBand: string | null, demandLabel: string | null): { headline: string; detail: string } | null {
+  if (!priceBand) return null;
+  if (priceBand === "Below Market") {
+    return {
+      headline: "This model is currently priced below recent comps.",
+      detail: "Good time to be ready — set an alert to catch the next comparable listing.",
+    };
+  }
+  if (priceBand === "Above Market") {
+    return {
+      headline: "Prices on this model are currently higher than typical.",
+      detail: "Worth waiting — set a target below today's market and we'll email you when a matching listing appears.",
+    };
+  }
+  if (priceBand === "Fair" && demandLabel && /high|very high/i.test(demandLabel)) {
+    return {
+      headline: "Priced fairly with active demand.",
+      detail: "Listings move quickly — set a target and we'll email you when one lands at or below your price.",
+    };
+  }
+  if (priceBand === "Fair") {
+    return {
+      headline: "Trading near fair value right now.",
+      detail: "Useful if you're patient — set a target below today's typical price and we'll email you if a listing drops in.",
+    };
+  }
+  return null;
+}
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  const prefix = local.length > 2 ? local.slice(0, 2) + "..." : local;
+  return `${prefix}@${domain}`;
+}
 
 export default function PriceAlertSignup({
   variantId,
@@ -16,6 +52,9 @@ export default function PriceAlertSignup({
   familySlug,
   modelFamilyId,
   signupSource,
+  priceBand,
+  medianPrice,
+  demandLabel,
 }: {
   variantId: string;
   variantSlug: string;
@@ -24,6 +63,9 @@ export default function PriceAlertSignup({
   familySlug?: string;
   modelFamilyId?: string;
   signupSource?: string;
+  priceBand?: string | null;
+  medianPrice?: number | null;
+  demandLabel?: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
@@ -36,6 +78,10 @@ export default function PriceAlertSignup({
   const [userCountry, setUserCountry] = useState("US");
   const [userRadiusMiles, setUserRadiusMiles] = useState(50);
   const [allowInternational, setAllowInternational] = useState(false);
+  const [showLocationOptions, setShowLocationOptions] = useState(false);
+
+  const suggestedPrice = medianPrice ? Math.round(medianPrice * 0.85 / 10) * 10 : null;
+  const framing = getFraming(priceBand ?? null, demandLabel ?? null);
 
   async function handleSubmit() {
     if (!email || !price) return;
@@ -109,22 +155,17 @@ export default function PriceAlertSignup({
 
   if (submitted) {
     return (
-      <section className="rounded-2xl border border-emerald-800/40 bg-emerald-950/20 p-6">
+      <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex-shrink-0 text-emerald-400">
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
+          <CheckCircle2 className="h-5 w-5 text-emerald-400 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-emerald-200">Price alert set</p>
+            <p className="text-sm font-medium text-emerald-200">Alert set for {modelName}</p>
             <p className="mt-1 text-sm text-slate-400">
-              We'll email <span className="text-slate-300">{email}</span> when {modelName} drops below{" "}
-              <span className="text-slate-300">${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>.
-              Check your inbox for a confirmation.
+              We&apos;ll email <span className="text-slate-300">{maskEmail(email)}</span> when a listing lands at or below{" "}
+              <span className="text-slate-300">${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>.
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              You can unsubscribe anytime via the link in any alert email.
+              Check back here anytime — new sold comps update this page&apos;s fair-value estimate.
             </p>
           </div>
         </div>
@@ -134,16 +175,54 @@ export default function PriceAlertSignup({
 
   return (
     <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-sm">
+      {framing && (
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 mb-5 flex items-start gap-3">
+          <Sparkles className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-white">{framing.headline}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{framing.detail}</p>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-2xl">
         <h2 className="inline-flex items-center gap-2 text-2xl font-semibold text-white">
           <Bell className="h-5 w-5 text-amber-400" />
-          Get notified when this model drops below your target price
+          Watch this model for a better buy
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          Set your target price for {modelName} and we'll email you when the market drops below it.
+          Pick a target price. We&apos;ll email you when a new {modelName} listing comes in at or below it.
         </p>
       </div>
-      <div className="mt-5 sm:mt-6 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_auto] md:items-end">
+
+      {/* Target price — hero input */}
+      <div className="mt-5">
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-slate-200">Your target price</span>
+          <div className="relative">
+            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-lg text-slate-500">$</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0.01"
+              step="0.01"
+              placeholder={suggestedPrice ? String(suggestedPrice) : "299"}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 py-4 pl-10 pr-4 text-lg font-semibold text-white outline-none transition focus:border-amber-500"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+          {medianPrice && (
+            <p className="mt-1.5 text-xs text-slate-500">
+              Fair value right now is <strong className="text-white">${Math.round(medianPrice).toLocaleString("en-US")}</strong>. Set your target below that.
+            </p>
+          )}
+        </label>
+      </div>
+
+      {/* Email + submit */}
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-200">Email</span>
           <input
@@ -156,155 +235,109 @@ export default function PriceAlertSignup({
             disabled={loading}
           />
         </label>
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-slate-200">Target price</span>
-          <div className="relative">
-            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-slate-500">$</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              min="0.01"
-              step="0.01"
-              placeholder="299.99"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 py-3 pl-8 pr-4 text-sm text-white outline-none transition focus:border-amber-500"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-        </label>
         <button
           onClick={handleSubmit}
           disabled={loading || !email || !price}
           className="inline-flex h-[46px] items-center justify-center rounded-xl bg-amber-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {loading ? "Saving…" : "Create alert"}
+          {loading ? "Saving…" : "Set alert"}
         </button>
       </div>
-      <div className="mt-4 flex gap-4">
+
+      {/* Frequency */}
+      <div className="mt-4 flex flex-wrap gap-4">
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="frequency"
-            value="daily"
-            checked={frequency === "daily"}
-            onChange={() => setFrequency("daily")}
-            className="accent-amber-500"
-            disabled={loading}
-          />
-          <span className="text-sm text-slate-300">Daily — get alerts when new deals appear</span>
+          <input type="radio" name="frequency" value="daily" checked={frequency === "daily"} onChange={() => setFrequency("daily")} className="accent-amber-500" disabled={loading} />
+          <span className="text-sm text-slate-300">Daily — one email per day if matching listings appear</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="frequency"
-            value="weekly"
-            checked={frequency === "weekly"}
-            onChange={() => setFrequency("weekly")}
-            className="accent-amber-500"
-            disabled={loading}
-          />
-          <span className="text-sm text-slate-300">Weekly — get a summary of the week&apos;s best deals</span>
+          <input type="radio" name="frequency" value="weekly" checked={frequency === "weekly"} onChange={() => setFrequency("weekly")} className="accent-amber-500" disabled={loading} />
+          <span className="text-sm text-slate-300">Weekly — a digest of matching listings from the past week</span>
         </label>
       </div>
+
+      {/* Collapsed shipping & location options */}
       <div className="mt-4">
-        <label className="block text-sm font-medium text-slate-200 mb-2">Delivery Preference</label>
-        <div className="flex gap-2">
-          {([
-            { value: "shipping_only" as const, label: "Shipping Only" },
-            { value: "shipping_or_local" as const, label: "Local + Shipping" },
-            { value: "local_only" as const, label: "Local Only" },
-          ]).map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setDeliveryPref(value)}
-              className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${
-                deliveryPref === value
-                  ? "bg-amber-500 text-slate-950 border-amber-500 font-semibold"
-                  : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
-              }`}
-              disabled={loading}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <p className="text-xs text-slate-500 mt-1">
-          {deliveryPref === "shipping_only" && "Alerts for listings that ship to you"}
-          {deliveryPref === "shipping_or_local" && "Alerts for any accessible listing"}
-          {deliveryPref === "local_only" && "Alerts for pickup listings near you"}
-        </p>
-      </div>
-
-      {deliveryPref !== "shipping_only" && (
-        <div className="mt-3 space-y-3">
-          <label className="block">
-            <span className="block text-xs font-medium text-slate-300 mb-1">ZIP Code</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={10}
-              value={userZip}
-              onChange={(e) => setUserZip(e.target.value)}
-              placeholder="e.g. 90210"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-              disabled={loading}
-            />
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="block text-xs font-medium text-slate-300 mb-1">Country</span>
-              <select
-                value={userCountry}
-                onChange={(e) => setUserCountry(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-                disabled={loading}
-              >
-                <option value="US">United States</option>
-                <option value="CA">Canada</option>
-                <option value="GB">United Kingdom</option>
-                <option value="AU">Australia</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="block text-xs font-medium text-slate-300 mb-1">Search Radius</span>
-              <select
-                value={userRadiusMiles}
-                onChange={(e) => setUserRadiusMiles(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500"
-                disabled={loading}
-              >
-                <option value={25}>25 miles</option>
-                <option value={50}>50 miles</option>
-                <option value={100}>100 miles</option>
-                <option value={200}>200 miles</option>
-              </select>
-            </label>
-          </div>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-start gap-2">
-        <input
-          id="allow-international"
-          type="checkbox"
-          checked={allowInternational}
-          onChange={(e) => setAllowInternational(e.target.checked)}
-          className="mt-0.5 accent-amber-500"
+        <button
+          type="button"
+          onClick={() => setShowLocationOptions(!showLocationOptions)}
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-300 transition-colors"
           disabled={loading}
-        />
-        <label htmlFor="allow-international" className="text-xs text-slate-400">
-          Include international listings
-          <span className="block text-slate-500">Allow listings from outside your country (shipping eligibility may vary)</span>
-        </label>
+        >
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showLocationOptions ? "rotate-0" : "-rotate-90"}`} />
+          Shipping &amp; location options
+        </button>
+
+        {showLocationOptions && (
+          <div className="mt-3 space-y-3 pl-5">
+            <div>
+              <label className="block text-sm font-medium text-slate-200 mb-2">Delivery Preference</label>
+              <div className="flex gap-2">
+                {([
+                  { value: "shipping_only" as const, label: "Shipping Only" },
+                  { value: "shipping_or_local" as const, label: "Local + Shipping" },
+                  { value: "local_only" as const, label: "Local Only" },
+                ]).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDeliveryPref(value)}
+                    className={`flex-1 text-xs py-2 rounded-lg border transition-colors ${
+                      deliveryPref === value
+                        ? "bg-amber-500 text-slate-950 border-amber-500 font-semibold"
+                        : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
+                    }`}
+                    disabled={loading}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {deliveryPref !== "shipping_only" && (
+              <div className="space-y-3">
+                <label className="block">
+                  <span className="block text-xs font-medium text-slate-300 mb-1">ZIP Code</span>
+                  <input type="text" inputMode="numeric" maxLength={10} value={userZip} onChange={(e) => setUserZip(e.target.value)} placeholder="e.g. 90210" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500" disabled={loading} />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="block text-xs font-medium text-slate-300 mb-1">Country</span>
+                    <select value={userCountry} onChange={(e) => setUserCountry(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500" disabled={loading}>
+                      <option value="US">United States</option>
+                      <option value="CA">Canada</option>
+                      <option value="GB">United Kingdom</option>
+                      <option value="AU">Australia</option>
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="block text-xs font-medium text-slate-300 mb-1">Search Radius</span>
+                    <select value={userRadiusMiles} onChange={(e) => setUserRadiusMiles(Number(e.target.value))} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none transition focus:border-amber-500" disabled={loading}>
+                      <option value={25}>25 miles</option>
+                      <option value={50}>50 miles</option>
+                      <option value={100}>100 miles</option>
+                      <option value={200}>200 miles</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-start gap-2">
+              <input id="allow-international" type="checkbox" checked={allowInternational} onChange={(e) => setAllowInternational(e.target.checked)} className="mt-0.5 accent-amber-500" disabled={loading} />
+              <label htmlFor="allow-international" className="text-xs text-slate-400">
+                Include international listings
+                <span className="block text-slate-500">Allow listings from outside your country (shipping eligibility may vary)</span>
+              </label>
+            </div>
+          </div>
+        )}
       </div>
 
-      {error && (
-        <p className="mt-3 text-xs text-red-400">{error}</p>
-      )}
+      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
       <p className="mt-3 text-xs text-slate-500">
-        No account required. Unsubscribe anytime via your alert email.
+        No account needed. Every email includes an unsubscribe link.
       </p>
     </section>
   );

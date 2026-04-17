@@ -132,7 +132,7 @@ export default function PriceAlertSignup({
   }
 
   return (
-    <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
+    <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-sm">
       <div className="max-w-2xl">
         <h2 className="text-2xl font-semibold text-white">
           Get notified when this model drops below your target price
@@ -141,7 +141,7 @@ export default function PriceAlertSignup({
           Set your target price for {modelName} and we'll email you when the market drops below it.
         </p>
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_auto] md:items-end">
+      <div className="mt-5 sm:mt-6 grid gap-4 md:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_auto] md:items-end">
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-200">Email</span>
           <input

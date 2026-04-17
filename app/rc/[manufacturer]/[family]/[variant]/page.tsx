@@ -489,25 +489,19 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                   : "Source: eBay sold listings"}
               </div>
 
-              <div className="mt-3 flex items-center gap-3 text-sm">
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
                 <a href={`/tools?tool=deal&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
                   Check a price &rarr;
                 </a>
-                <span className="text-slate-600">|</span>
                 <a href={`/tools?tool=compare&model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
                   Compare models &rarr;
                 </a>
-                <span className="text-slate-600">|</span>
                 <a href={`/tools/vehicle-evaluator?model=${variantSlug}`} className="text-slate-400 underline hover:text-amber-400 transition-colors">
                   Evaluate your build &rarr;
                 </a>
               </div>
 
               <div className="mt-4 space-y-4">
-                <div className="mb-3">
-                  <h2 className="text-base font-semibold text-slate-200">Market Trend</h2>
-                </div>
-
                 <ConfidenceExplainer
                   confidenceLabel={confidenceLabel}
                   valuationStatus={valuation.confidence ?? "no_data"}
@@ -573,8 +567,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               signupSource="variant_page"
             />
           )}
-
-          <div className="border-t border-slate-800 my-8" />
 
           {/* ═══ LAYER 2: MID-PAGE CONTEXT + CONVERSION LAYER ═══ */}
 
@@ -661,7 +653,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 {intelligence.demand_score != null && (
                   <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Demand</div>
-                    <div className="text-3xl font-semibold text-green-400">{intelligence.demand_score}</div>
+                    <div className="text-2xl font-semibold text-slate-200">{intelligence.demand_score}</div>
                     {intelligence.demand_label && (
                       <div className="text-sm text-slate-300 mt-0.5 capitalize">{intelligence.demand_label}</div>
                     )}
@@ -672,7 +664,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                     <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">Total Sales</div>
                     <div className="text-3xl font-semibold text-slate-200">{intelligence.total_sales}</div>
                     <div className="text-sm text-slate-400 mt-0.5">observed</div>
-                    <div className="text-xs text-slate-500 mt-0.5">Verified sold listings used to calculate this estimate. Parts listings and outliers are excluded.</div>
                   </div>
                 )}
                 {intelligence.market_depth && (
@@ -815,17 +806,15 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           <ResourceSection resources={resourceData ?? []} />
           <ToolsBlock />
 
-          <div className="border-t border-slate-800 my-8" />
-
           {/* ═══ LAYER 3: BOTTOM PROOF LAYER ═══ */}
 
           {soldListings.length > 0 && (
-            <div className="border-t border-slate-800 pt-8 mt-4">
+            <div>
               <div className="mb-4">
                 <h2 className="text-base font-semibold text-slate-200">Recent Sold Listings</h2>
                 <p className="text-sm text-slate-500 mt-1">Individual sales used to calculate the estimated value above.</p>
               </div>
-            <CollapsibleSection title="Recent Sold Listings">
+            <CollapsibleSection title="Show all sales">
               <div className="space-y-3">
                 {soldListings.map((listing: any, i: number) => {
                   const Wrapper = listing.listing_url ? "a" : "div";
@@ -930,7 +919,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           <div className="mt-8 space-y-6">
 
             {siblingData.length > 0 && (
-              <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6">
+              <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5">
                 <div className="mb-4">
                   <h2 className="text-base font-semibold text-white">More from {mfrName}</h2>
                   <p className="mt-1 text-xs text-slate-500">Other {mfrName} variants with market data</p>

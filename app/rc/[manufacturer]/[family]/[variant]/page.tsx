@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import CollapsibleSection from "@/components/CollapsibleSection";
 import PriceAlertSignup from "@/components/PriceAlertSignup";
@@ -222,7 +223,22 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     .eq("slug", variantSlug)
     .single();
 
-  if (!variantData) return <div className="p-8 text-white">Variant not found.</div>;
+  if (!variantData) {
+    const { data: fallbackVariant } = await supabase
+      .from("variants")
+      .select("slug, model_families!inner(slug, manufacturers!inner(slug))")
+      .eq("model_families.slug", family)
+      .eq("model_families.manufacturers.slug", manufacturer)
+      .order("release_year", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackVariant?.slug) {
+      redirect(`/rc/${manufacturer}/${family}/${fallbackVariant.slug}`);
+    }
+
+    return <div className="p-8 text-white">Variant not found.</div>;
+  }
 
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;

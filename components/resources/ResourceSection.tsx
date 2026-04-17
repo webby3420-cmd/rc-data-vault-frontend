@@ -1,4 +1,5 @@
 import type { ResourceLink } from "@/lib/tools/types";
+import { ArrowUpRight } from "lucide-react";
 
 const TYPE_LABELS: Record<string, string> = {
   manual: "Manual",
@@ -70,9 +71,7 @@ export default function ResourceSection({ resources }: { resources: ResourceLink
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs ${SCOPE_COLORS[r.scope_level]}`}>
                       {SCOPE_LABELS[r.scope_level]}
                     </span>
-                    <svg className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
+                    <ArrowUpRight className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
                   </div>
                 </a>
               ))}

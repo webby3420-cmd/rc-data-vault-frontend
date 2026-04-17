@@ -1,3 +1,6 @@
+import { Activity, Minus, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 type FamilyState = "active" | "moderate" | "thin" | "sparse" | "no_data";
 
 interface FamilyMarketBandProps {
@@ -13,20 +16,12 @@ interface FamilyMarketBandProps {
   familyConfidenceDescription: string;
 }
 
-const DOT_COLOR: Record<FamilyState, string> = {
-  active: "bg-emerald-400",
-  moderate: "bg-amber-400",
-  thin: "bg-slate-400",
-  sparse: "bg-slate-600",
-  no_data: "bg-slate-700",
-};
-
-const LABEL_COLOR: Record<FamilyState, string> = {
-  active: "text-emerald-400",
-  moderate: "text-amber-400",
-  thin: "text-slate-400",
-  sparse: "text-slate-500",
-  no_data: "text-slate-600",
+const STATE_STYLE: Record<FamilyState, { color: string; icon: LucideIcon }> = {
+  active: { color: "text-emerald-400", icon: TrendingUp },
+  moderate: { color: "text-amber-400", icon: Activity },
+  thin: { color: "text-slate-400", icon: Minus },
+  sparse: { color: "text-slate-500", icon: Minus },
+  no_data: { color: "text-slate-600", icon: Minus },
 };
 
 function fmt(v: number | null): string {
@@ -45,12 +40,15 @@ export default function FamilyMarketBand({
 }: FamilyMarketBandProps) {
   if (familyState === "no_data") return null;
 
+  const style = STATE_STYLE[familyState] ?? STATE_STYLE.sparse;
+  const Icon = style.icon;
+
   return (
     <div className="rounded-xl border border-slate-700 bg-slate-900/50 px-5 py-4 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 text-sm">
-          <span className={`inline-block h-2.5 w-2.5 rounded-full ${DOT_COLOR[familyState] ?? "bg-slate-700"}`} />
-          <span className={`font-semibold ${LABEL_COLOR[familyState] ?? "text-slate-500"}`}>
+          <Icon className={`h-4 w-4 ${style.color}`} />
+          <span className={`font-semibold ${style.color}`}>
             {familyStateLabel}
           </span>
           {familyStateDescription && (

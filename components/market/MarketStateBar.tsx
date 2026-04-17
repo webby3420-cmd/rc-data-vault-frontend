@@ -1,3 +1,6 @@
+import { Activity, Minus, TrendingDown, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 type MarketState = "hot" | "rising" | "stable" | "softening" | "thin";
 
 interface MarketStateBarProps {
@@ -7,20 +10,12 @@ interface MarketStateBarProps {
   alertCTAUrgency: "high" | "medium" | "low";
 }
 
-const DOT_COLOR: Record<MarketState, string> = {
-  hot: "bg-amber-400",
-  rising: "bg-emerald-400",
-  stable: "bg-slate-400",
-  softening: "bg-orange-400",
-  thin: "bg-slate-600",
-};
-
-const LABEL_COLOR: Record<MarketState, string> = {
-  hot: "text-amber-400",
-  rising: "text-emerald-400",
-  stable: "text-slate-400",
-  softening: "text-orange-400",
-  thin: "text-slate-500",
+const STATE_STYLE: Record<MarketState, { color: string; icon: LucideIcon }> = {
+  hot: { color: "text-amber-400", icon: TrendingUp },
+  rising: { color: "text-emerald-400", icon: TrendingUp },
+  stable: { color: "text-slate-400", icon: Minus },
+  softening: { color: "text-orange-400", icon: TrendingDown },
+  thin: { color: "text-slate-500", icon: Activity },
 };
 
 export default function MarketStateBar({
@@ -30,10 +25,13 @@ export default function MarketStateBar({
 }: MarketStateBarProps) {
   if (!marketState || !marketStateLabel) return null;
 
+  const style = STATE_STYLE[marketState] ?? STATE_STYLE.stable;
+  const Icon = style.icon;
+
   return (
     <div className="flex items-center gap-2.5 text-sm">
-      <span className={`inline-block h-2.5 w-2.5 rounded-full ${DOT_COLOR[marketState] ?? "bg-slate-600"}`} />
-      <span className={`font-semibold ${LABEL_COLOR[marketState] ?? "text-slate-500"}`}>
+      <Icon className={`h-4 w-4 ${style.color}`} />
+      <span className={`font-semibold ${style.color}`}>
         {marketStateLabel}
       </span>
       {marketStateDescription && (

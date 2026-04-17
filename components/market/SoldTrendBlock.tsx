@@ -1,3 +1,6 @@
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 interface SoldTrendBlockProps {
   median30d: number | null;
   median90d: number | null;
@@ -13,10 +16,10 @@ function fmt(v: number | null): string {
   return "$" + Math.round(v).toLocaleString("en-US");
 }
 
-const ARROW: Record<string, { icon: string; color: string }> = {
-  rising: { icon: "↑", color: "text-emerald-400" },
-  falling: { icon: "↓", color: "text-orange-400" },
-  stable: { icon: "→", color: "text-slate-400" },
+const ARROW: Record<string, { icon: LucideIcon; color: string }> = {
+  rising: { icon: TrendingUp, color: "text-emerald-400" },
+  falling: { icon: TrendingDown, color: "text-orange-400" },
+  stable: { icon: Minus, color: "text-slate-400" },
 };
 
 export default function SoldTrendBlock({
@@ -47,11 +50,15 @@ export default function SoldTrendBlock({
         </div>
       </div>
 
-      {arrow && trendPct != null && (
-        <div className={`text-sm font-medium ${arrow.color}`}>
-          {arrow.icon} {Math.abs(trendPct).toFixed(1)}% {trendDirection === "rising" ? "above" : trendDirection === "falling" ? "below" : "vs"} 90-day median
-        </div>
-      )}
+      {arrow && trendPct != null && (() => {
+        const Icon = arrow.icon;
+        return (
+          <div className={`flex items-center gap-1 text-sm font-medium ${arrow.color}`}>
+            <Icon className="h-4 w-4" />
+            {Math.abs(trendPct).toFixed(1)}% {trendDirection === "rising" ? "above" : trendDirection === "falling" ? "below" : "vs"} 90-day median
+          </div>
+        );
+      })()}
 
       {lastSaleDaysAgo != null && (
         <div

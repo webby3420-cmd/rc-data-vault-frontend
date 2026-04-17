@@ -10,6 +10,8 @@ import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import FamilyEcosystemBlock from "@/components/family/FamilyEcosystemBlock";
 import FamilyVariantCoverage from "@/components/family/FamilyVariantCoverage";
 import FamilyMarketOpportunitySlot from "@/components/family/FamilyMarketOpportunitySlot";
+import FamilySummaryStrip from "@/components/family/FamilySummaryStrip";
+import FamilyMarketActivity from "@/components/family/FamilyMarketActivity";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -128,6 +130,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
         <h1 className="mb-4 text-3xl font-semibold text-white">{page.manufacturer_name} {page.family_name} Value &amp; Price Guide</h1>
         <p className="mb-6 max-w-2xl text-slate-400 leading-7">Browse used {page.manufacturer_name} {page.family_name} values by variant. All values are based on real sold listings from eBay.</p>
 
+        <FamilySummaryStrip summary={fms} />
+
         {fms && (
           <div className="mb-8">
             <FamilyMarketBand
@@ -186,6 +190,8 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           manufacturerSlug={page.manufacturer_slug}
           familySlug={page.family_slug}
         />
+
+        <FamilyMarketActivity summary={fms} variants={page.variants} />
 
         <div className="mt-8">
           <FamilyEcosystemBlock ecosystem={ecosystemData ?? null} />

@@ -151,7 +151,7 @@ function SignalRow({ signal }: { signal: Signal }) {
 export default function OpportunitySignals(props: OpportunitySignalsProps) {
   // Gate: only render for sufficiently valued variants
   const status = props.valuationStatus;
-  if (status !== "high_confidence" && status !== "low_confidence" && status !== "estimate") return null;
+  if (status !== "reliable" && status !== "low" && status !== "zero_spread") return null;
   if (props.priceBand == null) return null;
 
   const signals = buildSignals(props);

@@ -14,6 +14,7 @@ import ConfidenceExplainer from "@/components/market/ConfidenceExplainer";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
+import MarketInsightSection from "@/components/market/MarketInsightSection";
 
 export const dynamic = "force-dynamic";
 
@@ -272,6 +273,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     { data: trendData },
     { data: listingsData },
     { data: payloadData },
+    { data: insightData },
   ] = await Promise.all([
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
@@ -292,6 +294,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
       .order("observed_at", { ascending: false })
       .limit(12),
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
+    supabase
+      .from("v_variant_page_payload")
+      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text")
+      .eq("variant_slug", variantSlug)
+      .maybeSingle(),
   ]);
 
   const { data: verifiedContent } = await supabase
@@ -542,6 +549,16 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
                 )}
               </div>
             </section>
+          )}
+
+          {insightData?.price_position_band && (
+            <MarketInsightSection
+              band={insightData.price_position_band}
+              score={insightData.deal_score_simple!}
+              confidence={insightData.confidence_label!}
+              summary={insightData.market_summary_text!}
+              recommendation={insightData.recommendation_text!}
+            />
           )}
 
           {isAlertTraffic ? (

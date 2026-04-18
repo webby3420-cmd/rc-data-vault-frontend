@@ -149,6 +149,45 @@ export default function PriceAlertSignup({
       console.error("Confirmation email error:", emailErr);
     }
 
+    // Persist to localStorage for homepage "Your Alerts" section
+    try {
+      if (typeof window !== "undefined") {
+        const STORAGE_KEY = "rcdv_alerts";
+        const MAX_ENTRIES = 10;
+        const targetPriceNum = parseFloat(price);
+        const hasValidIdentity =
+          typeof variantSlug === "string" && variantSlug.length > 0 &&
+          typeof modelName === "string" && modelName.length > 0 &&
+          isFinite(targetPriceNum);
+
+        if (hasValidIdentity) {
+          const raw = window.localStorage.getItem(STORAGE_KEY);
+          let existing: Array<{ variant_slug: string; variant_name: string; manufacturer: string; family_slug: string; target_price: number; created_at: string }> = [];
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) existing = parsed;
+            } catch { /* malformed — treat as empty */ }
+          }
+          const newEntry = {
+            variant_slug: variantSlug,
+            variant_name: modelName,
+            manufacturer: mfrSlug ?? "",
+            family_slug: familySlug ?? "",
+            target_price: targetPriceNum,
+            created_at: new Date().toISOString(),
+          };
+          const deduped = existing.filter(
+            (e) => !(e.variant_slug === newEntry.variant_slug && e.target_price === newEntry.target_price)
+          );
+          const updated = [newEntry, ...deduped].slice(0, MAX_ENTRIES);
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        }
+      }
+    } catch {
+      // localStorage unavailable — fail silently
+    }
+
     setLoading(false);
     setSubmitted(true);
   }

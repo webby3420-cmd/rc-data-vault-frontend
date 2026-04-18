@@ -7,6 +7,7 @@ import { HomeCtaStrip } from '@/components/home/HomeCtaStrip'
 import { HomepageRecentlyResearchedVariants } from '@/components/home/HomepageRecentlyResearchedVariants'
 import { HomepageResearchPaths } from '@/components/home/HomepageResearchPaths'
 import { HomepageOpportunities } from '@/components/home/HomepageOpportunities'
+import { HomepageYourAlerts } from '@/components/home/HomepageYourAlerts'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
@@ -78,6 +79,7 @@ export default async function HomePage() {
 
       <HomepageRecentlyResearchedVariants />
       <HomepageOpportunities />
+      <HomepageYourAlerts />
       <HomepageResearchPaths />
       <HowItWorks />
       <WhatYouSee />

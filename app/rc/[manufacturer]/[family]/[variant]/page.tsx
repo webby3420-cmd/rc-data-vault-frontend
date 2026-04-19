@@ -24,6 +24,7 @@ import {
   SecondarySkeleton,
 } from "@/components/variant/skeletons";
 import { ArrowUpRight, Search } from "lucide-react";
+import { getVariantPagePayload } from "@/lib/variant-page";
 
 export const dynamic = "force-dynamic";
 
@@ -210,7 +211,7 @@ async function PricingSection({
     { data: valuationData },
     { data: payloadData },
     { data: insightData },
-    rpcResult,
+    variantPayload,
   ] = await Promise.all([
     supabase
       .from("v_variant_valuations_clean")
@@ -223,19 +224,8 @@ async function PricingSection({
       .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price")
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
-    (supabase.rpc as any)("get_variant_page_payload", { p_variant_slug: variantSlug }) as Promise<{ data: any; error: any }>,
+    getVariantPagePayload(variantSlug),
   ]);
-
-  const { data: variantPayload, error: rpcError } = rpcResult;
-  if (rpcError) {
-    console.error("[variant page] RPC error", {
-      variantSlug,
-      code: rpcError.code,
-      message: rpcError.message,
-      details: rpcError.details,
-      hint: rpcError.hint,
-    });
-  }
 
   const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
   const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
@@ -305,7 +295,7 @@ async function MarketDealsSection({
     { data: listingsData },
     { data: payloadData },
     { data: insightData },
-    rpcResult,
+    variantPayload,
   ] = await Promise.all([
     supabase
       .from("v_variant_valuations_clean")
@@ -330,10 +320,9 @@ async function MarketDealsSection({
       .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price")
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
-    (supabase.rpc as any)("get_variant_page_payload", { p_variant_slug: variantSlug }) as Promise<{ data: any; error: any }>,
+    getVariantPagePayload(variantSlug),
   ]);
 
-  const { data: variantPayload } = rpcResult;
   const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
   const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
 
@@ -462,9 +451,11 @@ async function MarketDealsSection({
         )}
       </div>
 
-      <p className="text-xs text-slate-600">
-        Updated {fmtDate(valuation?.last_observation_at)} · {valuation?.total_observation_count ?? 0} sold listings · Refreshes hourly
-      </p>
+      {soldListings.length > 0 && (
+        <p className="text-xs text-slate-600">
+          Updated {fmtDate(valuation?.last_observation_at)} · {soldListings.length} sold listings · Refreshes hourly
+        </p>
+      )}
     </>
   );
 }

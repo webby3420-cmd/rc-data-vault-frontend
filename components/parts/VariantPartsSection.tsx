@@ -414,12 +414,17 @@ export default function VariantPartsSection({ variantSlug }: VariantPartsSection
   const [sectionOpen, setSectionOpen] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+
     ;(async () => {
       try {
         const { data: result, error } = await (supabase.rpc as any)(
           'get_variant_parts',
           { p_variant_slug: variantSlug }
-        )
+        ).abortSignal(controller.signal)
+        if (cancelled) return
         if (error) {
           console.error('[VariantPartsSection] RPC error:', error)
           setLoading(false)
@@ -432,11 +437,18 @@ export default function VariantPartsSection({ variantSlug }: VariantPartsSection
           setSectionOpen(d.total_parts <= 20 && d.categories.length <= 3)
         }
       } catch (err) {
-        console.error('[VariantPartsSection] fetch error:', err)
+        if (!cancelled) console.error('[VariantPartsSection] fetch error:', err)
       } finally {
-        setLoading(false)
+        clearTimeout(timer)
+        if (!cancelled) setLoading(false)
       }
     })()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+      clearTimeout(timer)
+    }
   }, [variantSlug])
 
   if (loading) {

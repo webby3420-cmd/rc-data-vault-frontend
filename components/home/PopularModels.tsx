@@ -76,6 +76,7 @@ export function PopularModels() {
             <Link
               key={model.href}
               href={model.href}
+              prefetch={true}
               className="group rounded-2xl border border-slate-700 bg-slate-950 p-5 transition hover:border-slate-500"
             >
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">

@@ -195,7 +195,7 @@ async function PricingSection({
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
     supabase
       .from("v_variant_page_payload")
-      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price")
+      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price, valuation_min_price, valuation_max_price, candidate_count")
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
     getVariantPagePayload(variantSlug),
@@ -218,7 +218,66 @@ async function PricingSection({
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
 
+  // Tier B: RPC failed but insightData (v_variant_page_payload) has valuation.
+  // Render a simplified valuation card from the never-fails view so the user
+  // still sees meaningful pricing instead of a blank section.
   if (!variantPayload) {
+    const insight = insightData as any;
+    const medianRaw = insight?.valuation_median_price;
+    if (medianRaw != null) {
+      const medianPrice = Math.round(Number(medianRaw));
+      const minRaw = insight?.valuation_min_price;
+      const maxRaw = insight?.valuation_max_price;
+      const minPrice = minRaw != null ? Math.round(Number(minRaw)) : null;
+      const maxPrice = maxRaw != null ? Math.round(Number(maxRaw)) : null;
+      const confidence: string | null = insight?.confidence_label ?? null;
+      const obsCount: number | null = insight?.candidate_count ?? null;
+      const summaryText: string | null = insight?.market_summary_text ?? null;
+
+      return (
+        <>
+          <CompactHeroImage
+            imageUrl={approvedPrimaryImage.url}
+            imageAlt={approvedPrimaryImage.alt}
+            modelName={modelName}
+          />
+          <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-2">
+            <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
+              Market Valuation
+            </p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-white">
+                ${medianPrice.toLocaleString()}
+              </span>
+              <span className="text-sm text-slate-400">typical</span>
+            </div>
+            {minPrice != null && maxPrice != null && (
+              <p className="text-sm text-slate-400">
+                Range: ${minPrice.toLocaleString()} – ${maxPrice.toLocaleString()}
+              </p>
+            )}
+            {(confidence || (obsCount != null && obsCount > 0)) && (
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                {confidence && <span>{confidence} confidence</span>}
+                {confidence && obsCount != null && obsCount > 0 && (
+                  <span className="text-slate-700">·</span>
+                )}
+                {obsCount != null && obsCount > 0 && (
+                  <span>{obsCount} price observations</span>
+                )}
+              </div>
+            )}
+            {summaryText && (
+              <p className="text-xs text-slate-600 pt-1 border-t border-slate-800">
+                {summaryText}
+              </p>
+            )}
+          </div>
+        </>
+      );
+    }
+
+    // Tier C: no valuation anywhere. Keep the honest fallback.
     return (
       <>
         <CompactHeroImage
@@ -306,7 +365,7 @@ async function MarketDealsSection({
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
     supabase
       .from("v_variant_page_payload")
-      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price")
+      .select("price_position_band, deal_score_simple, confidence_label, market_summary_text, recommendation_text, valuation_median_price, valuation_min_price, valuation_max_price, candidate_count")
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
     getVariantPagePayload(variantSlug),

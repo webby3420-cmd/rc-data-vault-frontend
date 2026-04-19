@@ -48,7 +48,7 @@ function getApprovedPrimaryImage(payloadRow: any): {
   };
 }
 
-function VariantHeroImage({
+function CompactHeroImage({
   imageUrl,
   imageAlt,
   modelName,
@@ -57,37 +57,22 @@ function VariantHeroImage({
   imageAlt: string | null;
   modelName: string;
 }) {
-  return (
-    <section className="mb-8">
-      <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
-        <div className="relative w-full aspect-[4/3] bg-slate-950">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={imageAlt || `${modelName} approved reference image`}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900">
-              <div className="px-6 text-center">
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Approved image pending
-                </div>
-                <div className="mt-3 text-xl font-semibold text-white sm:text-2xl">
-                  {modelName}
-                </div>
-                <p className="mt-2 text-sm text-slate-400">
-                  RC Data Vault only displays approved governed images.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+  if (imageUrl) {
+    return (
+      <div className="mb-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+        <img
+          src={imageUrl}
+          alt={imageAlt || `${modelName} reference image`}
+          className="h-full w-full object-cover aspect-[16/9] max-h-56 sm:max-h-64"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+        />
       </div>
-    </section>
+    );
+  }
+  return (
+    <p className="mb-4 text-xs text-slate-600">Reference image pending review</p>
   );
 }
 
@@ -267,9 +252,16 @@ async function PricingSection({
   } : null);
 
   const intelligence = payloadData?.intelligence as any;
+  const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
 
   return (
     <>
+      <CompactHeroImage
+        imageUrl={approvedPrimaryImage.url}
+        imageAlt={approvedPrimaryImage.alt}
+        modelName={modelName}
+      />
+
       <HeroDecisionSurface
         retail={{ retail_current_price: retail.retail_current_price, retail_price_source: retail.retail_price_source }}
         segmentedPricing={{ nib: segmentedPricing.nib, used_complete: segmentedPricing.used_complete, roller: segmentedPricing.roller }}
@@ -863,9 +855,6 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
             {variantData.full_name}
           </h1>
         </header>
-
-        {/* Hero image placeholder renders instantly (no data dependency for the shell) */}
-        <VariantHeroImage imageUrl={null} imageAlt={null} modelName={variantData.full_name} />
 
         <div className="space-y-6">
 

@@ -90,7 +90,7 @@ function PricingPillRow({
             </div>
             <div>
               <div className="text-[11px] uppercase tracking-wide text-slate-500 leading-none">{p.label}</div>
-              <div className="text-base font-semibold text-white leading-tight mt-0.5">{p.price}</div>
+              <div className="text-xl font-bold text-white leading-tight mt-0.5">{p.price}</div>
               <div className="text-[10px] text-slate-500 leading-none mt-0.5">{p.sub}</div>
             </div>
           </div>

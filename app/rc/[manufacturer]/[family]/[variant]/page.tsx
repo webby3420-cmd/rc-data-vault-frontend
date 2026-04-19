@@ -232,7 +232,6 @@ async function PricingSection({
       const maxPrice = maxRaw != null ? Math.round(Number(maxRaw)) : null;
       const confidence: string | null = insight?.confidence_label ?? null;
       const obsCount: number | null = insight?.candidate_count ?? null;
-      const summaryText: string | null = insight?.market_summary_text ?? null;
 
       return (
         <>
@@ -266,11 +265,6 @@ async function PricingSection({
                   <span>{obsCount} price observations</span>
                 )}
               </div>
-            )}
-            {summaryText && (
-              <p className="text-xs text-slate-600 pt-1 border-t border-slate-800">
-                {summaryText}
-              </p>
             )}
           </div>
         </>

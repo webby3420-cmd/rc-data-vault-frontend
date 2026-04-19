@@ -11,6 +11,7 @@ import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import HeroDecisionSurface from "@/components/variant/HeroDecisionSurface";
+import CompactHeroImage from "@/components/variant/CompactHeroImage";
 import MarketIntelligenceCard from "@/components/variant/MarketIntelligenceCard";
 import BestDeals from "@/components/variant/BestDeals";
 import QuickLinks from "@/components/variant/QuickLinks";
@@ -49,33 +50,6 @@ function getApprovedPrimaryImage(payloadRow: any): {
   };
 }
 
-function CompactHeroImage({
-  imageUrl,
-  imageAlt,
-  modelName,
-}: {
-  imageUrl: string | null;
-  imageAlt: string | null;
-  modelName: string;
-}) {
-  if (imageUrl) {
-    return (
-      <div className="mb-4 overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
-        <img
-          src={imageUrl}
-          alt={imageAlt || `${modelName} reference image`}
-          className="h-full w-full object-cover aspect-[16/9] max-h-56 sm:max-h-64"
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-        />
-      </div>
-    );
-  }
-  return (
-    <p className="mb-4 text-xs text-slate-600">Reference image pending review</p>
-  );
-}
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { variant: variantSlug } = await params;

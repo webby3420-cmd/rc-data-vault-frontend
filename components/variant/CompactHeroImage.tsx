@@ -17,7 +17,7 @@ export default function CompactHeroImage({ imageUrl, imageAlt, modelName }: Comp
         <img
           src={imageUrl}
           alt={imageAlt || `${modelName} reference image`}
-          className="h-full w-full object-cover aspect-[16/9] max-h-56 sm:max-h-64"
+          className="h-full w-full object-contain aspect-[16/9] max-h-56 sm:max-h-64"
           loading="eager"
           fetchPriority="high"
           decoding="async"

@@ -2,6 +2,22 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import {
+  Zap,
+  Battery,
+  Settings2,
+  Activity,
+  Wrench,
+  Layers,
+  Disc,
+  Circle,
+  Car,
+  Radio,
+  Package,
+  ArrowUpRight,
+  ChevronDown,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,7 +32,8 @@ type PurchaseLink = {
   url: string
   price_usd: number | null
   in_stock: boolean
-  priority: number
+  priority?: number
+  display_priority?: number
 }
 
 type Part = {
@@ -61,26 +78,74 @@ function fmt(n: number | null) {
   return '$' + Math.round(n).toLocaleString('en-US')
 }
 
-const CATEGORY_ICON: Record<string, string> = {
-  motors: '\u26A1',
-  escs: '\uD83C\uDFDB\uFE0F',
-  chassis: '\uD83D\uDD29',
-  shocks: '\uD83D\uDEE0\uFE0F',
-  'suspension-arms': '\u2195\uFE0F',
-  driveshafts: '\uD83D\uDD04',
-  differentials: '\u2699\uFE0F',
-  tires: '\uD83D\uDD18',
-  wheels: '\u2B55',
-  batteries: '\uD83D\uDD0B',
-  servos: '\uD83C\uDFAE',
-  bearings: '\uD83D\uDD35',
-  'gear-sets': '\u2699\uFE0F',
-  'body-exterior': '\uD83D\uDE97',
-  radio: '\uD83D\uDCE1',
-  'screws-fasteners': '\uD83D\uDD29',
-  'tools-accessories': '\uD83E\uDDF0',
-  'axles-hubs': '\u2699\uFE0F',
-  'wheel-accessories': '\u2B55',
+// Category → Lucide icon. Keyed by both category_name and category_slug for safety.
+const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
+  // by category_name
+  'Motors': Zap,
+  'Batteries': Battery,
+  'ESC / Speed Control': Settings2,
+  'ESCs': Settings2,
+  'Servos': Activity,
+  'Suspension Arms': Wrench,
+  'Shocks & Dampers': Layers,
+  'Shocks': Layers,
+  'Driveshafts & CVDs': Disc,
+  'Driveshafts': Disc,
+  'Differentials': Disc,
+  'Tires & Wheels': Circle,
+  'Tires': Circle,
+  'Wheels': Circle,
+  'Body & Exterior': Car,
+  'Body / Exterior': Car,
+  'Receivers & Transmitters': Radio,
+  'Radio': Radio,
+  // by category_slug
+  motors: Zap,
+  batteries: Battery,
+  escs: Settings2,
+  servos: Activity,
+  'suspension-arms': Wrench,
+  shocks: Layers,
+  driveshafts: Disc,
+  differentials: Disc,
+  tires: Circle,
+  wheels: Circle,
+  'body-exterior': Car,
+  radio: Radio,
+  chassis: Wrench,
+  bearings: Disc,
+  'gear-sets': Disc,
+  'screws-fasteners': Wrench,
+  'tools-accessories': Wrench,
+  'axles-hubs': Disc,
+  'wheel-accessories': Circle,
+}
+
+function iconFor(category: Category | undefined): LucideIcon {
+  if (!category) return Package
+  return (
+    CATEGORY_ICON_MAP[category.category_name] ??
+    CATEGORY_ICON_MAP[category.category_slug] ??
+    Package
+  )
+}
+
+// Amazon-first link sort (DB display_priority has Amazon at 5/lowest — must override).
+function sortLinks(links: PurchaseLink[]): PurchaseLink[] {
+  const order: Record<string, number> = { amazon: 0, ebay: 1 }
+  return [...links].sort((a, b) => {
+    const aRank = order[a.retailer_slug] ?? 2
+    const bRank = order[b.retailer_slug] ?? 2
+    if (aRank !== bRank) return aRank - bRank
+    const aPri = a.display_priority ?? a.priority ?? 0
+    const bPri = b.display_priority ?? b.priority ?? 0
+    return bPri - aPri
+  })
+}
+
+function validLinks(links: PurchaseLink[] | undefined | null): PurchaseLink[] {
+  if (!links) return []
+  return links.filter((l) => typeof l.url === 'string' && l.url.trim().length > 0)
 }
 
 const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
@@ -90,61 +155,48 @@ const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
 }
 
 function PartTypeBadge({ part }: { part: Part }) {
-  if (part.is_oem) {
-    const b = TYPE_BADGE.oem
-    return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
-  }
-  const b = TYPE_BADGE[part.part_type] ?? TYPE_BADGE.universal_fitment
-  return <span className={`${b.cls} text-xs px-2 py-0.5 rounded`}>{b.label}</span>
+  const b = part.is_oem
+    ? TYPE_BADGE.oem
+    : TYPE_BADGE[part.part_type] ?? TYPE_BADGE.universal_fitment
+  return <span className={`${b.cls} text-[11px] px-1.5 py-0.5 rounded font-medium`}>{b.label}</span>
 }
 
-
-function UpgradeCard({ part, bestLink, price }: { part: Part; bestLink: PurchaseLink | undefined; price: number | null }) {
-  const [imgErr, setImgErr] = useState(false)
-  const imgSrc = part.thumbnail_url || part.image_url
-  const showImg = imgSrc && !imgErr
-
+function CtaButton({ link, primary }: { link: PurchaseLink; primary: boolean }) {
+  const priceLabel = link.price_usd != null ? ` $${Math.round(link.price_usd)}` : ''
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5">
-      <div className="flex items-center gap-3 min-w-0">
-        {showImg ? (
-          <img src={imgSrc} alt={part.part_name} className="w-12 h-12 object-contain rounded-lg bg-slate-800 flex-shrink-0" loading="lazy" onError={() => setImgErr(true)} />
-        ) : null}
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-white leading-5 truncate">{part.part_name}</div>
-          {price != null && <div className="text-xs text-amber-400 mt-0.5">${Number(price).toFixed(2)}</div>}
-        </div>
-      </div>
-      {bestLink?.url && (
-        <a href={bestLink.url} target={bestLink.retailer_slug === 'ebay' ? '_self' : '_blank'} rel="noopener noreferrer sponsored" className="flex-shrink-0 inline-flex items-center rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400">
-          Buy
-        </a>
-      )}
-    </div>
+    <a
+      href={link.url}
+      target={link.retailer_slug === 'ebay' ? '_self' : '_blank'}
+      rel="noopener noreferrer sponsored"
+      className={`inline-flex min-h-11 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
+        primary
+          ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
+          : 'border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-400'
+      }`}
+    >
+      <span className="truncate">{link.retailer_name}{priceLabel}</span>
+      <ArrowUpRight className="h-3.5 w-3.5 flex-shrink-0" />
+    </a>
   )
 }
 
-function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) {
+function PartCard({ part, category }: { part: Part; category: Category }) {
+  const Icon = iconFor(category)
+  const brand = part.manufacturer || part.aftermarket_brand
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
-  const brand = part.manufacturer || part.aftermarket_brand
-  const links = (part.purchase_links ?? []).slice(0, 3)
-  const imgSrc = part.thumbnail_url || part.image_url
-  const [imgError, setImgError] = useState(false)
-  const showImg = imgSrc && !imgError
+  const links = sortLinks(validLinks(part.purchase_links)).slice(0, 3)
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 space-y-2">
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-10 h-10 rounded overflow-hidden bg-slate-800 flex items-center justify-center">
-          {showImg ? (
-            <img src={imgSrc} alt={part.part_name} className="w-full h-full object-cover" loading="lazy" onError={() => setImgError(true)} />
-          ) : (
-            <span className="text-lg">{CATEGORY_ICON[categorySlug] ?? '\uD83D\uDD27'}</span>
-          )}
+    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 space-y-2">
+      <div className="flex items-start gap-2.5">
+        <div className="flex-shrink-0 w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-400">
+          <Icon className="h-5 w-5" aria-hidden />
         </div>
         <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
-          <span className="text-sm font-medium text-white">{part.part_name}</span>
+          <span className="text-sm font-medium text-white leading-5 line-clamp-2">
+            {part.part_name}
+          </span>
           {priceDisplay ? (
             <span className="flex-shrink-0 text-sm font-semibold text-amber-400">{priceDisplay}</span>
           ) : msrpDisplay ? (
@@ -155,7 +207,7 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
 
       <div className="flex flex-wrap items-center gap-1.5">
         <PartTypeBadge part={part} />
-        {brand && <span className="text-xs text-slate-500 ml-1">{brand}</span>}
+        {brand && <span className="text-xs text-slate-500">{brand}</span>}
         {part.part_number && (
           <span className="text-xs text-slate-600 ml-auto">#{part.part_number}</span>
         )}
@@ -165,34 +217,16 @@ function PartCard({ part, categorySlug }: { part: Part; categorySlug: string }) 
         <p className="text-xs text-slate-500 line-clamp-2">{part.description}</p>
       )}
 
-      {links.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+      {links.length > 0 && (
+        <div className={`grid gap-1.5 pt-0.5 ${links.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {links.map((link, i) => (
-            <a
-              key={link.link_id}
-              href={link.url}
-              target={link.retailer_slug === 'ebay' ? '_self' : '_blank'}
-              rel="noopener noreferrer sponsored"
-              className={`inline-flex items-center gap-1 px-3 py-1 rounded text-xs transition-colors ${
-                i === 0
-                  ? 'bg-amber-500 text-slate-950 font-semibold hover:bg-amber-400'
-                  : 'border border-slate-600 text-slate-300 hover:border-amber-500 hover:text-amber-400'
-              }`}
-            >
-              {link.retailer_name}
-              {link.price_usd != null && ` $${Math.round(link.price_usd)}`}
-              {' \u2192'}
-            </a>
+            <CtaButton key={link.link_id} link={link} primary={i === 0} />
           ))}
         </div>
-      ) : (
-        <p className="text-xs text-slate-600 pt-1">No buy links yet</p>
       )}
     </div>
   )
 }
-
-// ─── Type group helpers ──────────────────────────────────────────────
 
 type TypeGroup = {
   key: string
@@ -214,7 +248,6 @@ function groupByPartType(categories: Category[]): TypeGroup[] {
     groups[getPartTypeKey(part)].push(part)
   }
 
-  // Sort parts alphabetically within each group
   for (const key of Object.keys(groups)) {
     groups[key].sort((a, b) => a.part_name.localeCompare(b.part_name))
   }
@@ -233,12 +266,10 @@ function getSupportLabel(total: number): string {
   return 'Limited parts coverage'
 }
 
-// ─── Top upgrades selection ──────────────────────────────────────────
-
 function selectTopUpgrades(categories: Category[]): Part[] {
   const allParts = categories.flatMap((c) => c.parts)
   const upgrades = allParts.filter(
-    (p) => p.part_type === 'aftermarket_upgrade' && p.purchase_links && p.purchase_links.length > 0
+    (p) => p.part_type === 'aftermarket_upgrade' && validLinks(p.purchase_links).length > 0
   )
 
   if (upgrades.length < 3) return []
@@ -257,9 +288,10 @@ function selectTopUpgrades(categories: Category[]): Part[] {
     if (/\b(chassis|brace|skid|armor)\b/.test(nameLower)) score += 10
     if (/\b(arm|link|knuckle|hub)\b/.test(nameLower)) score += 8
 
-    score += Math.min(p.purchase_links.length * 10, 20)
+    score += Math.min(validLinks(p.purchase_links).length * 10, 20)
 
-    const price = p.purchase_links[0]?.price_usd ?? p.msrp ?? 0
+    const firstLink = sortLinks(validLinks(p.purchase_links))[0]
+    const price = firstLink?.price_usd ?? p.msrp ?? 0
     if (price >= 200) score += 15
     else if (price >= 100) score += 10
     else if (price >= 50) score += 5
@@ -273,7 +305,6 @@ function selectTopUpgrades(categories: Category[]): Part[] {
 
   const results: Part[] = []
   const seen = new Set<string>()
-
   for (const { part } of scored) {
     const key = part.part_name.toLowerCase().split(' ').slice(0, 3).join(' ')
     if (!seen.has(key)) {
@@ -282,51 +313,86 @@ function selectTopUpgrades(categories: Category[]): Part[] {
     }
     if (results.length >= 5) break
   }
-
   return results
 }
 
-// ─── Collapsible category section ───────────────────────────────────
+function UpgradeCard({ part, category }: { part: Part; category: Category | undefined }) {
+  const Icon = iconFor(category)
+  const links = sortLinks(validLinks(part.purchase_links))
+  const bestLink = links[0]
+  const price = bestLink?.price_usd ?? part.msrp
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+          <Icon className="h-5 w-5" aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-white leading-5 line-clamp-1">{part.part_name}</div>
+          {price != null && (
+            <div className="text-xs text-amber-400 mt-0.5">${Number(price).toFixed(2)}</div>
+          )}
+        </div>
+      </div>
+      {bestLink?.url && (
+        <a
+          href={bestLink.url}
+          target={bestLink.retailer_slug === 'ebay' ? '_self' : '_blank'}
+          rel="noopener noreferrer sponsored"
+          className="flex-shrink-0 inline-flex min-h-11 items-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-400"
+        >
+          Buy
+        </a>
+      )}
+    </div>
+  )
+}
 
 const PREVIEW_LIMIT = 5
 
-function CategorySection({ category, defaultOpen }: { category: Category; defaultOpen: boolean }) {
+function CategorySection({
+  category,
+  defaultOpen,
+}: {
+  category: Category
+  defaultOpen: boolean
+}) {
   const [open, setOpen] = useState(defaultOpen)
   const [showAll, setShowAll] = useState(category.parts.length <= PREVIEW_LIMIT)
   const visibleParts = showAll ? category.parts : category.parts.slice(0, PREVIEW_LIMIT)
-  const icon = CATEGORY_ICON[category.category_slug] ?? '\uD83D\uDD27'
+  const Icon = iconFor(category)
 
   return (
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-2 text-left"
+        className="flex w-full min-h-11 items-center justify-between py-2 text-left"
+        aria-expanded={open}
       >
         <div className="flex items-center gap-2">
-          <span className="text-base">{icon}</span>
+          <Icon className="h-4 w-4 text-slate-400" aria-hidden />
           <h3 className="text-base font-medium text-white">{category.category_name}</h3>
           <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
             {category.parts.length}
           </span>
         </div>
-        <svg
+        <ChevronDown
           className={`h-4 w-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+          aria-hidden
+        />
       </button>
       {open && (
         <div>
-          <div className="grid gap-3 md:grid-cols-2 mt-2">
+          <div className="grid gap-2 md:grid-cols-2 mt-2">
             {visibleParts.map((part) => (
-              <PartCard key={part.part_id} part={part} categorySlug={category.category_slug} />
+              <PartCard key={part.part_id} part={part} category={category} />
             ))}
           </div>
           {!showAll && category.parts.length > PREVIEW_LIMIT && (
             <button
               onClick={() => setShowAll(true)}
-              className="mt-3 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
+              className="mt-3 min-h-11 text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors"
             >
               Show all {category.parts.length} →
             </button>
@@ -337,14 +403,12 @@ function CategorySection({ category, defaultOpen }: { category: Category; defaul
   )
 }
 
-// ─── Main component ──────────────────────────────────────────────────
-
 interface VariantPartsSectionProps {
   variantSlug: string
   variantName: string
 }
 
-export default function VariantPartsSection({ variantSlug, variantName }: VariantPartsSectionProps) {
+export default function VariantPartsSection({ variantSlug }: VariantPartsSectionProps) {
   const [data, setData] = useState<PartsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [sectionOpen, setSectionOpen] = useState(false)
@@ -361,9 +425,8 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           setLoading(false)
           return
         }
-        // RPC returns JSONB — supabase-js may wrap scalar in array
         const raw = Array.isArray(result) ? result[0] : result
-        const d = (raw && typeof raw === 'object' && 'categories' in raw) ? raw as PartsData : null
+        const d = raw && typeof raw === 'object' && 'categories' in raw ? (raw as PartsData) : null
         setData(d)
         if (d && d.categories) {
           setSectionOpen(d.total_parts <= 20 && d.categories.length <= 3)
@@ -394,13 +457,22 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
   const universalCount = typeGroups.find((g) => g.key === 'universal')?.parts.length ?? 0
   const supportLabel = getSupportLabel(data.total_parts)
   const topUpgrades = selectTopUpgrades(data.categories)
+  const categoryForPart = (p: Part): Category | undefined => {
+    for (const c of data.categories) {
+      if (c.parts.some((x) => x.part_id === p.part_id)) return c
+    }
+    return undefined
+  }
+
+  // Phase 2: only group by category if >8 parts. Otherwise flat list.
+  const useCategories = data.total_parts > 8
 
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 overflow-hidden">
-      {/* Summary bar — always visible */}
       <button
         onClick={() => setSectionOpen(!sectionOpen)}
-        className="flex w-full items-center justify-between px-6 py-4 text-left"
+        className="flex w-full min-h-11 items-center justify-between px-4 py-3 text-left sm:px-6 sm:py-4"
+        aria-expanded={sectionOpen}
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -408,7 +480,9 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
             <span className="text-xs text-slate-500">{supportLabel}</span>
           </div>
           <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">
-            <span>{data.total_parts} parts across {typeGroups.length} categories</span>
+            <span>
+              {data.total_parts} parts across {typeGroups.length} categories
+            </span>
             {oemCount > 0 && <span className="text-blue-400">OEM: {oemCount}</span>}
             {upgradeCount > 0 && <span className="text-purple-400">Upgrades: {upgradeCount}</span>}
             {universalCount > 0 && <span className="text-slate-400">Universal: {universalCount}</span>}
@@ -418,43 +492,41 @@ export default function VariantPartsSection({ variantSlug, variantName }: Varian
           <span className="text-xs text-slate-500">
             {sectionOpen ? 'Show less' : `Show all ${data.total_parts}`}
           </span>
-          <svg
+          <ChevronDown
             className={`h-4 w-4 text-slate-500 transition-transform ${sectionOpen ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+            aria-hidden
+          />
         </div>
       </button>
 
-      {/* Top upgrades — always visible when present */}
       {topUpgrades.length > 0 && (
-        <div className="px-6 pb-4 border-t border-slate-800 pt-4">
+        <div className="px-4 pb-4 border-t border-slate-800 pt-4 sm:px-6">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
             Top Upgrades for This Model
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {topUpgrades.map((part) => {
-              const bestLink = (part.purchase_links ?? [])[0]
-              const price = bestLink?.price_usd ?? part.msrp
-              return (
-                <UpgradeCard key={part.part_id} part={part} bestLink={bestLink} price={price} />
-              )
-            })}
+            {topUpgrades.map((part) => (
+              <UpgradeCard key={part.part_id} part={part} category={categoryForPart(part)} />
+            ))}
           </div>
         </div>
       )}
 
-      {/* Expanded content — grouped by category */}
       {sectionOpen && (
-        <div className="px-6 pb-6 space-y-6 border-t border-slate-800 pt-4">
-          {data.categories.map((cat) => (
-            <CategorySection
-              key={cat.category_slug}
-              category={cat}
-              defaultOpen={data.total_parts <= 20}
-            />
-          ))}
+        <div className="px-4 pb-6 border-t border-slate-800 pt-4 space-y-6 sm:px-6">
+          {useCategories ? (
+            data.categories.map((cat, i) => (
+              <CategorySection key={cat.category_slug} category={cat} defaultOpen={i < 2} />
+            ))
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2">
+              {data.categories.flatMap((cat) =>
+                cat.parts.map((part) => (
+                  <PartCard key={part.part_id} part={part} category={cat} />
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

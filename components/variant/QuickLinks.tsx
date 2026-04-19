@@ -1,4 +1,4 @@
-import { Calculator, Gauge, FileText, Layers, HelpCircle } from "lucide-react";
+import { Calculator, Gauge, FileText, Layers, HelpCircle, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import type { ResourceLink } from "@/lib/tools/types";

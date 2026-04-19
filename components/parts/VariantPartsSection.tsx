@@ -16,6 +16,7 @@ import {
   Package,
   ArrowUpRight,
   ChevronDown,
+  Sparkles,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -130,6 +131,73 @@ function iconFor(category: Category | undefined): LucideIcon {
   )
 }
 
+type Tint = { bg: string; text: string }
+const TINT_AMBER: Tint = { bg: 'bg-amber-950/60', text: 'text-amber-400' }
+const TINT_GREEN: Tint = { bg: 'bg-green-950/60', text: 'text-green-400' }
+const TINT_BLUE: Tint = { bg: 'bg-blue-950/60', text: 'text-blue-400' }
+const TINT_PURPLE: Tint = { bg: 'bg-purple-950/60', text: 'text-purple-400' }
+const TINT_SLATE: Tint = { bg: 'bg-slate-800', text: 'text-slate-300' }
+
+// Category tint lookup — keyed by category_name and category_slug.
+const CATEGORY_TINT_MAP: Record<string, Tint> = {
+  // amber — power / drive output
+  Motors: TINT_AMBER,
+  motors: TINT_AMBER,
+  ESCs: TINT_AMBER,
+  'ESC / Speed Control': TINT_AMBER,
+  escs: TINT_AMBER,
+  // green — energy
+  Batteries: TINT_GREEN,
+  batteries: TINT_GREEN,
+  Charging: TINT_GREEN,
+  charging: TINT_GREEN,
+  // blue — electronics / control
+  Servos: TINT_BLUE,
+  servos: TINT_BLUE,
+  'Receivers & Transmitters': TINT_BLUE,
+  Radio: TINT_BLUE,
+  radio: TINT_BLUE,
+  // purple — cosmetic
+  'Body & Exterior': TINT_PURPLE,
+  'Body / Exterior': TINT_PURPLE,
+  'body-exterior': TINT_PURPLE,
+}
+
+function tintFor(category: Category | undefined): Tint {
+  if (!category) return TINT_SLATE
+  return (
+    CATEGORY_TINT_MAP[category.category_name] ??
+    CATEGORY_TINT_MAP[category.category_slug] ??
+    TINT_SLATE
+  )
+}
+
+const RETAILER_SHORT_NAME: Record<string, string> = {
+  amazon: 'Amazon',
+  ebay: 'eBay',
+  amain: 'AMain',
+  'amain-hobbies': 'AMain',
+  amain_hobbies: 'AMain',
+  traxxas_direct: 'Traxxas',
+  'traxxas-direct': 'Traxxas',
+  m2c_direct: 'M2C',
+  'm2c-direct': 'M2C',
+  hot_racing_direct: 'Hot Racing',
+  'hot-racing-direct': 'Hot Racing',
+  vitavon_direct: 'Vitavon',
+  'vitavon-direct': 'Vitavon',
+  scorched_direct: 'Scorched',
+  'scorched-direct': 'Scorched',
+  proline_direct: 'ProLine',
+  'proline-direct': 'ProLine',
+  jconcepts_direct: 'JConcepts',
+  'jconcepts-direct': 'JConcepts',
+}
+
+function retailerShortName(link: PurchaseLink): string {
+  return RETAILER_SHORT_NAME[link.retailer_slug] ?? link.retailer_name
+}
+
 // Amazon-first link sort (DB display_priority has Amazon at 5/lowest — must override).
 function sortLinks(links: PurchaseLink[]): PurchaseLink[] {
   const order: Record<string, number> = { amazon: 0, ebay: 1 }
@@ -162,7 +230,11 @@ function PartTypeBadge({ part }: { part: Part }) {
 }
 
 function CtaButton({ link, primary }: { link: PurchaseLink; primary: boolean }) {
-  const priceLabel = link.price_usd != null ? ` $${Math.round(link.price_usd)}` : ''
+  const shortName = retailerShortName(link)
+  const label =
+    link.price_usd != null
+      ? `${shortName} · $${Math.round(link.price_usd)}`
+      : shortName
   return (
     <a
       href={link.url}
@@ -174,7 +246,7 @@ function CtaButton({ link, primary }: { link: PurchaseLink; primary: boolean }) 
           : 'border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-400'
       }`}
     >
-      <span className="truncate">{link.retailer_name}{priceLabel}</span>
+      <span className="truncate">{label}</span>
       <ArrowUpRight className="h-3.5 w-3.5 flex-shrink-0" />
     </a>
   )
@@ -182,19 +254,29 @@ function CtaButton({ link, primary }: { link: PurchaseLink; primary: boolean }) 
 
 function PartCard({ part, category }: { part: Part; category: Category }) {
   const Icon = iconFor(category)
+  const tint = tintFor(category)
   const brand = part.manufacturer || part.aftermarket_brand
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
   const links = sortLinks(validLinks(part.purchase_links)).slice(0, 3)
+  const hasLinks = links.length > 0
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 space-y-2">
+    <div
+      className={`rounded-lg border border-slate-700 bg-slate-900 space-y-2 ${
+        hasLinks ? 'px-3 py-2.5' : 'px-3 py-2'
+      }`}
+    >
       <div className="flex items-start gap-2.5">
-        <div className="flex-shrink-0 w-10 h-10 rounded bg-slate-800 flex items-center justify-center text-slate-400">
+        <div className={`flex-shrink-0 w-11 h-11 rounded-lg flex items-center justify-center ${tint.bg} ${tint.text}`}>
           <Icon className="h-5 w-5" aria-hidden />
         </div>
         <div className="flex-1 min-w-0 flex items-start justify-between gap-2">
-          <span className="text-sm font-medium text-white leading-5 line-clamp-2">
+          <span
+            className={`text-sm font-medium leading-5 ${
+              hasLinks ? 'text-white line-clamp-2' : 'text-slate-300 line-clamp-1'
+            }`}
+          >
             {part.part_name}
           </span>
           {priceDisplay ? (
@@ -217,7 +299,7 @@ function PartCard({ part, category }: { part: Part; category: Category }) {
         <p className="text-xs text-slate-500 line-clamp-2">{part.description}</p>
       )}
 
-      {links.length > 0 && (
+      {hasLinks && (
         <div className={`grid gap-1.5 pt-0.5 ${links.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
           {links.map((link, i) => (
             <CtaButton key={link.link_id} link={link} primary={i === 0} />
@@ -318,20 +400,21 @@ function selectTopUpgrades(categories: Category[]): Part[] {
 
 function UpgradeCard({ part, category }: { part: Part; category: Category | undefined }) {
   const Icon = iconFor(category)
+  const tint = tintFor(category)
   const links = sortLinks(validLinks(part.purchase_links))
   const bestLink = links[0]
-  const price = bestLink?.price_usd ?? part.msrp
+  const price = part.best_price ?? bestLink?.price_usd ?? part.msrp
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-700 border-l-2 border-l-amber-500/40 bg-slate-950 px-3 py-2.5">
       <div className="flex items-center gap-2.5 min-w-0">
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400">
+        <div className={`flex-shrink-0 w-11 h-11 rounded-lg flex items-center justify-center ${tint.bg} ${tint.text}`}>
           <Icon className="h-5 w-5" aria-hidden />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-medium text-white leading-5 line-clamp-1">{part.part_name}</div>
           {price != null && (
-            <div className="text-xs text-amber-400 mt-0.5">${Number(price).toFixed(2)}</div>
+            <div className="text-xs text-amber-400 mt-0.5">${Math.round(Number(price))}</div>
           )}
         </div>
       </div>
@@ -362,6 +445,10 @@ function CategorySection({
   const [showAll, setShowAll] = useState(category.parts.length <= PREVIEW_LIMIT)
   const visibleParts = showAll ? category.parts : category.parts.slice(0, PREVIEW_LIMIT)
   const Icon = iconFor(category)
+  const isShoppable = category.parts.some((p) => validLinks(p.purchase_links).length > 0)
+  const badgeClass = isShoppable
+    ? 'bg-amber-500/20 text-amber-300'
+    : 'bg-slate-800 text-slate-500'
 
   return (
     <div>
@@ -373,7 +460,7 @@ function CategorySection({
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-slate-400" aria-hidden />
           <h3 className="text-base font-medium text-white">{category.category_name}</h3>
-          <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-slate-400">
+          <span className={`rounded-full px-2 py-0.5 text-xs ${badgeClass}`}>
             {category.parts.length}
           </span>
         </div>
@@ -513,7 +600,8 @@ export default function VariantPartsSection({ variantSlug }: VariantPartsSection
 
       {topUpgrades.length > 0 && (
         <div className="px-4 pb-4 border-t border-slate-800 pt-4 sm:px-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+          <h3 className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">
+            <Sparkles className="h-3.5 w-3.5 text-amber-400" aria-hidden />
             Top Upgrades for This Model
           </h3>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

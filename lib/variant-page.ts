@@ -2,7 +2,7 @@ import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { VariantPagePayload } from "@/types/variant-page";
 
-const RPC_TIMEOUT_MS = 8000;
+const RPC_TIMEOUT_MS = 15000;
 
 /**
  * Cached server-side fetch of get_variant_page_payload.

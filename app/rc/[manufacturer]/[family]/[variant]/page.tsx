@@ -218,6 +218,21 @@ async function PricingSection({
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
 
+  if (!variantPayload) {
+    return (
+      <>
+        <CompactHeroImage
+          imageUrl={approvedPrimaryImage.url}
+          imageAlt={approvedPrimaryImage.alt}
+          modelName={modelName}
+        />
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-xs text-slate-500">
+          Pricing data temporarily unavailable — check back shortly.
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <CompactHeroImage

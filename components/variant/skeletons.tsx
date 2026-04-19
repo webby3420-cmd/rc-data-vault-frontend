@@ -200,7 +200,7 @@ export function VariantPageSkeleton() {
         {/* Hero image */}
         <section className="mb-8">
           <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
-            <div className={`w-full aspect-[4/3] ${pulse}`} />
+            <div className={`w-full aspect-[16/9] max-h-56 sm:max-h-64 ${pulse}`} />
           </div>
         </section>
         {/* Content */}

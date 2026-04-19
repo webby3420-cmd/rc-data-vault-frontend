@@ -112,7 +112,7 @@ function SignalStrip({
     chips.push({ key: "verified", label: "Verified Data", icon: ShieldCheck, color: "text-emerald-400" });
   }
   if (observationCount > 0) {
-    chips.push({ key: "sales", label: `${observationCount} sales`, icon: BarChart3, color: "text-slate-300" });
+    chips.push({ key: "observations", label: `${observationCount} price observations`, icon: BarChart3, color: "text-slate-300" });
   }
   if (demandLabel) {
     chips.push({ key: "demand", label: demandLabel, icon: Users, color: "text-slate-300" });

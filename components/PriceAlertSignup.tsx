@@ -8,33 +8,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-function getFraming(priceBand: string | null, demandLabel: string | null): { headline: string; detail: string } | null {
-  if (!priceBand) return null;
-  if (priceBand === "Below Market") {
-    return {
-      headline: "This model is currently priced below recent comps.",
-      detail: "Good time to be ready — set an alert to catch the next comparable listing.",
-    };
-  }
-  if (priceBand === "Above Market") {
-    return {
-      headline: "Prices on this model are currently higher than typical.",
-      detail: "Worth waiting — set a target below today's market and we'll email you when a matching listing appears.",
-    };
-  }
-  if (priceBand === "Fair" && demandLabel && /high|very high/i.test(demandLabel)) {
-    return {
-      headline: "Priced fairly with active demand.",
-      detail: "Listings move quickly — set a target and we'll email you when one lands at or below your price.",
-    };
-  }
-  if (priceBand === "Fair") {
-    return {
-      headline: "Trading near fair value right now.",
-      detail: "Useful if you're patient — set a target below today's typical price and we'll email you if a listing drops in.",
-    };
-  }
-  return null;
+function getFraming(referencePrice: number | null, referenceLabel: string | null): { headline: string; detail: string } | null {
+  if (!referencePrice) return null;
+  const fmtRef = "$" + Math.round(referencePrice).toLocaleString("en-US");
+  const label = referenceLabel ?? "resale";
+  return {
+    headline: `Typical ${label} price is around ${fmtRef}.`,
+    detail: "Set a target below that and we\u2019ll email you when a matching listing appears.",
+  };
 }
 
 function maskEmail(email: string): string {
@@ -52,9 +33,8 @@ export default function PriceAlertSignup({
   familySlug,
   modelFamilyId,
   signupSource,
-  priceBand,
-  medianPrice,
-  demandLabel,
+  referencePrice,
+  referenceLabel,
 }: {
   variantId: string;
   variantSlug: string;
@@ -63,9 +43,8 @@ export default function PriceAlertSignup({
   familySlug?: string;
   modelFamilyId?: string;
   signupSource?: string;
-  priceBand?: string | null;
-  medianPrice?: number | null;
-  demandLabel?: string | null;
+  referencePrice?: number | null;
+  referenceLabel?: string | null;
 }) {
   const [email, setEmail] = useState("");
   const [price, setPrice] = useState("");
@@ -80,8 +59,8 @@ export default function PriceAlertSignup({
   const [allowInternational, setAllowInternational] = useState(false);
   const [showLocationOptions, setShowLocationOptions] = useState(false);
 
-  const suggestedPrice = medianPrice ? Math.round(medianPrice * 0.85 / 10) * 10 : null;
-  const framing = getFraming(priceBand ?? null, demandLabel ?? null);
+  const suggestedPrice = referencePrice ? Math.round(referencePrice * 0.85 / 10) * 10 : null;
+  const framing = getFraming(referencePrice ?? null, referenceLabel ?? null);
 
   async function handleSubmit() {
     if (!email || !price) return;
@@ -204,7 +183,7 @@ export default function PriceAlertSignup({
               <span className="text-slate-300">${parseFloat(price).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>.
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              Check back here anytime — new sold comps update this page&apos;s fair-value estimate.
+              Check back here anytime — new sold comps update this page&apos;s pricing data.
             </p>
           </div>
         </div>
@@ -252,9 +231,9 @@ export default function PriceAlertSignup({
               disabled={loading}
             />
           </div>
-          {medianPrice && (
+          {referencePrice && (
             <p className="mt-1.5 text-xs text-slate-500">
-              Fair value right now is <strong className="text-white">${Math.round(medianPrice).toLocaleString("en-US")}</strong>. Set your target below that.
+              Typical {referenceLabel ?? "resale"} price is <strong className="text-white">${Math.round(referencePrice).toLocaleString("en-US")}</strong>. Set your target below that.
             </p>
           )}
         </label>

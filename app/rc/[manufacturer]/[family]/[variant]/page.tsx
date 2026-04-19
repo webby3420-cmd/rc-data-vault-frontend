@@ -15,8 +15,10 @@ import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import MarketInsightSection from "@/components/market/MarketInsightSection";
+import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import { BadgeDollarSign, ArrowLeftRight, Wrench, Activity, Flame, Users, BarChart3, Signal, ArrowUpRight, Search } from "lucide-react";
 import OpportunitySignals from "@/components/variant/OpportunitySignals";
+import { getVariantPagePayload } from "@/lib/variant-page";
 
 export const dynamic = "force-dynamic";
 
@@ -330,6 +332,17 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     .eq("is_active", true)
     .order("display_priority", { ascending: true });
 
+  // Fetch retail + segmented_pricing from the RPC payload
+  let rpcPayload: Awaited<ReturnType<typeof getVariantPagePayload>> | null = null;
+  try {
+    rpcPayload = await getVariantPagePayload(variantSlug);
+  } catch {
+    // RPC may fail for variants without full payload — degrade gracefully
+  }
+
+  const retail = rpcPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
+  const segmentedPricing = rpcPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -473,14 +486,21 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
           {/* ═══ LAYER 1: ABOVE-THE-FOLD DECISION LAYER ═══ */}
 
+          {/* Pricing Snapshot — segmented lanes */}
+          <PricingSnapshot
+            retail={{ retail_current_price: retail.retail_current_price, retail_price_source: retail.retail_price_source }}
+            segmentedPricing={{ nib: segmentedPricing.nib, used_complete: segmentedPricing.used_complete, roller: segmentedPricing.roller }}
+          />
+
+          {/* Legacy valuation detail block — kept for sub-components that still read blended data */}
           {valuation && (
             <section className="rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-sm">
-              <div className="mb-2 text-sm uppercase tracking-wide text-slate-400">Estimated Value</div>
-              <div className="text-5xl font-semibold text-amber-400">{fmt(valuation.fair_value)}</div>
-              <div className="mt-3 text-lg text-slate-200">
+              <div className="mb-2 text-sm uppercase tracking-wide text-slate-400">Blended Valuation</div>
+              <div className="text-3xl font-semibold text-amber-400">{fmt(valuation.fair_value)}</div>
+              <div className="mt-2 text-sm text-slate-300">
                 Range: {fmt(valuation.low_value)} – {fmt(valuation.high_value)}
               </div>
-              <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-300">
+              <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-300">
                 <span className="rounded-full border border-slate-600 px-3 py-1">{confidenceLabel}</span>
                 <span>{valuation.total_observation_count} sold listings</span>
                 <span>Updated {fmtDate(valuation.last_observation_at)}</span>
@@ -550,28 +570,21 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
             </section>
           )}
 
-          {insightData?.price_position_band && (
+          {insightData?.confidence_label && (
             <MarketInsightSection
-              band={insightData.price_position_band}
-              score={insightData.deal_score_simple!}
-              confidence={insightData.confidence_label!}
-              summary={insightData.market_summary_text!}
-              recommendation={insightData.recommendation_text!}
+              confidence={insightData.confidence_label}
+              summary={insightData.market_summary_text ?? ""}
+              usedComplete={segmentedPricing.used_complete}
+              nib={segmentedPricing.nib}
+              roller={segmentedPricing.roller}
             />
           )}
 
           <OpportunitySignals
-            priceBand={insightData?.price_position_band ?? null}
-            dealScore={insightData?.deal_score_simple ?? null}
-            confidenceLabel={insightData?.confidence_label ?? null}
-            demandScore={intelligence?.demand_score ?? null}
-            demandLabel={intelligence?.demand_label ?? null}
-            marketDepth={intelligence?.market_depth ?? null}
-            buyerSignal={intelligence?.buyer_signal ?? null}
-            marketState={marketIntel?.market_state ?? null}
-            marketStateLabel={marketIntel?.market_state_label ?? null}
-            candidateCount={valuation?.total_observation_count ?? null}
-            valuationStatus={valuation?.confidence ?? null}
+            retailPrice={retail.retail_current_price}
+            usedComplete={segmentedPricing.used_complete}
+            nib={segmentedPricing.nib}
+            roller={segmentedPricing.roller}
           />
 
           {isAlertTraffic ? (
@@ -584,9 +597,17 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               mfrSlug={mfrSlug}
               familySlug={familySlug}
               signupSource="variant_page"
-              priceBand={insightData?.price_position_band ?? null}
-              medianPrice={insightData?.valuation_median_price ? Number(insightData.valuation_median_price) : null}
-              demandLabel={intelligence?.demand_label ?? null}
+              referencePrice={
+                segmentedPricing.used_complete?.median
+                ?? segmentedPricing.nib?.median
+                ?? retail.retail_current_price
+              }
+              referenceLabel={
+                segmentedPricing.used_complete ? "used resale"
+                : segmentedPricing.nib ? "NIB resale"
+                : retail.retail_current_price != null ? "retail"
+                : null
+              }
             />
           )}
 

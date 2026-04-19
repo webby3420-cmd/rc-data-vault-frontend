@@ -26,6 +26,21 @@ export type VariantPagePayload = {
     has_outliers_present: boolean;
     valuation_last_updated_at: string | null;
   };
+
+  retail: {
+    retail_current_price: number | null;
+    retail_price_currency: string | null;
+    retail_price_source: string | null;
+    retail_price_last_verified_at: string | null;
+  };
+
+  segmented_pricing: {
+    nib: { median: number; low: number; high: number; comp_count: number } | null;
+    used_complete: { median: number; low: number; high: number; comp_count: number } | null;
+    roller: { median: number; low: number; high: number; comp_count: number } | null;
+    slider: { median: number; low: number; high: number; comp_count: number } | null;
+  };
+
   recent_sales: Array<{
     price: number;
     price_date: string | null;

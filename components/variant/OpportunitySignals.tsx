@@ -1,163 +1,90 @@
-import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
-  BarChart3,
-  CheckCircle2,
-  Flame,
-  Minus,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
+  Package,
+  ShoppingCart,
   Sparkles,
-  TrendingDown,
   TrendingUp,
-  Users,
+  Wrench,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+type Lane = { median: number; low: number; high: number; comp_count: number };
 
 interface OpportunitySignalsProps {
-  priceBand: "Below Market" | "Fair" | "Above Market" | null;
-  dealScore: number | null;
-  confidenceLabel: "High" | "Medium" | "Low" | null;
-  demandScore: number | null;
-  demandLabel: string | null;
-  marketDepth: string | null;
-  buyerSignal: string | null;
-  marketState: "hot" | "rising" | "stable" | "softening" | "thin" | null;
-  marketStateLabel: string | null;
-  candidateCount: number | null;
-  valuationStatus: string | null;
+  retailPrice: number | null;
+  usedComplete: Lane | null;
+  nib: Lane | null;
+  roller: Lane | null;
 }
 
 interface Signal {
   key: string;
-  label: string;
-  valueText: string;
-  tone: "positive" | "caution" | "neutral" | "weak";
+  text: string;
+  tone: "positive" | "neutral";
   icon: LucideIcon;
+}
+
+function fmt(n: number) {
+  return "$" + Math.round(n).toLocaleString("en-US");
 }
 
 const TONE_COLOR: Record<string, string> = {
   positive: "text-emerald-400",
-  caution: "text-amber-400",
   neutral: "text-slate-300",
-  weak: "text-slate-500",
 };
 
 function buildSignals(props: OpportunitySignalsProps): Signal[] {
   const signals: Signal[] = [];
 
-  // Signal 1 — Deal Quality
-  if (props.priceBand != null) {
-    const score = props.dealScore ?? 0;
-    if (props.priceBand === "Below Market") {
-      signals.push({ key: "deal", label: "Deal Quality", valueText: `Priced below typical market (${score}/100)`, tone: "positive", icon: TrendingDown });
-    } else if (props.priceBand === "Fair") {
-      signals.push({ key: "deal", label: "Deal Quality", valueText: `Trading near fair value (${score}/100)`, tone: "neutral", icon: CheckCircle2 });
-    } else {
-      signals.push({ key: "deal", label: "Deal Quality", valueText: `Listings running above typical (${score}/100)`, tone: "caution", icon: TrendingUp });
-    }
+  // Used prices track near the used-market median
+  if (props.usedComplete) {
+    signals.push({
+      key: "used",
+      text: `Used prices track near the used-market median of ${fmt(props.usedComplete.median)}`,
+      tone: "neutral",
+      icon: ShoppingCart,
+    });
   }
 
-  // Signal 2 — Confidence
-  if (props.confidenceLabel != null) {
-    const count = props.candidateCount ?? 0;
-    if (props.confidenceLabel === "High") {
-      signals.push({ key: "confidence", label: "Confidence", valueText: `Backed by ${count} verified sales`, tone: "positive", icon: ShieldCheck });
-    } else if (props.confidenceLabel === "Medium") {
-      signals.push({ key: "confidence", label: "Confidence", valueText: `Directional — ${count} sales`, tone: "neutral", icon: Shield });
-    } else {
-      signals.push({ key: "confidence", label: "Confidence", valueText: `Limited data — ${count} sales`, tone: "weak", icon: ShieldAlert });
-    }
+  // NIB resale is holding above current retail
+  if (
+    props.nib &&
+    props.retailPrice != null &&
+    props.nib.median > props.retailPrice
+  ) {
+    signals.push({
+      key: "nib_above_retail",
+      text: "NIB resale is holding above current retail",
+      tone: "positive",
+      icon: TrendingUp,
+    });
   }
 
-  // Signal 3 — Demand
-  if (props.demandScore != null) {
-    const tone = props.demandScore >= 70 ? "positive" as const : props.demandScore >= 40 ? "neutral" as const : "weak" as const;
-    const text = props.demandLabel ? `${props.demandLabel} (${props.demandScore}/100)` : `Buyer interest: ${props.demandScore}/100`;
-    signals.push({ key: "demand", label: "Demand", valueText: text, tone, icon: Users });
+  // NIB median standalone (only if we didn't already emit the above)
+  if (props.nib && !signals.some((s) => s.key === "nib_above_retail")) {
+    signals.push({
+      key: "nib",
+      text: `NIB units are trading around ${fmt(props.nib.median)}`,
+      tone: "neutral",
+      icon: Package,
+    });
   }
 
-  // Signal 4 — Market Activity
-  if (props.marketState != null && props.marketStateLabel != null) {
-    const map: Record<string, { tone: Signal["tone"]; icon: LucideIcon; suffix: string }> = {
-      hot: { tone: "caution", icon: Flame, suffix: "moving fast" },
-      rising: { tone: "positive", icon: TrendingUp, suffix: "prices trending up" },
-      stable: { tone: "neutral", icon: Minus, suffix: "steady pricing" },
-      softening: { tone: "positive", icon: TrendingDown, suffix: "possible buying window" },
-      thin: { tone: "weak", icon: Activity, suffix: "few recent sales" },
-    };
-    const entry = map[props.marketState];
-    if (entry) {
-      signals.push({ key: "activity", label: "Market Activity", valueText: `${props.marketStateLabel} — ${entry.suffix}`, tone: entry.tone, icon: entry.icon });
-    }
+  // Roller pricing suggests active project-build market
+  if (props.roller && props.roller.comp_count >= 3) {
+    signals.push({
+      key: "roller",
+      text: "Roller pricing suggests an active project-build market",
+      tone: "neutral",
+      icon: Wrench,
+    });
   }
 
-  // Signal 5 — Market Depth (only if < 4 signals so far)
-  if (signals.length < 4 && props.marketDepth != null) {
-    const depthMap: Record<string, { tone: Signal["tone"]; text: string }> = {
-      deep: { tone: "positive", text: "Strong sample size for pricing" },
-      moderate: { tone: "neutral", text: "Reasonable sample size" },
-      thin: { tone: "weak", text: "Shallow comp pool — treat carefully" },
-      sparse: { tone: "weak", text: "Shallow comp pool — treat carefully" },
-    };
-    const entry = depthMap[props.marketDepth];
-    if (entry) {
-      signals.push({ key: "depth", label: "Market Depth", valueText: entry.text, tone: entry.tone, icon: BarChart3 });
-    }
-  }
-
-  return signals.slice(0, 5);
-}
-
-function buildSummary(props: OpportunitySignalsProps): string {
-  const { priceBand, demandScore, confidenceLabel, marketState } = props;
-
-  if (priceBand === "Below Market" && (demandScore ?? 0) >= 60 && confidenceLabel !== "Low") {
-    return "Worth a close look: priced below typical market with solid buyer interest.";
-  }
-  if (priceBand === "Above Market" && marketState === "softening") {
-    return "Prices are running above typical but the market is softening — consider waiting.";
-  }
-  if (priceBand === "Above Market") {
-    return "Currently trading above typical market — deals may be scarce.";
-  }
-  if (priceBand === "Fair" && (demandScore ?? 0) >= 60) {
-    return "Balanced market with healthy demand — fair-value buys available.";
-  }
-  if (priceBand === "Fair") {
-    return "Market is trading near fair value.";
-  }
-  if (priceBand === "Below Market") {
-    return "Below-market pricing — worth a closer read on condition and seller.";
-  }
-  return "Current market signals for this model at a glance.";
-}
-
-function SignalRow({ signal }: { signal: Signal }) {
-  const Icon = signal.icon;
-  const color = TONE_COLOR[signal.tone];
-
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3">
-      <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${color}`} />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs uppercase tracking-wide text-slate-500">{signal.label}</div>
-        <div className="text-sm text-slate-200 mt-0.5">{signal.valueText}</div>
-      </div>
-    </div>
-  );
+  return signals;
 }
 
 export default function OpportunitySignals(props: OpportunitySignalsProps) {
-  // Gate: only render for sufficiently valued variants
-  const status = props.valuationStatus;
-  if (status !== "reliable" && status !== "low" && status !== "zero_spread") return null;
-  if (props.priceBand == null) return null;
-
   const signals = buildSignals(props);
   if (signals.length === 0) return null;
-
-  const summary = buildSummary(props);
 
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 mt-6">
@@ -167,11 +94,19 @@ export default function OpportunitySignals(props: OpportunitySignalsProps) {
           Opportunity Signals
         </h2>
       </div>
-      <p className="text-sm text-slate-300 leading-relaxed mb-4">{summary}</p>
       <div className="space-y-2">
-        {signals.map((sig) => (
-          <SignalRow key={sig.key} signal={sig} />
-        ))}
+        {signals.map((sig) => {
+          const Icon = sig.icon;
+          return (
+            <div
+              key={sig.key}
+              className="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3"
+            >
+              <Icon className={`h-4 w-4 shrink-0 mt-0.5 ${TONE_COLOR[sig.tone]}`} />
+              <span className="text-sm text-slate-200">{sig.text}</span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 import RCSearch from "@/components/RCSearch";
 
 const supabase = createClient(
@@ -34,10 +35,10 @@ export default async function RCBrowsePage() {
         <h2 className="mb-4 text-xl font-medium text-slate-200">Browse by Manufacturer</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {manufacturers.map((m) => (
-            <a key={m.manufacturer_slug} href={`/rc/${m.manufacturer_slug}`} className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500">
+            <Link key={m.manufacturer_slug} href={`/rc/${m.manufacturer_slug}`} className="rounded-xl border border-slate-700 bg-slate-900 p-5 transition-colors hover:border-slate-500">
               <div className="text-lg font-medium text-white">{m.manufacturer_name}</div>
               <div className="mt-1 text-sm text-slate-400">{m.family_count} {m.family_count === 1 ? "model family" : "model families"} &middot; {m.variant_count} variants</div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 import ResourceSection from "@/components/resources/ResourceSection";
 import ToolsBlock from "@/components/tools/ToolsBlock";
 import FamilyMarketBand from "@/components/family/FamilyMarketBand";
@@ -116,9 +117,9 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <nav className="mb-6 text-sm text-slate-400">
-          <a className="hover:text-white" href="/rc">RC Vehicle Values</a>
+          <Link className="hover:text-white" href="/rc">RC Vehicle Values</Link>
           <span className="mx-2">/</span>
-          <a className="hover:text-white" href={`/rc/${page.manufacturer_slug}`}>{page.manufacturer_name}</a>
+          <Link className="hover:text-white" href={`/rc/${page.manufacturer_slug}`}>{page.manufacturer_name}</Link>
           <span className="mx-2">/</span>
           <span>{page.family_name}</span>
         </nav>

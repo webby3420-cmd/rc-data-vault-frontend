@@ -433,7 +433,7 @@ async function MarketDealsSection({
     if (segmentedPricing.used_complete) return `Used units typically sell for ${fmt(segmentedPricing.used_complete.median)}`;
     if (segmentedPricing.nib) return `Sealed/NIB units are selling for ${fmt(segmentedPricing.nib.median)}`;
     if (segmentedPricing.roller) return `Rolling chassis trade around ${fmt(segmentedPricing.roller.median)}`;
-    return insightData?.market_summary_text ?? null;
+    return null;
   })();
 
   const liquidityLabel = intelligence?.market_depth ?? (

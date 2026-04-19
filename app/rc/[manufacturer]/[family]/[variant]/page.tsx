@@ -332,7 +332,16 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     .order("display_priority", { ascending: true });
 
   // Fetch retail + segmented_pricing directly from the RPC (same pattern as other RPCs on this page)
-  const { data: variantPayload } = await (supabase.rpc as any)("get_variant_page_payload", { p_variant_slug: variantSlug });
+  const { data: variantPayload, error: rpcError } = await (supabase.rpc as any)("get_variant_page_payload", { p_variant_slug: variantSlug });
+  if (rpcError) {
+    console.error("[variant page] RPC error", {
+      variantSlug,
+      code: rpcError.code,
+      message: rpcError.message,
+      details: rpcError.details,
+      hint: rpcError.hint,
+    });
+  }
 
   const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
   const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };

@@ -18,7 +18,6 @@ import MarketInsightSection from "@/components/market/MarketInsightSection";
 import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import { BadgeDollarSign, ArrowLeftRight, Wrench, Activity, Flame, Users, BarChart3, Signal, ArrowUpRight, Search } from "lucide-react";
 import OpportunitySignals from "@/components/variant/OpportunitySignals";
-import { getVariantPagePayload } from "@/lib/variant-page";
 
 export const dynamic = "force-dynamic";
 
@@ -332,16 +331,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     .eq("is_active", true)
     .order("display_priority", { ascending: true });
 
-  // Fetch retail + segmented_pricing from the RPC payload
-  let rpcPayload: Awaited<ReturnType<typeof getVariantPagePayload>> | null = null;
-  try {
-    rpcPayload = await getVariantPagePayload(variantSlug);
-  } catch {
-    // RPC may fail for variants without full payload — degrade gracefully
-  }
+  // Fetch retail + segmented_pricing directly from the RPC (same pattern as other RPCs on this page)
+  const { data: variantPayload } = await (supabase.rpc as any)("get_variant_page_payload", { p_variant_slug: variantSlug });
 
-  const retail = rpcPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
-  const segmentedPricing = rpcPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
+  const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
+  const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
 
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;

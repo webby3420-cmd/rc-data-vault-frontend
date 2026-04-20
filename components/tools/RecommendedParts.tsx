@@ -48,7 +48,7 @@ const SPEC_UNIT: Record<SpecKey, string> = {
 
 export default function RecommendedParts({ specKey, minValue, maxValue, label }: RecommendedPartsProps) {
   const [parts, setParts] = useState<PartResult[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {

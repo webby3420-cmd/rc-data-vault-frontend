@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { estimateTopSpeedMph } from "@/lib/tools/speedEstimator";
 import RecommendedParts from "@/components/tools/RecommendedParts";
 
@@ -29,6 +29,13 @@ function NumberInput({ value, onChange, min, max, step, placeholder }: {
 
 export default function SpeedEstimatorCalculator() {
   const [kv, setKv] = useState("2200");
+  const [debouncedKv, setDebouncedKv] = useState(kv);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedKv(kv), 400);
+    return () => clearTimeout(timer);
+  }, [kv]);
+
   const [volts, setVolts] = useState("14.8");
   const [spur, setSpur] = useState("54");
   const [pinion, setPinion] = useState("18");
@@ -103,8 +110,8 @@ export default function SpeedEstimatorCalculator() {
       {valid && parseFloat(kv) > 0 && (
         <RecommendedParts
           specKey="kv"
-          minValue={Math.round(parseFloat(kv) * 0.85)}
-          maxValue={Math.round(parseFloat(kv) * 1.15)}
+          minValue={Math.round(parseFloat(debouncedKv) * 0.85)}
+          maxValue={Math.round(parseFloat(debouncedKv) * 1.15)}
           label="Motors in this KV range"
         />
       )}

@@ -39,6 +39,13 @@ const TOOLS = [
     tags: ["Battery", "Runtime"],
   },
   {
+    href: "/tools/esc-calculator",
+    title: "ESC Selector",
+    description: "Find the right ESC amp rating for your battery and use case. See matching ESCs from our catalog with direct buy links.",
+    icon: "⚡",
+    tags: ["ESC", "Amps", "Parts"],
+  },
+  {
     href: "/tools/vehicle-evaluator",
     title: "Vehicle Evaluator",
     description: "Estimate what your RC is worth based on its condition and upgrades installed.",

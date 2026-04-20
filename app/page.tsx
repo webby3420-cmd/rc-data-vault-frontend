@@ -24,7 +24,18 @@ export default async function HomePage() {
 
       {/* Hero */}
       <div className="mx-auto max-w-4xl px-4 py-10 text-center sm:px-6 lg:px-8">
-        <h1 className="mt-4 mb-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <img
+            src="/logo.png"
+            alt=""
+            aria-hidden="true"
+            className="h-6 w-auto"
+          />
+          <span className="text-sm font-semibold tracking-tight text-white">
+            RC<span className="text-amber-400">DataVault</span>
+          </span>
+        </div>
+        <h1 className="mt-0 mb-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
           Know what any RC is worth.
         </h1>
 

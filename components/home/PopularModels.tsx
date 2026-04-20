@@ -84,7 +84,6 @@ export function PopularModels() {
               <h3 className="mt-1.5 text-sm font-semibold text-white group-hover:text-amber-400 transition">
                 {model.name}
               </h3>
-              <p className="mt-2 text-xs leading-5 text-slate-400">{model.blurb}</p>
               {model.priceMid && (
                 <div className="mt-4 text-lg font-semibold text-amber-400">
                   ~{formatPrice(model.priceMid)}

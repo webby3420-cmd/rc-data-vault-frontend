@@ -19,7 +19,7 @@ export default function GasMixPage() {
       <GasMixCalculator />
       <div className="mt-4 flex gap-3">
         <Link href="/tools/nitro-speed" className="rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-400 hover:text-white hover:border-slate-500 transition-colors">
-          Nitro / Gas Speed →
+          Nitro &amp; Gas Speed →
         </Link>
       </div>
     </main>

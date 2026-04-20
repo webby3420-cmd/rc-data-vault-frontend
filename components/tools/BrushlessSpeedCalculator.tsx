@@ -65,7 +65,7 @@ export default function BrushlessSpeedCalculator() {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-white">Brushless Speed Calculator</h2>
+        <h2 className="text-xl font-semibold text-white">Advanced Brushless Speed Calculator</h2>
         <p className="mt-1 text-sm text-slate-400">
           Estimate theoretical top speed from motor KV, LiPo cells, gearing, and tire diameter.
         </p>

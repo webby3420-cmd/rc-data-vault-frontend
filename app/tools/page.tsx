@@ -20,7 +20,7 @@ const TOOLS = [
   {
     href: "/tools/speed-estimator",
     title: "Speed Estimator",
-    description: "Estimate theoretical top speed from motor KV, battery voltage, gearing, and tire diameter. Includes wheel RPM and FDR output.",
+    description: "Quick estimate using basic inputs. Estimate theoretical top speed from motor KV, battery voltage, gearing, and tire diameter. Includes wheel RPM and FDR output.",
     icon: "⚡",
     tags: ["Motor", "Speed", "Gearing"],
   },
@@ -48,8 +48,8 @@ const TOOLS = [
   {
     href: "/tools/brushless-speed",
     icon: "🏎️",
-    title: "Brushless Speed Calculator",
-    description: "Estimate theoretical top speed from motor KV, LiPo cells, gearing, and tire diameter.",
+    title: "Advanced Brushless Speed Calculator",
+    description: "Full gearing, differential, and tire-based speed calculation. Estimate theoretical top speed from motor KV, LiPo cells, gearing, and tire diameter.",
     tags: ["Speed", "Brushless", "KV"],
   },
   {
@@ -62,8 +62,8 @@ const TOOLS = [
   {
     href: "/tools/nitro-speed",
     icon: "⛽",
-    title: "Nitro / Gas Speed Calculator",
-    description: "Estimate top speed for nitro and gas-powered RC vehicles from engine RPM and gearing.",
+    title: "Nitro & Gas Speed Calculator",
+    description: "RPM-based speed estimation for nitro and gas engines. Estimate top speed for nitro and gas-powered RC vehicles from engine RPM and gearing.",
     tags: ["Speed", "Nitro", "Gas"],
   },
   {

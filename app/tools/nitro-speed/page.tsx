@@ -14,7 +14,7 @@ export default function NitroSpeedPage() {
       <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
         <Link href="/tools" className="hover:text-slate-300 transition-colors">Tools</Link>
         <span>/</span>
-        <span className="text-slate-300">Nitro / Gas Speed</span>
+        <span className="text-slate-300">Nitro &amp; Gas Speed</span>
       </div>
       <NitroSpeedCalculator />
       <p className="mt-6 text-xs text-slate-500 text-center">

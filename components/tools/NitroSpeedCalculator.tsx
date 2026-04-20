@@ -60,7 +60,7 @@ export default function NitroSpeedCalculator() {
   return (
     <div className="rounded-2xl border border-slate-700 bg-slate-900 p-6 space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-white">Nitro / Gas Speed Calculator</h2>
+        <h2 className="text-xl font-semibold text-white">Nitro &amp; Gas Speed Calculator</h2>
         <p className="mt-1 text-sm text-slate-400">
           Estimate top speed for nitro and gas-powered RC vehicles from engine RPM, gearing, and tire size.
         </p>

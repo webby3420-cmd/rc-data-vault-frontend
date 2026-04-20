@@ -3,7 +3,7 @@ import BrushlessSpeedCalculator from "@/components/tools/BrushlessSpeedCalculato
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Brushless Speed Calculator | RC Data Vault",
+  title: "Advanced Brushless Speed Calculator | RC Data Vault",
   description:
     "Estimate theoretical top speed for brushless RC vehicles from motor KV, LiPo cells, gearing, and tire size.",
 };
@@ -14,7 +14,7 @@ export default function BrushlessSpeedPage() {
       <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
         <Link href="/tools" className="hover:text-slate-300 transition-colors">Tools</Link>
         <span>/</span>
-        <span className="text-slate-300">Brushless Speed</span>
+        <span className="text-slate-300">Advanced Brushless Speed</span>
       </div>
       <BrushlessSpeedCalculator />
       <p className="mt-6 text-xs text-slate-500 text-center">

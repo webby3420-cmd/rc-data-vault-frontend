@@ -113,7 +113,7 @@ export default function EscCalculator() {
             specKey="amps"
             minValue={result.minAmps}
             maxValue={result.maxAmps}
-            label="Matching ESCs in catalog"
+            label="Recommended ESCs for this setup"
           />
         </div>
       )}

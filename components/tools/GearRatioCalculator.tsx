@@ -76,7 +76,7 @@ export default function GearRatioCalculator() {
           specKey="teeth"
           minValue={parseFloat(spur)}
           maxValue={parseFloat(spur)}
-          label="Spur gears with this tooth count"
+          label="Matching spur gears for this tooth count"
         />
       )}
     </div>

@@ -104,7 +104,7 @@ export default function BatteryRuntimeCalculator() {
           specKey="cells"
           minValue={cells}
           maxValue={cells}
-          label="Batteries in this cell count"
+          label="Matching batteries for this cell count"
         />
       )}
     </div>

@@ -112,7 +112,7 @@ export default function SpeedEstimatorCalculator() {
           specKey="kv"
           minValue={Math.round(parseFloat(debouncedKv) * 0.85)}
           maxValue={Math.round(parseFloat(debouncedKv) * 1.15)}
-          label="Motors in this KV range"
+          label="Matching motors in this KV range"
         />
       )}
     </div>

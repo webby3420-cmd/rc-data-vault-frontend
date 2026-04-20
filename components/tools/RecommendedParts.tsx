@@ -82,75 +82,89 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label }:
     }
   }, [specKey, minValue, maxValue])
 
+  const unit = SPEC_UNIT[specKey]
+
   if (loading) {
     return (
-      <div className="space-y-2 mt-4">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-14 rounded-xl bg-slate-800 animate-pulse" />
-        ))}
+      <div className="mt-2">
+        <div className="mt-6 mb-3 flex items-center gap-3">
+          <h3 className="text-sm font-semibold text-white">{label}</h3>
+        </div>
+        <div className="space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-slate-800 animate-pulse" />
+          ))}
+        </div>
       </div>
     )
   }
 
   if (error) {
-    return <div className="mt-4 text-sm text-red-400">Could not load parts. Try again.</div>
-  }
-
-  if (parts.length === 0) {
     return (
-      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900 px-4 py-5 text-sm text-slate-500">
-        No parts found for this spec range.
+      <div className="mt-2">
+        <div className="mt-4 rounded-xl border border-red-900/30 bg-red-950/20 px-4 py-4">
+          <p className="text-sm text-red-400">Could not load parts. Try again.</p>
+        </div>
       </div>
     )
   }
 
-  const unit = SPEC_UNIT[specKey]
+  if (parts.length === 0) {
+    return (
+      <div className="mt-2">
+        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-5 text-center">
+          <p className="text-sm text-slate-500">No matching parts in catalog yet.</p>
+          <p className="mt-1 text-xs text-slate-600">
+            Coverage is growing — check back as more parts are added.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <>
-      <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">
-        {label}
-        <span className="ml-2 font-normal normal-case text-slate-600">
-          ({parts.length} found)
+    <div className="mt-2">
+      <div className="mt-6 mb-3 flex items-center gap-3">
+        <h3 className="text-sm font-semibold text-white">{label}</h3>
+        <span className="text-xs text-slate-600">
+          {parts.length} {parts.length === 1 ? 'result' : 'results'}
         </span>
-      </h3>
-      <div className="mt-4 space-y-2">
+      </div>
+      <div className="space-y-2">
         {parts.map((part) => (
           <div
             key={part.part_id}
-            className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 flex items-center gap-3"
+            className="flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3"
           >
+            <div className="shrink-0 w-16 text-center">
+              <span className="text-base font-bold text-amber-400">{part.spec_value}</span>
+              <span className="block text-xs text-slate-600 mt-0.5">{unit}</span>
+            </div>
+
+            <div className="w-px self-stretch bg-slate-700 shrink-0" />
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-white truncate">
-                  {part.part_name}
-                </span>
+              <p className="text-sm font-medium text-white leading-snug truncate">
+                {part.part_name}
+              </p>
+              <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-slate-500">{part.manufacturer_name}</span>
                 {part.is_oem ? (
-                  <span className="rounded-full bg-slate-700 px-2 py-0.5 text-xs text-slate-400">
+                  <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-xs text-slate-500">
                     OEM
                   </span>
                 ) : (
-                  <span className="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
+                  <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-xs text-amber-500/80">
                     Aftermarket
                   </span>
                 )}
-              </div>
-              <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-500">
-                <span>{part.manufacturer_name}</span>
-                <span>·</span>
-                <span className="font-medium text-slate-400">
-                  {part.spec_value}
-                  {unit}
-                </span>
                 {part.msrp != null && (
-                  <>
-                    <span>·</span>
-                    <span>${Number(part.msrp).toFixed(0)}</span>
-                  </>
+                  <span className="text-xs text-slate-500">${Number(part.msrp).toFixed(0)}</span>
                 )}
               </div>
             </div>
-            {part.best_link && (
+
+            {part.best_link ? (
               <a
                 href={part.best_link.url}
                 target="_blank"
@@ -159,10 +173,14 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label }:
               >
                 Buy
               </a>
+            ) : (
+              <span className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-600 select-none">
+                No link
+              </span>
             )}
           </div>
         ))}
       </div>
-    </>
+    </div>
   )
 }

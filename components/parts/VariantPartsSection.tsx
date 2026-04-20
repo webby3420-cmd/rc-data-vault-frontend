@@ -216,6 +216,14 @@ function validLinks(links: PurchaseLink[] | undefined | null): PurchaseLink[] {
   return links.filter((l) => typeof l.url === 'string' && l.url.trim().length > 0)
 }
 
+function amazonSearchUrl(name: string): string {
+  return `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=rcdatavault-20`
+}
+
+function ebaySearchUrl(name: string): string {
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(name)}&_sacat=0&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339148896&customid=&toolid=10001&mkevt=1`
+}
+
 const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
   oem: { cls: 'bg-blue-900/40 text-blue-300', label: 'OEM' },
   aftermarket_upgrade: { cls: 'bg-purple-900/40 text-purple-300', label: 'Upgrade' },
@@ -306,6 +314,27 @@ function PartCard({ part, category }: { part: Part; category: Category }) {
           ))}
         </div>
       )}
+
+      <div className="flex gap-1.5 pt-0.5">
+        <a
+          href={amazonSearchUrl(part.part_name)}
+          target="_blank"
+          rel="noopener noreferrer nofollow sponsored"
+          className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
+          title="Search on Amazon — results may vary"
+        >
+          Amazon
+        </a>
+        <a
+          href={ebaySearchUrl(part.part_name)}
+          target="_blank"
+          rel="noopener noreferrer nofollow sponsored"
+          className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
+          title="Search on eBay — results may vary"
+        >
+          eBay
+        </a>
+      </div>
     </div>
   )
 }

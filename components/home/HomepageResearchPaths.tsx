@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 
 const PATHS = [
   { label: 'Traxxas values', href: '/rc/traxxas' },
@@ -15,15 +16,18 @@ export function HomepageResearchPaths() {
   return (
     <section className="border-t border-slate-800 bg-slate-950">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <h2 className="mb-4 text-base font-semibold text-white">Browse by brand or family</h2>
-        <div className="flex flex-wrap gap-3">
-          {PATHS.map(p => (
+        <h2 className="mb-6 text-base font-semibold text-white">Browse by brand</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {PATHS.map((brand) => (
             <Link
-              key={p.href}
-              href={p.href}
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:text-white"
+              key={brand.href}
+              href={brand.href}
+              className="group flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 transition hover:border-slate-500 hover:bg-slate-800"
             >
-              {p.label}
+              <span className="text-sm font-semibold text-white group-hover:text-amber-400 transition">
+                {brand.label}
+              </span>
+              <ChevronRight className="ml-auto h-3.5 w-3.5 text-slate-600 group-hover:text-slate-400 transition" />
             </Link>
           ))}
         </div>

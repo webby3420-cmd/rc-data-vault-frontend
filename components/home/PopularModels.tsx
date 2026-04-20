@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Car } from 'lucide-react'
 
 type PopularModel = {
   manufacturer: string
@@ -57,6 +58,16 @@ function formatPrice(p: number) {
   return '$' + Math.round(p).toLocaleString('en-US')
 }
 
+function getBrandTileClass(manufacturer: string): string {
+  const m = manufacturer.toLowerCase()
+  if (m.includes('traxxas')) return 'bg-amber-950/60'
+  if (m.includes('arrma')) return 'bg-blue-950/60'
+  if (m.includes('losi')) return 'bg-emerald-950/60'
+  if (m.includes('axial')) return 'bg-orange-950/60'
+  if (m.includes('associated')) return 'bg-rose-950/60'
+  return 'bg-slate-800/80'
+}
+
 export function PopularModels() {
   return (
     <section id="popular-models" className="border-t border-slate-800 bg-slate-900">
@@ -72,26 +83,34 @@ export function PopularModels() {
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {POPULAR_MODELS.map((model) => (
-            <Link
-              key={model.href}
-              href={model.href}
-              className="group rounded-2xl border border-slate-700 bg-slate-950 p-5 transition hover:border-slate-500"
-            >
-              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {model.manufacturer}
-              </div>
-              <h3 className="mt-1.5 text-sm font-semibold text-white group-hover:text-amber-400 transition">
-                {model.name}
-              </h3>
-              {model.priceMid && (
-                <div className="mt-4 text-lg font-semibold text-amber-400">
-                  ~{formatPrice(model.priceMid)}
+          {POPULAR_MODELS.map((model) => {
+            const tileClass = getBrandTileClass(model.manufacturer)
+            return (
+              <Link
+                key={model.href}
+                href={model.href}
+                className="group rounded-2xl border border-slate-700 bg-slate-950 overflow-hidden transition hover:border-slate-500"
+              >
+                <div className={`h-24 flex items-center justify-center ${tileClass} group-hover:brightness-110 transition`}>
+                  <Car className="h-8 w-8 opacity-60" />
                 </div>
-              )}
-              <div className="mt-1 text-xs text-slate-500">estimated market value</div>
-            </Link>
-          ))}
+                <div className="p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {model.manufacturer}
+                  </div>
+                  <h3 className="text-sm font-semibold text-white group-hover:text-amber-400 transition">
+                    {model.name}
+                  </h3>
+                  {model.priceMid && (
+                    <div className="mt-4 text-lg font-semibold text-amber-400">
+                      ~{formatPrice(model.priceMid)}
+                    </div>
+                  )}
+                  <div className="mt-1 text-xs text-slate-500">estimated market value</div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
 
         <div className="mt-8 text-center">

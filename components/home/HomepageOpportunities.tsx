@@ -118,7 +118,7 @@ export async function HomepageOpportunities() {
   if (cards.length < 4) return null;
 
   return (
-    <section className="border-t border-slate-800 bg-slate-950">
+    <section className="border-t border-slate-800 bg-slate-900/50">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h2 className="text-3xl font-semibold tracking-tight text-white">Opportunities</h2>
@@ -134,25 +134,28 @@ export async function HomepageOpportunities() {
             const pillCls = isBelowMarket
               ? "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20"
               : "bg-blue-500/20 text-blue-400 ring-1 ring-blue-500/30";
+            const accentCls = isBelowMarket
+              ? "border-l-2 border-l-emerald-500/40"
+              : "border-l-2 border-l-blue-500/40";
 
             return (
               <Link
                 key={card.variant_slug}
                 href={`/rc/${card.manufacturer_slug}/${card.model_family_slug}/${card.variant_slug}`}
-                className="group rounded-2xl border border-slate-700 bg-slate-950 p-5 transition hover:border-slate-500"
+                className={`group rounded-2xl border border-slate-700 bg-slate-950 p-5 transition hover:border-slate-500 ${accentCls}`}
               >
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {card.manufacturer_name}
                 </div>
-                <h3 className="mt-1.5 text-sm font-semibold text-white group-hover:text-amber-400 transition">
-                  {card.variant_name}
-                </h3>
-                <div className="mt-2">
+                <div className="mt-1.5">
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${pillCls}`}>
                     <Icon className="h-3.5 w-3.5" />
                     {card.price_position_band}
                   </span>
                 </div>
+                <h3 className="mt-2 text-sm font-semibold text-white group-hover:text-amber-400 transition">
+                  {card.variant_name}
+                </h3>
                 <div className="mt-3 text-lg font-semibold text-amber-400">
                   ~{formatPrice(card.median_price)}
                 </div>

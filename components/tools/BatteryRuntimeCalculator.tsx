@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import RecommendedParts from "@/components/tools/RecommendedParts";
 
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
@@ -28,6 +29,7 @@ function NumberInput({ value, onChange, min, step, placeholder }: {
 export default function BatteryRuntimeCalculator() {
   const [capacity, setCapacity] = useState("5000");
   const [current, setCurrent] = useState("50");
+  const [cells, setCells] = useState<number | null>(null);
 
   const capVal = parseFloat(capacity);
   const curVal = parseFloat(current);
@@ -49,6 +51,27 @@ export default function BatteryRuntimeCalculator() {
         <Field label="Average Current Draw (A)" help="Typical range: 20–80A for most RC vehicles">
           <NumberInput value={current} onChange={setCurrent} min={0.1} step={1} placeholder="50" />
         </Field>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-200 mb-2">
+          Cell count <span className="text-xs font-normal text-slate-500">(optional — required for battery suggestions)</span>
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {[2, 3, 4, 6, 8].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setCells(cells === s ? null : s)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                cells === s
+                  ? "bg-amber-500 text-slate-950"
+                  : "bg-slate-800 text-slate-400 hover:text-white"
+              }`}
+            >
+              {s}S
+            </button>
+          ))}
+        </div>
       </div>
       {valid ? (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
@@ -75,6 +98,14 @@ export default function BatteryRuntimeCalculator() {
         <div className="rounded-xl border border-slate-700 bg-slate-950 p-5 text-center text-sm text-slate-500">
           Enter valid values above to calculate
         </div>
+      )}
+      {cells !== null && (
+        <RecommendedParts
+          specKey="cells"
+          minValue={cells}
+          maxValue={cells}
+          label="Batteries in this cell count"
+        />
       )}
     </div>
   );

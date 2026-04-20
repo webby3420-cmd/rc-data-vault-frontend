@@ -42,7 +42,7 @@ const TOOLS = [
     href: "/tools/esc-calculator",
     title: "ESC Selector",
     description: "Find the right ESC amp rating for your battery and use case. See matching ESCs from our catalog with direct buy links.",
-    icon: "⚡",
+    icon: "🔌",
     tags: ["ESC", "Amps", "Parts"],
   },
   {

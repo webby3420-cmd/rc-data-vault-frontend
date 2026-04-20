@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { calculateFinalDriveRatio } from "@/lib/tools/gearRatio";
+import RecommendedParts from "@/components/tools/RecommendedParts";
 
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
@@ -69,6 +70,14 @@ export default function GearRatioCalculator() {
         <div className="rounded-xl border border-slate-700 bg-slate-950 p-5 text-center text-sm text-slate-500">
           Enter valid values above to calculate
         </div>
+      )}
+      {valid && parseFloat(spur) > 0 && (
+        <RecommendedParts
+          specKey="teeth"
+          minValue={parseFloat(spur)}
+          maxValue={parseFloat(spur)}
+          label="Spur gears with this tooth count"
+        />
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { estimateTopSpeedMph } from "@/lib/tools/speedEstimator";
+import RecommendedParts from "@/components/tools/RecommendedParts";
 
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
@@ -98,6 +99,14 @@ export default function SpeedEstimatorCalculator() {
         <div className="rounded-xl border border-slate-700 bg-slate-950 p-5 text-center text-sm text-slate-500">
           Enter valid values above to estimate speed
         </div>
+      )}
+      {valid && parseFloat(kv) > 0 && (
+        <RecommendedParts
+          specKey="kv"
+          minValue={Math.round(parseFloat(kv) * 0.85)}
+          maxValue={Math.round(parseFloat(kv) * 1.15)}
+          label="Motors in this KV range"
+        />
       )}
     </div>
   );

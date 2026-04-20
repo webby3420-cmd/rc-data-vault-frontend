@@ -51,10 +51,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         {children}
-        <footer className="border-t border-slate-800 mt-12 py-8 px-4 text-center">
-          <p className="text-xs text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            RC Data Vault is an independent valuation and price guide platform. All manufacturer names, model names, and trademarks are the property of their respective owners. We are not affiliated with or endorsed by any manufacturer.
-          </p>
+        <footer className="border-t border-slate-800 mt-12 py-8 px-4">
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+              <a href="/privacy-policy" className="text-xs text-slate-500 hover:text-slate-400 transition">
+                Privacy Policy
+              </a>
+              <a href="/terms-of-use" className="text-xs text-slate-500 hover:text-slate-400 transition">
+                Terms of Use
+              </a>
+              <a href="/disclaimer" className="text-xs text-slate-500 hover:text-slate-400 transition">
+                Disclaimer
+              </a>
+              <a href="/affiliate-disclosure" className="text-xs text-slate-500 hover:text-slate-400 transition">
+                Affiliate Disclosure
+              </a>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              RC Data Vault is an independent valuation and price guide platform. All manufacturer names, model names, and trademarks are the property of their respective owners. We are not affiliated with or endorsed by any manufacturer.
+            </p>
+          </div>
         </footer>
       </body>
     </html>

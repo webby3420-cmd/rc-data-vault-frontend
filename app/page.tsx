@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 import HomepageSearch from '@/components/HomepageSearch'
 import { HowItWorks } from '@/components/home/HowItWorks'
 import { PopularModels } from '@/components/home/PopularModels'
@@ -16,9 +15,6 @@ export const metadata: Metadata = {
 }
 
 export default async function HomePage() {
-  const supabase = createSupabaseServerClient()
-  await supabase.rpc('get_homepage_stats')
-
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100" id="top">
 

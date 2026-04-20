@@ -17,9 +17,9 @@ export default function BatteryRuntimePage() {
       </div>
       <BatteryRuntimeCalculator />
       <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-slate-300">How to estimate current draw</h3>
+        <h3 className="text-sm font-semibold text-slate-300">How to estimate power draw</h3>
         <p className="text-sm text-slate-400 leading-relaxed">
-          Average current draw depends on your driving style, terrain, and setup. Casual bashing is typically 20–40A, aggressive bashing 40–60A, and racing or speed runs can exceed 80A. Check your ESC logs or use a watt meter for precise readings.
+          Average power draw depends on your motor, gearing, and driving style. Casual bashing: 200–400W. Aggressive bashing: 500–1000W. Racing or high-speed runs: 1000W+. Check your ESC&apos;s watt logging if available, or use a watt meter at the battery leads.
         </p>
         <h3 className="text-sm font-semibold text-slate-300">Tips for longer runtime</h3>
         <p className="text-sm text-slate-400 leading-relaxed">

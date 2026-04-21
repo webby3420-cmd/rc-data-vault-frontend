@@ -221,7 +221,7 @@ export default function HomepageSearch() {
       </div>
 
       {open && results.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
+        <ul className="absolute z-50 mt-1 w-full max-h-96 overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
           {results.map((r, index) => (
             <li key={r.variant_id}>
               <button
@@ -246,7 +246,7 @@ export default function HomepageSearch() {
       )}
 
       {open && !loading && results.length === 0 && query.trim().length >= 2 && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-4 shadow-xl">
+        <div className="absolute z-50 mt-1 w-full max-h-96 overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 px-4 py-4 shadow-xl">
           <ZeroResultRecovery query={query} suggestions={suggestions ?? []} />
         </div>
       )}

@@ -10,14 +10,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-function amazonSearchUrl(name: string): string {
-  return `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=rcdatavault-20`
-}
-
-function ebaySearchUrl(name: string): string {
-  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(name)}&_sacat=0&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339148896&customid=&toolid=10001&mkevt=1`
-}
-
 type SpecKey = 'kv' | 'amps' | 'cells' | 'teeth'
 
 interface RecommendedPartsProps {
@@ -189,26 +181,6 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label, p
                   className="mt-2"
                 />
               )}
-              <div className="flex gap-1.5">
-                <a
-                  href={amazonSearchUrl(part.part_name)}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow sponsored"
-                  className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
-                  title="Search on Amazon — results may vary"
-                >
-                  Amazon
-                </a>
-                <a
-                  href={ebaySearchUrl(part.part_name)}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow sponsored"
-                  className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
-                  title="Search on eBay — results may vary"
-                >
-                  eBay
-                </a>
-              </div>
             </div>
           </div>
         ))}

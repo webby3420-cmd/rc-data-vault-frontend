@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import RecommendedParts from "@/components/tools/RecommendedParts";
 
 function calcSpeed(wheelRpm: number, tireDiamMm: number) {
   const circumMm = Math.PI * tireDiamMm;
@@ -106,12 +107,33 @@ export default function BrushlessSpeedCalculator() {
           <p className="text-xs text-slate-500">
             Theoretical maximum — real speeds vary with sag voltage, terrain, and mechanical losses.
           </p>
-          {/* TODO: <RecommendedParts specKey="kv" minValue={...} maxValue={...} /> */}
         </div>
       ) : (
         <div className="rounded-xl border border-slate-700 bg-slate-950 p-5 text-center text-sm text-slate-500">
           Enter valid values above to estimate speed
         </div>
+      )}
+      {valid && (
+        <>
+          <RecommendedParts
+            specKey="kv"
+            minValue={Math.round(parseFloat(kv) * 0.85)}
+            maxValue={Math.round(parseFloat(kv) * 1.15)}
+            label="Matching motors in this KV range"
+          />
+          <RecommendedParts
+            specKey="teeth"
+            minValue={parseFloat(spur)}
+            maxValue={parseFloat(spur)}
+            label="Matching spur gears"
+          />
+          <RecommendedParts
+            specKey="teeth"
+            minValue={parseFloat(pinion)}
+            maxValue={parseFloat(pinion)}
+            label="Matching pinion gears"
+          />
+        </>
       )}
     </div>
   );

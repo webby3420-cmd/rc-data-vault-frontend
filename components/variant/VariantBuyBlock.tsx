@@ -17,7 +17,7 @@ function ebaySearchUrl(query: string, customId: string): string {
 
 // Manufacturer homepage search URLs — extend as more brands are added
 const MFR_SEARCH: Record<string, (q: string) => string> = {
-  traxxas:        (q) => `https://traxxas.com/search?q=${encodeURIComponent(q)}`,
+  traxxas:        (_q) => `https://traxxas.com/products/models`,
   arrma:          (q) => `https://www.arrma-rc.com/rc-cars`,
   losi:           (q) => `https://www.losi.com/search?q=${encodeURIComponent(q)}`,
   axial:          (q) => `https://www.axialadventure.com/search?q=${encodeURIComponent(q)}`,

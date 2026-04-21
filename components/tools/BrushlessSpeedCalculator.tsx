@@ -2,6 +2,8 @@
 import { useState } from "react";
 import RecommendedParts from "@/components/tools/RecommendedParts";
 
+type GearPitch = 'mod1' | 'mod1_5';
+
 function calcSpeed(wheelRpm: number, tireDiamMm: number) {
   const circumMm = Math.PI * tireDiamMm;
   const speedKmh = (wheelRpm * circumMm * 60) / 1_000_000;
@@ -45,6 +47,7 @@ export default function BrushlessSpeedCalculator() {
   const [diffPinion, setDiffPinion] = useState("14");
   const [diffSpur, setDiffSpur] = useState("38");
   const [tireMm, setTireMm] = useState("110");
+  const [pitch, setPitch] = useState<GearPitch>('mod1');
 
   const kvVal = parseFloat(kv);
   const cellsVal = parseFloat(cells);
@@ -94,6 +97,30 @@ export default function BrushlessSpeedCalculator() {
           <NumberInput value={tireMm} onChange={setTireMm} min={10} step={1} placeholder="110" />
         </Field>
       </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-200 mb-2">
+          Gear pitch
+        </label>
+        <div className="flex gap-2">
+          {([
+            ['mod1',   'MOD 1'],
+            ['mod1_5', 'MOD 1.5'],
+          ] as const).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setPitch(val)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                pitch === val
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       {valid ? (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-3">
           <div className="flex items-baseline gap-3">
@@ -102,7 +129,7 @@ export default function BrushlessSpeedCalculator() {
           </div>
           <div className="text-sm text-slate-300">{speedMph.toFixed(1)} mph</div>
           <div className="text-xs text-slate-500">
-            FDR: {fdr.toFixed(2)} · Motor RPM: {motorRpm.toFixed(0)} · {cellsVal}S · {voltage.toFixed(1)}V nominal
+            FDR: {fdr.toFixed(2)} · Motor RPM: {motorRpm.toFixed(0)} · {cellsVal}S · {voltage.toFixed(1)}V nominal · {pitch === 'mod1' ? 'MOD 1' : 'MOD 1.5'} pitch
           </div>
           <p className="text-xs text-slate-500">
             Theoretical maximum — real speeds vary with sag voltage, terrain, and mechanical losses.
@@ -133,6 +160,8 @@ export default function BrushlessSpeedCalculator() {
             maxValue={parseFloat(pinion)}
             label="Matching pinion gears"
           />
+          {/* TODO: filter RecommendedParts by pitch when coverage improves
+              <RecommendedParts specKey="pitch" minValue={pitch} ... /> */}
         </>
       )}
     </div>

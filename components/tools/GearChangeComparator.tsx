@@ -2,6 +2,8 @@
 import { useState } from "react";
 import { compareGearChange } from "@/lib/tools/gearChangeComparator";
 
+type GearPitch = 'mod1' | 'mod1_5';
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
@@ -29,6 +31,7 @@ export default function GearChangeComparator() {
   const [newSpur, setNewSpur] = useState("54");
   const [newPinion, setNewPinion] = useState("20");
   const [idr, setIdr] = useState("2.72");
+  const [pitch, setPitch] = useState<GearPitch>('mod1');
 
   const result = compareGearChange({
     currentSpur: parseFloat(curSpur), currentPinion: parseFloat(curPinion),
@@ -77,6 +80,30 @@ export default function GearChangeComparator() {
       <Field label="Internal Drive Ratio">
         <NumberInput value={idr} onChange={setIdr} placeholder="2.72" />
       </Field>
+      <div>
+        <label className="block text-sm font-medium text-slate-200 mb-2">
+          Gear pitch
+        </label>
+        <div className="flex gap-2">
+          {([
+            ['mod1',   'MOD 1'],
+            ['mod1_5', 'MOD 1.5'],
+          ] as const).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setPitch(val)}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                pitch === val
+                  ? 'bg-amber-500 text-slate-950'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       {valid ? (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-4">
           <div className="grid grid-cols-3 gap-3 text-center text-sm">
@@ -101,12 +128,17 @@ export default function GearChangeComparator() {
             </span>
           </div>
           <p className="text-sm text-slate-300">{directionDesc[result.gearingDirection]}</p>
+          <div className="text-xs text-slate-500">
+            {pitch === 'mod1' ? 'MOD 1' : 'MOD 1.5'} pitch
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border border-slate-700 bg-slate-950 p-5 text-center text-sm text-slate-500">
           Enter valid values above to compare
         </div>
       )}
+      {/* TODO: filter RecommendedParts by pitch when coverage improves
+          <RecommendedParts specKey="pitch" minValue={pitch} ... /> */}
     </div>
   );
 }

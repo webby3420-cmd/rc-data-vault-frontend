@@ -12,7 +12,7 @@ function amazonSearchUrl(query: string): string {
 }
 
 function ebaySearchUrl(query: string): string {
-  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sacat=0&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=${EBAY_CAMPID}&customid=&toolid=10001&mkevt=1`
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sacat=0&LH_BIN=1&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=${EBAY_CAMPID}&customid=&toolid=10001&mkevt=1`
 }
 
 // Manufacturer homepage search URLs — extend as more brands are added

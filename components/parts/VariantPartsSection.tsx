@@ -14,7 +14,6 @@ import {
   Car,
   Radio,
   Package,
-  ArrowUpRight,
   ChevronDown,
   Sparkles,
 } from 'lucide-react'
@@ -218,14 +217,6 @@ function validLinks(links: PurchaseLink[] | undefined | null): PurchaseLink[] {
   return links.filter((l) => typeof l.url === 'string' && l.url.trim().length > 0)
 }
 
-function amazonSearchUrl(name: string): string {
-  return `https://www.amazon.com/s?k=${encodeURIComponent(name)}&tag=rcdatavault-20`
-}
-
-function ebaySearchUrl(name: string): string {
-  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(name)}&_sacat=0&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=5339148896&customid=&toolid=10001&mkevt=1`
-}
-
 const TYPE_BADGE: Record<string, { cls: string; label: string }> = {
   oem: { cls: 'bg-blue-900/40 text-blue-300', label: 'OEM' },
   aftermarket_upgrade: { cls: 'bg-purple-900/40 text-purple-300', label: 'Upgrade' },
@@ -239,37 +230,13 @@ function PartTypeBadge({ part }: { part: Part }) {
   return <span className={`${b.cls} text-[11px] px-1.5 py-0.5 rounded font-medium`}>{b.label}</span>
 }
 
-function CtaButton({ link, primary }: { link: PurchaseLink; primary: boolean }) {
-  const shortName = retailerShortName(link)
-  const label =
-    link.price_usd != null
-      ? `${shortName} · $${Math.round(link.price_usd)}`
-      : shortName
-  return (
-    <a
-      href={link.url}
-      target={link.retailer_slug === 'ebay' ? '_self' : '_blank'}
-      rel="noopener noreferrer sponsored"
-      className={`inline-flex min-h-11 items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs font-medium transition-colors ${
-        primary
-          ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
-          : 'border border-slate-600 text-slate-200 hover:border-amber-500 hover:text-amber-400'
-      }`}
-    >
-      <span className="truncate">{label}</span>
-      <ArrowUpRight className="h-3.5 w-3.5 flex-shrink-0" />
-    </a>
-  )
-}
-
 function PartCard({ part, category }: { part: Part; category: Category }) {
   const Icon = iconFor(category)
   const tint = tintFor(category)
   const brand = part.manufacturer || part.aftermarket_brand
   const priceDisplay = fmt(part.best_price)
   const msrpDisplay = !priceDisplay && part.msrp ? `MSRP ${fmt(part.msrp)}` : null
-  const links = sortLinks(validLinks(part.purchase_links)).slice(0, 3)
-  const hasLinks = links.length > 0
+  const hasLinks = (part.link_count ?? 0) > 0
 
   return (
     <div
@@ -317,35 +284,6 @@ function PartCard({ part, category }: { part: Part; category: Category }) {
       {part.description && (
         <p className="text-xs text-slate-500 line-clamp-2">{part.description}</p>
       )}
-
-      {hasLinks && (
-        <div className={`grid gap-1.5 pt-0.5 ${links.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {links.map((link, i) => (
-            <CtaButton key={link.link_id} link={link} primary={i === 0} />
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-1.5 pt-0.5">
-        <a
-          href={amazonSearchUrl(part.part_name)}
-          target="_blank"
-          rel="noopener noreferrer nofollow sponsored"
-          className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
-          title="Search on Amazon — results may vary"
-        >
-          Amazon
-        </a>
-        <a
-          href={ebaySearchUrl(part.part_name)}
-          target="_blank"
-          rel="noopener noreferrer nofollow sponsored"
-          className="rounded px-2 py-1 text-xs text-slate-400 border border-slate-700 hover:text-white hover:border-slate-500 transition-colors"
-          title="Search on eBay — results may vary"
-        >
-          eBay
-        </a>
-      </div>
     </div>
   )
 }

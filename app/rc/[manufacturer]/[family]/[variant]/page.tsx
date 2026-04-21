@@ -15,6 +15,7 @@ import CompactHeroImage from "@/components/variant/CompactHeroImage";
 import MarketIntelligenceCard from "@/components/variant/MarketIntelligenceCard";
 import BestDeals from "@/components/variant/BestDeals";
 import QuickLinks from "@/components/variant/QuickLinks";
+import VariantBuyBlock from "@/components/variant/VariantBuyBlock";
 import {
   HeroDecisionSurfaceSkeleton,
   PricingSnapshotSkeleton,
@@ -306,6 +307,12 @@ async function PricingSection({
       <PricingSnapshot
         retail={{ retail_current_price: retail.retail_current_price, retail_price_source: retail.retail_price_source }}
         segmentedPricing={{ nib: segmentedPricing.nib, used_complete: segmentedPricing.used_complete, roller: segmentedPricing.roller }}
+      />
+
+      <VariantBuyBlock
+        variantName={modelName}
+        manufacturerSlug={mfrSlug}
+        className="mt-4"
       />
     </>
   );

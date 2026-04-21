@@ -24,6 +24,7 @@
  */
 
 import { resolvePurchaseLinks, type BuyChannel, type PurchaseLinkRow, type ResolvedLink } from '@/lib/purchase-link-router'
+import { trackBuyClick } from '@/lib/trackBuyClick'
 
 // ─── Retailer copy ────────────────────────────────────────────────────────────
 
@@ -77,7 +78,7 @@ function ChannelIcon({ channel }: { channel: ResolvedLink['channel'] }) {
 
 // ─── Buttons ──────────────────────────────────────────────────────────────────
 
-function PrimaryButton({ link }: { link: ResolvedLink }) {
+function PrimaryButton({ link, partNumber }: { link: ResolvedLink; partNumber: string | null }) {
   const isAmazon = link.channel === 'amazon'
   const { label, sub } = getRetailerCopy(link.retailerSlug, link.channel)
   return (
@@ -85,6 +86,11 @@ function PrimaryButton({ link }: { link: ResolvedLink }) {
       href={link.href}
       target="_blank"
       rel="noopener noreferrer sponsored"
+      onClick={() => trackBuyClick({
+        channel: link.channel,
+        surface: 'variant_part_card',
+        label: partNumber ?? undefined,
+      })}
       className={[
         'group flex items-center gap-3 w-full px-4 py-3.5 rounded-xl',
         'font-semibold text-sm leading-none transition-all duration-150',
@@ -106,13 +112,18 @@ function PrimaryButton({ link }: { link: ResolvedLink }) {
   )
 }
 
-function SecondaryButton({ link }: { link: ResolvedLink }) {
+function SecondaryButton({ link, partNumber }: { link: ResolvedLink; partNumber: string | null }) {
   const { label, sub } = getRetailerCopy(link.retailerSlug, link.channel)
   return (
     <a
       href={link.href}
       target="_blank"
       rel="noopener noreferrer sponsored"
+      onClick={() => trackBuyClick({
+        channel: link.channel,
+        surface: 'variant_part_card',
+        label: partNumber ?? undefined,
+      })}
       className={[
         'group flex items-center gap-3 w-full px-4 py-2.5 rounded-lg',
         'text-sm font-medium leading-none transition-all duration-150',
@@ -182,13 +193,13 @@ export function WhereToBuyCard({ purchaseLinks, ebaySearchUrl, partName, partNum
       ) : (
         <div className="space-y-2">
           {resolved.primary && (
-            <PrimaryButton link={resolved.primary} />
+            <PrimaryButton link={resolved.primary} partNumber={partNumber ?? null} />
           )}
 
           {resolved.secondaries.length > 0 && (
             <div className="space-y-1.5 pt-0.5">
               {resolved.secondaries.map((link) => (
-                <SecondaryButton key={link.retailerSlug} link={link} />
+                <SecondaryButton key={link.retailerSlug} link={link} partNumber={partNumber ?? null} />
               ))}
             </div>
           )}

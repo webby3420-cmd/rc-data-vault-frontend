@@ -1,6 +1,6 @@
 'use client'
 
-import type { BuyChannel } from '@/lib/purchase-link-router'
+import { trackBuyClick } from '@/lib/trackBuyClick'
 
 // ─── Affiliate URL builders ───────────────────────────
 
@@ -11,8 +11,8 @@ function amazonSearchUrl(query: string): string {
   return `https://www.amazon.com/s?k=${encodeURIComponent(query)}&tag=${AMAZON_TAG}`
 }
 
-function ebaySearchUrl(query: string): string {
-  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sacat=0&LH_BIN=1&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=${EBAY_CAMPID}&customid=&toolid=10001&mkevt=1`
+function ebaySearchUrl(query: string, customId: string): string {
+  return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sacat=0&LH_BIN=1&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=${EBAY_CAMPID}&customid=${encodeURIComponent(customId)}&toolid=10001&mkevt=1`
 }
 
 // Manufacturer homepage search URLs — extend as more brands are added
@@ -48,6 +48,7 @@ function ExternalIcon() {
 interface VariantBuyBlockProps {
   variantName:      string
   manufacturerSlug: string
+  variantSlug:      string
   className?:       string
 }
 
@@ -56,10 +57,11 @@ interface VariantBuyBlockProps {
 export default function VariantBuyBlock({
   variantName,
   manufacturerSlug,
+  variantSlug,
   className = '',
 }: VariantBuyBlockProps) {
   const amazon   = amazonSearchUrl(variantName)
-  const ebay     = ebaySearchUrl(variantName)
+  const ebay     = ebaySearchUrl(variantName, variantSlug)
   const mfrFn    = MFR_SEARCH[manufacturerSlug]
   const mfr      = mfrFn ? mfrFn(variantName) : null
 
@@ -74,6 +76,11 @@ export default function VariantBuyBlock({
         href={amazon}
         target="_blank"
         rel="noopener noreferrer nofollow sponsored"
+        onClick={() => trackBuyClick({
+          channel: 'amazon',
+          surface: 'variant_retail_block',
+          label: variantSlug,
+        })}
         className="flex w-full items-center gap-3 rounded-lg bg-amber-500 px-4 py-2.5
                    text-sm font-semibold text-slate-950 transition hover:bg-amber-400"
       >
@@ -92,6 +99,11 @@ export default function VariantBuyBlock({
           href={ebay}
           target="_blank"
           rel="noopener noreferrer nofollow sponsored"
+          onClick={() => trackBuyClick({
+            channel: 'ebay',
+            surface: 'variant_retail_block',
+            label: variantSlug,
+          })}
           className="flex flex-1 items-center gap-2 rounded-lg border border-slate-700
                      bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300
                      transition hover:border-slate-500 hover:text-white min-w-[120px]"
@@ -105,6 +117,11 @@ export default function VariantBuyBlock({
             href={mfr}
             target="_blank"
             rel="noopener noreferrer nofollow"
+            onClick={() => trackBuyClick({
+              channel: 'manufacturer',
+              surface: 'variant_retail_block',
+              label: variantSlug,
+            })}
             className="flex flex-1 items-center gap-2 rounded-lg border border-slate-700
                        bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300
                        transition hover:border-slate-500 hover:text-white min-w-[120px]"

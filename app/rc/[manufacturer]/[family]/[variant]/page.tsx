@@ -312,6 +312,7 @@ async function PricingSection({
       <VariantBuyBlock
         variantName={modelName}
         manufacturerSlug={mfrSlug}
+        variantSlug={variantSlug}
         className="mt-4"
       />
     </>

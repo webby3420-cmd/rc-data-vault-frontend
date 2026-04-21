@@ -22,6 +22,7 @@
  */
 
 import { resolvePurchaseLinks, type BuyChannel, type PurchaseLinkRow } from '@/lib/purchase-link-router'
+import { trackBuyClick } from '@/lib/trackBuyClick'
 
 // ─── Retailer copy ────────────────────────────────────────────────────────────
 
@@ -105,6 +106,11 @@ export function BuyBar({ purchaseLinks, ebaySearchUrl, partName, className, load
           href={primary.href}
           target="_blank"
           rel="noopener noreferrer sponsored"
+          onClick={() => trackBuyClick({
+            channel: primary.channel,
+            surface: 'tool_result',
+            label: partName ?? undefined,
+          })}
           className={[
             'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
             'text-xs font-semibold leading-none whitespace-nowrap',

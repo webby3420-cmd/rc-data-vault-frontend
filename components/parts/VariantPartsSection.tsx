@@ -19,6 +19,8 @@ import {
   Sparkles,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { WhereToBuyCard } from '@/components/parts/WhereToBuyCard'
+import { adaptDbPartLinks } from '@/lib/purchase-link-adapter'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -302,6 +304,15 @@ function PartCard({ part, category }: { part: Part; category: Category }) {
           <span className="text-xs text-slate-600 ml-auto">#{part.part_number}</span>
         )}
       </div>
+
+      {(part.link_count ?? 0) > 0 && (
+        <WhereToBuyCard
+          purchaseLinks={adaptDbPartLinks(part.purchase_links ?? [])}
+          partName={part.part_name ?? ''}
+          partNumber={part.part_number ?? null}
+          className="mt-3"
+        />
+      )}
 
       {part.description && (
         <p className="text-xs text-slate-500 line-clamp-2">{part.description}</p>

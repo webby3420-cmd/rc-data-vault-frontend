@@ -21,7 +21,21 @@
  * Drop-in location: components/parts/BuyBar.tsx
  */
 
-import { resolvePurchaseLinks, type PurchaseLinkRow } from '@/lib/purchase-link-router'
+import { resolvePurchaseLinks, type BuyChannel, type PurchaseLinkRow } from '@/lib/purchase-link-router'
+
+// ─── Retailer copy ────────────────────────────────────────────────────────────
+
+const RETAILER_COPY: Record<string, { label: string; sub: string | null }> = {
+  amazon: { label: 'Buy on Amazon',      sub: 'Fast shipping • Verified product' },
+  ebay:   { label: 'View deals on eBay', sub: 'New & used listings' },
+}
+
+function getRetailerCopy(slug: string, channel: BuyChannel): { label: string; sub: string | null } {
+  if (RETAILER_COPY[slug]) return RETAILER_COPY[slug]
+  if (slug.startsWith('castle') || channel === 'manufacturer_direct')
+    return { label: 'View official product', sub: 'Specs & compatibility' }
+  return { label: 'View product', sub: null }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -104,7 +118,7 @@ export function BuyBar({ purchaseLinks, ebaySearchUrl, partName, className, load
           ].join(' ')}
         >
           <CartIcon />
-          {primary.label}
+          {getRetailerCopy(primary.retailerSlug, primary.channel).label}
         </a>
       )}
 

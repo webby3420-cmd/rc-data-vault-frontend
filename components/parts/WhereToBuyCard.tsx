@@ -23,7 +23,21 @@
  * Drop-in location: components/parts/WhereToBuyCard.tsx
  */
 
-import { resolvePurchaseLinks, type PurchaseLinkRow, type ResolvedLink } from '@/lib/purchase-link-router'
+import { resolvePurchaseLinks, type BuyChannel, type PurchaseLinkRow, type ResolvedLink } from '@/lib/purchase-link-router'
+
+// ─── Retailer copy ────────────────────────────────────────────────────────────
+
+const RETAILER_COPY: Record<string, { label: string; sub: string | null }> = {
+  amazon: { label: 'Buy on Amazon',      sub: 'Fast shipping • Verified product' },
+  ebay:   { label: 'View deals on eBay', sub: 'New & used listings' },
+}
+
+function getRetailerCopy(slug: string, channel: BuyChannel): { label: string; sub: string | null } {
+  if (RETAILER_COPY[slug]) return RETAILER_COPY[slug]
+  if (slug.startsWith('castle') || channel === 'manufacturer_direct')
+    return { label: 'View official product', sub: 'Specs & compatibility' }
+  return { label: 'View product', sub: null }
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -65,6 +79,7 @@ function ChannelIcon({ channel }: { channel: ResolvedLink['channel'] }) {
 
 function PrimaryButton({ link }: { link: ResolvedLink }) {
   const isAmazon = link.channel === 'amazon'
+  const { label, sub } = getRetailerCopy(link.retailerSlug, link.channel)
   return (
     <a
       href={link.href}
@@ -82,13 +97,17 @@ function PrimaryButton({ link }: { link: ResolvedLink }) {
       <span className="flex items-center justify-center w-6 h-6 rounded-md bg-black/10 shrink-0">
         <ChannelIcon channel={link.channel} />
       </span>
-      <span className="flex-1">{link.label}</span>
+      <span className="flex-1 flex flex-col items-start gap-0.5">
+        <span>{label}</span>
+        {sub && <span className="text-[11px] text-slate-500 leading-tight font-normal">{sub}</span>}
+      </span>
       <ExternalLinkIcon />
     </a>
   )
 }
 
 function SecondaryButton({ link }: { link: ResolvedLink }) {
+  const { label, sub } = getRetailerCopy(link.retailerSlug, link.channel)
   return (
     <a
       href={link.href}
@@ -107,7 +126,10 @@ function SecondaryButton({ link }: { link: ResolvedLink }) {
       <span className="text-slate-500 group-hover:text-slate-400 transition-colors shrink-0">
         <ChannelIcon channel={link.channel} />
       </span>
-      <span className="flex-1">{link.label}</span>
+      <span className="flex-1 flex flex-col items-start gap-0.5">
+        <span>{label}</span>
+        {sub && <span className="text-[11px] text-slate-500 leading-tight font-normal">{sub}</span>}
+      </span>
       <ExternalLinkIcon />
     </a>
   )
@@ -160,19 +182,13 @@ export function WhereToBuyCard({ purchaseLinks, ebaySearchUrl, partName, partNum
       ) : (
         <div className="space-y-2">
           {resolved.primary && (
-            <div>
-              <PrimaryButton link={resolved.primary} />
-              <p className="text-[11px] text-slate-500 px-1 mt-1">{resolved.primary.sublabel}</p>
-            </div>
+            <PrimaryButton link={resolved.primary} />
           )}
 
           {resolved.secondaries.length > 0 && (
             <div className="space-y-1.5 pt-0.5">
               {resolved.secondaries.map((link) => (
-                <div key={link.retailerSlug}>
-                  <SecondaryButton link={link} />
-                  <p className="text-[11px] text-slate-600 px-1 mt-0.5">{link.sublabel}</p>
-                </div>
+                <SecondaryButton key={link.retailerSlug} link={link} />
               ))}
             </div>
           )}

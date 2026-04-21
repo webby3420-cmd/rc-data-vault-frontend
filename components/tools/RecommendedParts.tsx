@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { BuyBar } from '@/components/parts/BuyBar'
+import { adaptDbPartLinks } from '@/lib/purchase-link-adapter'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -176,14 +178,16 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label, p
 
             <div className="shrink-0 flex flex-col items-end gap-1.5">
               {part.best_link && (
-                <a
-                  href={part.best_link.url}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-400 transition-colors"
-                >
-                  Buy
-                </a>
+                <BuyBar
+                  purchaseLinks={adaptDbPartLinks([{
+                    retailer_name: part.best_link.retailer_name,
+                    retailer_slug: part.best_link.retailer_slug,
+                    retailer_type: 'mass_market',
+                    url:           part.best_link.url,
+                  }])}
+                  partName={part.part_name ?? ''}
+                  className="mt-2"
+                />
               )}
               <div className="flex gap-1.5">
                 <a

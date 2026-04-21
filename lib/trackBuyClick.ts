@@ -1,3 +1,5 @@
+import { sendBuyClickEvent } from '@/lib/telemetry/buy'
+
 export interface BuyClickEvent {
   channel: string   // 'amazon' | 'ebay' | 'manufacturer' | 'manufacturer_direct' | 'hobby_retailer' | 'unknown'
   surface: string   // 'variant_part_card' | 'tool_result' | 'variant_retail_block'
@@ -16,4 +18,6 @@ export function trackBuyClick(event: BuyClickEvent): void {
   })
   // Plausible
   w.plausible?.('buy_click', { props: event })
+  // First-party capture (fire-and-forget via sendBeacon)
+  sendBuyClickEvent(event)
 }

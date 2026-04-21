@@ -153,15 +153,15 @@ export default function BrushlessSpeedCalculator() {
             minValue={parseFloat(spur)}
             maxValue={parseFloat(spur)}
             label="Matching spur gears"
+            pitchFilter={pitch}
           />
           <RecommendedParts
             specKey="teeth"
             minValue={parseFloat(pinion)}
             maxValue={parseFloat(pinion)}
             label="Matching pinion gears"
+            pitchFilter={pitch}
           />
-          {/* TODO: filter RecommendedParts by pitch when coverage improves
-              <RecommendedParts specKey="pitch" minValue={pitch} ... /> */}
         </>
       )}
     </div>

@@ -107,10 +107,9 @@ export default function GearRatioCalculator() {
           minValue={parseFloat(spur)}
           maxValue={parseFloat(spur)}
           label="Matching spur gears for this tooth count"
+          pitchFilter={pitch}
         />
       )}
-      {/* TODO: filter RecommendedParts by pitch when coverage improves
-          <RecommendedParts specKey="pitch" minValue={pitch} ... /> */}
     </div>
   );
 }

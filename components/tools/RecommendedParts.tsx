@@ -23,6 +23,7 @@ interface RecommendedPartsProps {
   minValue: number
   maxValue: number
   label: string
+  pitchFilter?: string
 }
 
 interface PartResult {
@@ -54,7 +55,7 @@ const SPEC_UNIT: Record<SpecKey, string> = {
   teeth: 'T',
 }
 
-export default function RecommendedParts({ specKey, minValue, maxValue, label }: RecommendedPartsProps) {
+export default function RecommendedParts({ specKey, minValue, maxValue, label, pitchFilter }: RecommendedPartsProps) {
   const [parts, setParts] = useState<PartResult[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -71,6 +72,7 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label }:
         p_spec_key: specKey,
         p_min_value: minValue,
         p_max_value: maxValue,
+        p_pitch_filter: pitchFilter ?? null,
       })
 
       if (cancelled) return
@@ -88,7 +90,7 @@ export default function RecommendedParts({ specKey, minValue, maxValue, label }:
     return () => {
       cancelled = true
     }
-  }, [specKey, minValue, maxValue])
+  }, [specKey, minValue, maxValue, pitchFilter])
 
   const unit = SPEC_UNIT[specKey]
 

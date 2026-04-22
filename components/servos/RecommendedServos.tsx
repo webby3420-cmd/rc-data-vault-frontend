@@ -1,6 +1,7 @@
 // Server Component — no 'use client'
 import { supabase } from '@/lib/supabase/server'
 import { mapScaleToServoTier } from '@/lib/servos/mapScaleToServoTier'
+import { buildEbaySearchUrl } from '@/lib/ebay/buildSearchUrl'
 
 type ServoRec = {
   part_id: string
@@ -141,7 +142,11 @@ export default async function RecommendedServos({ variantSlug }: Props) {
                       Amazon
                     </a>
                     <a
-                      href={makeSearchUrl('ebay', s.manufacturer, s.part_number)}
+                      href={buildEbaySearchUrl({
+                        manufacturer: s.manufacturer,
+                        name:         s.part_name,
+                        part_number:  s.part_number,
+                      }, { customId: s.part_number })}
                       target="_blank"
                       rel="noopener noreferrer nofollow sponsored"
                       className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"

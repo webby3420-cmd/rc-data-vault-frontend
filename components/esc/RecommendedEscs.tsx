@@ -1,6 +1,7 @@
 // Server Component — no 'use client'
 import { supabase } from '@/lib/supabase/server'
 import { mapScaleToEscTier } from '@/lib/esc/mapScaleToEscTier'
+import { buildEbaySearchUrl } from '@/lib/ebay/buildSearchUrl'
 
 type EscRec = {
   part_id: string
@@ -139,7 +140,11 @@ export default async function RecommendedEscs({ variantSlug, manufacturerSlug }:
                       Amazon
                     </a>
                     <a
-                      href={makeSearchUrl('ebay', e.manufacturer, e.part_number)}
+                      href={buildEbaySearchUrl({
+                        manufacturer: e.manufacturer,
+                        name:         e.part_name,
+                        part_number:  e.part_number,
+                      }, { customId: e.part_number })}
                       target="_blank"
                       rel="noopener noreferrer nofollow sponsored"
                       className="inline-flex items-center rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 hover:text-white"

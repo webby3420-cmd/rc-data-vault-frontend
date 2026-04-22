@@ -19,6 +19,7 @@ type EscRec = {
 
 interface Props {
   variantSlug: string
+  manufacturerSlug?: string | null
 }
 
 function makeSearchUrl(channel: 'amazon' | 'ebay', mfr: string, partNo: string) {
@@ -33,7 +34,7 @@ function makeSearchUrl(channel: 'amazon' | 'ebay', mfr: string, partNo: string) 
   )
 }
 
-export default async function RecommendedEscs({ variantSlug }: Props) {
+export default async function RecommendedEscs({ variantSlug, manufacturerSlug }: Props) {
   try {
     // Two-query pattern — matches RecommendedServos.tsx
     const { data: v } = await supabase
@@ -56,10 +57,11 @@ export default async function RecommendedEscs({ variantSlug }: Props) {
     const { data, error } = await (supabase.rpc as any)(
       'get_esc_recommendations',
       {
-        p_vehicle_scale:  tier.vehicleScale,
-        p_use_case:       tier.useCase,
-        p_limit:          4,
-        p_platform_cells: specRow?.cell_count_max ?? null,
+        p_vehicle_scale:        tier.vehicleScale,
+        p_use_case:             tier.useCase,
+        p_limit:                4,
+        p_platform_cells:       specRow?.cell_count_max ?? null,
+        p_vehicle_manufacturer: manufacturerSlug ?? null,
       }
     )
 

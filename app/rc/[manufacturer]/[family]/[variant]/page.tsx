@@ -941,7 +941,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
           {/* ─── TIER 3D: ESC RECOMMENDATIONS (after servo recommendations) ─── */}
           <Suspense fallback={null}>
-            <RecommendedEscs variantSlug={variantSlug} />
+            <RecommendedEscs variantSlug={variantSlug} manufacturerSlug={manufacturer} />
           </Suspense>
 
           {/* ─── TIER 4: LAZY (links, siblings, sold listings, CTA) ─── */}

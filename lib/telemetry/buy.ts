@@ -15,11 +15,17 @@ export function sendBuyClickEvent(event: BuyClickEvent): void {
     user_agent:  navigator.userAgent,
   }
 
-  // sendBeacon: fire-and-forget, survives page navigation
-  const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' })
+  // fetch + keepalive: fire-and-forget, survives page navigation.
+  // Explicit text/plain header (no charset) keeps this a CORS simple
+  // request, avoiding the preflight that a Blob body would trigger.
   try {
-    navigator.sendBeacon(BUY_TELEMETRY_URL, blob)
+    fetch(BUY_TELEMETRY_URL, {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    }).catch(() => {})
   } catch {
-    // sendBeacon not available (e.g. SSR context) — silent no-op
+    // fetch not available — silent no-op
   }
 }

@@ -8,6 +8,7 @@ import RecentlyViewedVariants from "@/components/RecentlyViewedVariants";
 import Link from "next/link";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
+import RecommendedServos from "@/components/servos/RecommendedServos";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import HeroDecisionSurface from "@/components/variant/HeroDecisionSurface";
@@ -930,6 +931,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               variantSlug={variantSlug}
               modelName={variantData.full_name}
             />
+          </Suspense>
+
+          {/* ─── TIER 3C: SERVO RECOMMENDATIONS (after parts) ─── */}
+          <Suspense fallback={null}>
+            <RecommendedServos variantSlug={variantSlug} />
           </Suspense>
 
           {/* ─── TIER 4: LAZY (links, siblings, sold listings, CTA) ─── */}

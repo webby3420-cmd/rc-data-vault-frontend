@@ -17,10 +17,43 @@ function ebaySearchUrl(query: string, customId: string): string {
 
 // Manufacturer homepage search URLs — extend as more brands are added
 const MFR_SEARCH: Record<string, (q: string) => string> = {
-  traxxas:        (_q) => `https://traxxas.com/products/models`,
-  arrma:          (q) => `https://www.arrma-rc.com/rc-cars`,
-  losi:           (q) => `https://www.losi.com/search?q=${encodeURIComponent(q)}`,
-  axial:          (q) => `https://www.axialadventure.com/search?q=${encodeURIComponent(q)}`,
+  // TRAXXAS — upgraded from generic catalog to model search
+  // traxxas.com/products/models is the base; appending the
+  // model name suffix routes to the specific model family page.
+  // The suffix is derived by lower-casing and replacing spaces
+  // with hyphens from the first significant word(s) of the
+  // variant name. Fallback to /products/models if derivation
+  // would be empty.
+  // Pattern confirmed: traxxas.com/products/models/electric/X-Maxx
+  //                    traxxas.com/products/models/electric/slash
+  //                    traxxas.com/products/models/electric/maxx
+  traxxas: (q) => {
+    // Extract the model name: everything before the first
+    // RTR/BLX/VXL/brushless/cell-count marker, trim, replace spaces with hyphens
+    const model = q
+      .replace(/^traxxas\s+/i, '')          // strip brand prefix
+      .replace(/\s+(rtr|brushless|vxl|trx|4x4|2wd|4wd|blx|telluride|\d+s)\b.*$/i, '')
+      .trim()
+    return model
+      ? `https://traxxas.com/products/models/electric/${encodeURIComponent(model)}`
+      : 'https://traxxas.com/products/models'
+  },
+
+  // ARRMA — upgraded from dead catalog stub to Horizon Hobby search
+  // arrma-rc.com has no useful site search.
+  // horizonhobby.com is the authorized ARRMA distributor and has
+  // excellent search. The variant_purchase_links for ARRMA are
+  // all horizon_hobby search URLs. Use the same destination.
+  arrma: (q) => `https://www.horizonhobby.com/search?q=${encodeURIComponent(q)}`,
+
+  // LOSI — keep search, stays on losi.com (same Horizon family)
+  // Confirmed: losi.com/search?q= returns correct product pages
+  losi: (q) => `https://www.losi.com/search?q=${encodeURIComponent(q)}`,
+
+  // AXIAL — keep search (axialadventure.com is the Horizon-family site)
+  axial: (q) => `https://www.axialadventure.com/search?q=${encodeURIComponent(q)}`,
+
+  // TEAM ASSOCIATED — keep search (direct manufacturer search works)
   'team-associated': (q) => `https://www.teamassociated.com/search/?q=${encodeURIComponent(q)}`,
 }
 

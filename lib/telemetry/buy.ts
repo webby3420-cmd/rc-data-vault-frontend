@@ -1,7 +1,6 @@
 import type { BuyClickEvent } from '@/lib/trackBuyClick'
 
-const BUY_TELEMETRY_URL =
-  'https://frphiluaykgrmvyvdzsp.supabase.co/functions/v1/buy-click-telemetry'
+const BUY_TELEMETRY_URL = '/api/telemetry/buy-click'
 
 export function sendBuyClickEvent(event: BuyClickEvent): void {
   if (typeof window === 'undefined') return

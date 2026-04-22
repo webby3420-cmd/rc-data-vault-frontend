@@ -46,7 +46,7 @@ export default async function RecommendedEscs({ variantSlug }: Props) {
 
     const { data: specRow } = await supabase
       .from('variant_specs')
-      .select('scale, vehicle_class')
+      .select('scale, vehicle_class, cell_count_max')
       .eq('variant_id', v.variant_id)
       .maybeSingle()
 
@@ -56,9 +56,10 @@ export default async function RecommendedEscs({ variantSlug }: Props) {
     const { data, error } = await (supabase.rpc as any)(
       'get_esc_recommendations',
       {
-        p_vehicle_scale: tier.vehicleScale,
-        p_use_case:      tier.useCase,
-        p_limit:         4,
+        p_vehicle_scale:  tier.vehicleScale,
+        p_use_case:       tier.useCase,
+        p_limit:          4,
+        p_platform_cells: specRow?.cell_count_max ?? null,
       }
     )
 

@@ -9,6 +9,7 @@ import Link from "next/link";
 import AlertReturnBanner from "@/components/alerts/AlertReturnBanner";
 import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import RecommendedServos from "@/components/servos/RecommendedServos";
+import RecommendedEscs from "@/components/esc/RecommendedEscs";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import HeroDecisionSurface from "@/components/variant/HeroDecisionSurface";
@@ -936,6 +937,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           {/* ─── TIER 3C: SERVO RECOMMENDATIONS (after parts) ─── */}
           <Suspense fallback={null}>
             <RecommendedServos variantSlug={variantSlug} />
+          </Suspense>
+
+          {/* ─── TIER 3D: ESC RECOMMENDATIONS (after servo recommendations) ─── */}
+          <Suspense fallback={null}>
+            <RecommendedEscs variantSlug={variantSlug} />
           </Suspense>
 
           {/* ─── TIER 4: LAZY (links, siblings, sold listings, CTA) ─── */}

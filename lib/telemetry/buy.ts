@@ -16,7 +16,7 @@ export function sendBuyClickEvent(event: BuyClickEvent): void {
   }
 
   // sendBeacon: fire-and-forget, survives page navigation
-  const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' })
   try {
     navigator.sendBeacon(BUY_TELEMETRY_URL, blob)
   } catch {

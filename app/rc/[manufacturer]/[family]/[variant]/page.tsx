@@ -936,9 +936,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
             />
           </Suspense>
 
-          {/* ─── TIER 3C: SERVO RECOMMENDATIONS (after parts) ─── */}
+          {/* ─── TIER 3C: POWER SYSTEMS (primary decision layer) ─── */}
           <Suspense fallback={null}>
-            <RecommendedServos variantSlug={variantSlug} />
+            <RecommendedCombos variantSlug={variantSlug} manufacturerSlug={manufacturer} />
           </Suspense>
 
           {/* ─── TIER 3D: ESC RECOMMENDATIONS (after servo recommendations) ─── */}
@@ -951,9 +951,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
             <RecommendedMotors variantSlug={variantSlug} manufacturerSlug={manufacturer} />
           </Suspense>
 
-          {/* ─── TIER 3F: COMBO RECOMMENDATIONS (after motor recommendations) ─── */}
+          {/* ─── TIER 3F: SERVO RECOMMENDATIONS (after motors) ─── */}
           <Suspense fallback={null}>
-            <RecommendedCombos variantSlug={variantSlug} manufacturerSlug={manufacturer} />
+            <RecommendedServos variantSlug={variantSlug} />
           </Suspense>
 
           {/* ─── TIER 4: LAZY (links, siblings, sold listings, CTA) ─── */}

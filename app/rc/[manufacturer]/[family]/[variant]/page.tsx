@@ -11,6 +11,7 @@ import VariantPartsSection from "@/components/parts/VariantPartsSection";
 import RecommendedServos from "@/components/servos/RecommendedServos";
 import RecommendedEscs from "@/components/esc/RecommendedEscs";
 import RecommendedMotors from "@/components/motors/RecommendedMotors";
+import RecommendedCombos from "@/components/combos/RecommendedCombos";
 import PriceHistoryChart from "@/components/market/PriceHistoryChart";
 import PricingSnapshot from "@/components/variant/PricingSnapshot";
 import HeroDecisionSurface from "@/components/variant/HeroDecisionSurface";
@@ -948,6 +949,11 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           {/* ─── TIER 3E: MOTOR RECOMMENDATIONS (after ESC recommendations) ─── */}
           <Suspense fallback={null}>
             <RecommendedMotors variantSlug={variantSlug} manufacturerSlug={manufacturer} />
+          </Suspense>
+
+          {/* ─── TIER 3F: COMBO RECOMMENDATIONS (after motor recommendations) ─── */}
+          <Suspense fallback={null}>
+            <RecommendedCombos variantSlug={variantSlug} manufacturerSlug={manufacturer} />
           </Suspense>
 
           {/* ─── TIER 4: LAZY (links, siblings, sold listings, CTA) ─── */}

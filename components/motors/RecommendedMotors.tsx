@@ -2,6 +2,7 @@
 import { supabase } from '@/lib/supabase/server'
 import { mapScaleToMotorTier } from '@/lib/motors/mapScaleToMotorTier'
 import { buildEbaySearchUrl } from '@/lib/ebay/buildSearchUrl'
+import { MotorRecommendationExplainer } from './MotorRecommendationExplainer'
 
 type MotorRec = {
   part_id:        string
@@ -151,6 +152,8 @@ export default async function RecommendedMotors({ variantSlug, manufacturerSlug 
           Motor recommendations are based on RC Data Vault spec data.
           Affiliate links — we may earn a commission at no extra cost to you.
         </p>
+
+        <MotorRecommendationExplainer />
       </section>
     )
   } catch {

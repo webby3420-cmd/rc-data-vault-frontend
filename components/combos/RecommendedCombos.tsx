@@ -27,6 +27,15 @@ type ComboRec = {
   role_reason:        string | null
 }
 
+type ComboGuidance = {
+  combo_part_id:    string
+  voltage_note:     string | null
+  battery_note:     string | null
+  sensored_note:    string | null
+  waterproof_note:  string | null
+  telemetry_note:   string | null
+}
+
 interface Props {
   variantSlug:       string
   manufacturerSlug?: string | null
@@ -56,10 +65,11 @@ const ROLE_CLASSES: Record<DecisionRole, string> = {
   specialty:    'border-slate-500/30 bg-slate-800/70 text-slate-300',
 }
 
-function ComboCard({ c, isSoftMode, subdued }: {
+function ComboCard({ c, isSoftMode, subdued, guidance }: {
   c:          ComboRec
   isSoftMode: boolean
   subdued?:   boolean
+  guidance?:  ComboGuidance
 }) {
   const role         = c.decision_role
   const roleLabel    = role ? ROLE_LABELS[role]  : null
@@ -130,6 +140,29 @@ function ComboCard({ c, isSoftMode, subdued }: {
         </p>
       )}
 
+      {guidance && (() => {
+        const notes = [
+          guidance.voltage_note,
+          guidance.battery_note,
+          guidance.sensored_note,
+          guidance.waterproof_note,
+          guidance.telemetry_note,
+        ].filter(Boolean) as string[]
+        if (notes.length === 0) return null
+        return (
+          <ul className="flex flex-wrap gap-1.5 text-[11px] leading-snug">
+            {notes.map((n, i) => (
+              <li
+                key={i}
+                className="inline-flex items-center rounded-md border border-slate-800 bg-slate-900/70 px-2 py-0.5 text-slate-400"
+              >
+                {n}
+              </li>
+            ))}
+          </ul>
+        )
+      })()}
+
       <div className="mt-auto flex items-center gap-2">
         {c.msrp != null && (
           <span className="text-sm font-semibold text-white">
@@ -175,7 +208,7 @@ export default async function RecommendedCombos({ variantSlug, manufacturerSlug 
 
     const { data: specRow } = await supabase
       .from('variant_specs')
-      .select('scale, vehicle_class, cell_count_max')
+      .select('scale, vehicle_class, cell_count_max, cell_count_stock, battery_included')
       .eq('variant_id', v.variant_id)
       .maybeSingle()
 
@@ -211,6 +244,28 @@ export default async function RecommendedCombos({ variantSlug, manufacturerSlug 
 
     if (primary.length === 0 && secondary.length === 0) return null
 
+    // Guidance notes — primary cards only, failure-tolerant.
+    // If the RPC errors or returns non-array, guidanceById stays empty and
+    // cards fall back to their pre-guidance appearance.
+    const guidanceById = new Map<string, ComboGuidance>()
+    if (primary.length > 0) {
+      const primaryIds = primary.map((c) => c.combo_part_id)
+      const { data: guidanceRows, error: guidanceError } = await (supabase.rpc as any)(
+        'get_combo_guidance',
+        {
+          p_combo_ids:                primaryIds,
+          p_variant_cells_stock:      specRow?.cell_count_stock ?? null,
+          p_variant_cells_max:        specRow?.cell_count_max ?? null,
+          p_variant_battery_included: specRow?.battery_included ?? null,
+        }
+      )
+      if (!guidanceError && Array.isArray(guidanceRows)) {
+        for (const row of guidanceRows as ComboGuidance[]) {
+          guidanceById.set(row.combo_part_id, row)
+        }
+      }
+    }
+
     return (
       <section className="rounded-2xl border border-slate-700 bg-slate-900 p-5">
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
@@ -226,7 +281,12 @@ export default async function RecommendedCombos({ variantSlug, manufacturerSlug 
         {primary.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2">
             {primary.map((c) => (
-              <ComboCard key={c.combo_part_id} c={c} isSoftMode={isSoftMode} />
+              <ComboCard
+                key={c.combo_part_id}
+                c={c}
+                isSoftMode={isSoftMode}
+                guidance={guidanceById.get(c.combo_part_id)}
+              />
             ))}
           </div>
         )}

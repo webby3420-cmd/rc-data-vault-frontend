@@ -1,7 +1,5 @@
 // app/admin/agent-review/lib/format.ts
-// Display helpers + defensive payload accessors for the Review Queue UI.
-// JSONB payload shape is not declared in this repo (agents live elsewhere),
-// so accessors try multiple key paths and fall back to null.
+// Display helpers for the Review Queue UI.
 
 export function formatConfidencePercent(c: number | string | null): string {
   if (c == null) return '—';
@@ -56,161 +54,39 @@ export function capitalize(s: string | null | undefined): string | null {
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
 }
 
+// Listing image isn't exposed as a top-level column on
+// v_agent_review_queue_enriched — marketplace_listings.raw_payload_json
+// shape varies per source (eBay vs Facebook vs AMain). Dig into the JSONB
+// payloads defensively until the view exposes a coalesced column.
 type Payload = Record<string, unknown> | null | undefined;
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-function lookup(payload: Payload, path: readonly string[]): unknown {
-  if (!payload) return undefined;
-  let cur: unknown = payload;
-  for (const k of path) {
-    if (!isObject(cur)) return undefined;
-    cur = cur[k];
-  }
-  return cur;
-}
-
-export function pickString(
-  payloads: readonly Payload[],
-  paths: readonly (readonly string[])[],
-): string | null {
+export function pickListingImage(payloads: readonly Payload[]): string | null {
+  const paths: readonly (readonly string[])[] = [
+    ['listing', 'image_url'],
+    ['listing', 'thumbnail_url'],
+    ['listing', 'image'],
+    ['listing_image_url'],
+    ['image_url'],
+    ['thumbnail_url'],
+  ];
   for (const p of payloads) {
+    if (!p) continue;
     for (const path of paths) {
-      const v = lookup(p, path);
-      if (typeof v === 'string' && v.trim().length > 0) return v;
-    }
-  }
-  return null;
-}
-
-export function pickNumber(
-  payloads: readonly Payload[],
-  paths: readonly (readonly string[])[],
-): number | null {
-  for (const p of payloads) {
-    for (const path of paths) {
-      const v = lookup(p, path);
-      if (typeof v === 'number' && Number.isFinite(v)) return v;
-      if (typeof v === 'string') {
-        const n = Number(v);
-        if (Number.isFinite(n)) return n;
+      let cur: unknown = p;
+      let ok = true;
+      for (const k of path) {
+        if (!isObject(cur)) {
+          ok = false;
+          break;
+        }
+        cur = cur[k];
       }
+      if (ok && typeof cur === 'string' && cur.trim().length > 0) return cur;
     }
-  }
-  return null;
-}
-
-export interface QueueRowContext {
-  listingTitle: string | null;
-  listingPriceUSD: number | null;
-  listingCurrency: string | null;
-  listingUrl: string | null;
-  listingSource: string | null;
-  listingCondition: string | null;
-  listingImage: string | null;
-  variantName: string | null;
-  variantImage: string | null;
-  variantUrlPath: string | null;
-  familyName: string | null;
-  familyImage: string | null;
-  manufacturerName: string | null;
-}
-
-export function extractContext(payloads: readonly Payload[]): QueueRowContext {
-  return {
-    listingTitle: pickString(payloads, [
-      ['listing', 'title'],
-      ['listing', 'title_raw'],
-      ['listing_title'],
-      ['title_raw'],
-      ['title'],
-    ]),
-    listingPriceUSD: pickNumber(payloads, [
-      ['listing', 'price_usd_normalized'],
-      ['listing', 'price_usd'],
-      ['listing', 'price'],
-      ['listing_price_usd'],
-      ['price_usd_normalized'],
-      ['price_usd'],
-      ['price'],
-    ]),
-    listingCurrency: pickString(payloads, [
-      ['listing', 'currency_code'],
-      ['listing', 'currency'],
-      ['listing_currency'],
-      ['currency_code'],
-      ['currency'],
-    ]),
-    listingUrl: pickString(payloads, [
-      ['listing', 'listing_url'],
-      ['listing', 'url'],
-      ['listing_url'],
-      ['url'],
-    ]),
-    listingSource: pickString(payloads, [
-      ['listing', 'source_name'],
-      ['listing', 'source'],
-      ['listing_source'],
-      ['source_name'],
-      ['source'],
-    ]),
-    listingCondition: pickString(payloads, [
-      ['listing', 'condition_raw'],
-      ['listing', 'condition'],
-      ['listing_condition'],
-      ['condition_raw'],
-      ['condition'],
-    ]),
-    listingImage: pickString(payloads, [
-      ['listing', 'image_url'],
-      ['listing', 'thumbnail_url'],
-      ['listing', 'image'],
-      ['listing_image_url'],
-      ['image_url'],
-      ['thumbnail_url'],
-    ]),
-    variantName: pickString(payloads, [
-      ['variant', 'full_name'],
-      ['variant', 'name'],
-      ['variant_full_name'],
-      ['variant_name'],
-    ]),
-    variantImage: pickString(payloads, [
-      ['variant', 'box_art_url'],
-      ['variant', 'image_url'],
-      ['variant_box_art_url'],
-      ['variant_image_url'],
-    ]),
-    variantUrlPath: pickString(payloads, [
-      ['variant', 'url_path'],
-      ['variant', 'path'],
-      ['variant_url_path'],
-      ['variant_url'],
-    ]),
-    familyName: pickString(payloads, [
-      ['family', 'name'],
-      ['family_name'],
-    ]),
-    familyImage: pickString(payloads, [
-      ['family', 'image_url'],
-      ['family_image_url'],
-    ]),
-    manufacturerName: pickString(payloads, [
-      ['manufacturer', 'name'],
-      ['manufacturer_name'],
-      ['brand', 'name'],
-      ['brand_name'],
-    ]),
-  };
-}
-
-export function pickFirstString(
-  ...candidates: Array<string | null | undefined>
-): string | null {
-  for (const c of candidates) {
-    if (typeof c === 'string' && c.trim().length > 0) return c;
   }
   return null;
 }

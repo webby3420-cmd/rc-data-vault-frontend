@@ -85,7 +85,7 @@ export async function fetchQueueRows(
     );
   }
 
-  const url = `${SUPABASE_URL}/rest/v1/agent_review_queue?${params.toString()}`;
+  const url = `${SUPABASE_URL}/rest/v1/v_agent_review_queue_enriched?${params.toString()}`;
 
   try {
     const res = await fetch(url, {
@@ -110,7 +110,7 @@ export async function fetchQueueRows(
 export async function fetchDistinctValues(
   column: 'agent_name' | 'entity_type' | 'proposed_action',
 ): Promise<string[]> {
-  const url = `${SUPABASE_URL}/rest/v1/agent_review_queue?select=${column}&order=${column}.asc`;
+  const url = `${SUPABASE_URL}/rest/v1/v_agent_review_queue_enriched?select=${column}&order=${column}.asc`;
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -141,7 +141,7 @@ export async function fetchQueueCounts(): Promise<Record<string, number>> {
   const results: Record<string, number> = {};
   await Promise.all(
     statuses.map(async (s) => {
-      const url = `${SUPABASE_URL}/rest/v1/agent_review_queue?select=queue_id&status=eq.${s}&limit=1`;
+      const url = `${SUPABASE_URL}/rest/v1/v_agent_review_queue_enriched?select=queue_id&status=eq.${s}&limit=1`;
       try {
         const res = await fetch(url, {
           method: 'HEAD',

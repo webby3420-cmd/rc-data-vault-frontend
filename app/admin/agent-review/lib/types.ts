@@ -37,6 +37,30 @@ export interface QueueRow {
   action_status: ActionStatus;
   created_at: string;
   updated_at: string;
+
+  // Joined columns from v_agent_review_queue_enriched.
+  // INNER JOIN guarantees these are present whenever the row is returned.
+  // Numeric columns arrive from PostgREST as strings.
+  listing_id: string;
+  listing_title: string;
+  listing_price_usd: string | null;
+  listing_currency: string | null;
+  listing_url: string | null;
+  listing_source: string | null;
+  listing_condition: string | null;
+
+  variant_id: string;
+  variant_full_name: string;
+  variant_slug: string;
+  variant_box_art_url: string | null;
+
+  family_name: string;
+  family_slug: string;
+  family_image_url: string | null;
+  manufacturer_name: string;
+  manufacturer_slug: string;
+
+  variant_url_path: string;
 }
 
 export interface QueueFilters {

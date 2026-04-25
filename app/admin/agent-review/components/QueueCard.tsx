@@ -15,7 +15,7 @@ import {
   formatPriceUSD,
   deriveSource,
   capitalize,
-  extractContext,
+  pickListingImage,
 } from '../lib/format';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -74,7 +74,10 @@ export default function QueueCard({ row }: { row: QueueRow }) {
     });
   }
 
-  const ctx = extractContext([row.proposed_payload, row.evidence_payload]);
+  const listingImageSrc = pickListingImage([
+    row.proposed_payload,
+    row.evidence_payload,
+  ]);
 
   const statusClass = STATUS_STYLES[row.status] ?? 'bg-slate-700 text-slate-200';
   const riskTextClass = row.risk_label
@@ -84,10 +87,10 @@ export default function QueueCard({ row }: { row: QueueRow }) {
   const created = new Date(row.created_at);
   const createdStr = created.toISOString().replace('T', ' ').slice(0, 16) + 'Z';
 
-  const sourceLabel = deriveSource(ctx.listingSource, ctx.listingUrl);
-  const variantImageSrc = ctx.variantImage ?? ctx.familyImage ?? null;
+  const sourceLabel = deriveSource(row.listing_source, row.listing_url);
+  const variantImageSrc = row.variant_box_art_url ?? row.family_image_url ?? null;
   const placeholderLetter =
-    ctx.manufacturerName?.charAt(0).toUpperCase() ?? '?';
+    row.manufacturer_name?.charAt(0).toUpperCase() ?? '?';
 
   return (
     <article className="rounded-xl border border-slate-700 bg-slate-900/60 p-5 text-slate-200 shadow-sm">
@@ -111,29 +114,29 @@ export default function QueueCard({ row }: { row: QueueRow }) {
             Listing
           </div>
           <h2 className="text-lg font-semibold leading-tight text-white">
-            {ctx.listingTitle ?? (
+            {row.listing_title || (
               <span className="text-slate-500">Title not available</span>
             )}
           </h2>
           <div className="text-2xl font-medium text-white">
-            {formatPriceUSD(ctx.listingPriceUSD, ctx.listingCurrency)}
+            {formatPriceUSD(row.listing_price_usd, row.listing_currency)}
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">
               {sourceLabel}
             </span>
-            {ctx.listingCondition && (
+            {row.listing_condition && (
               <span className="rounded-full border border-blue-700/40 bg-blue-500/10 px-2 py-0.5 text-blue-300">
-                {ctx.listingCondition}
+                {row.listing_condition}
               </span>
             )}
           </div>
           <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
-            {ctx.listingImage ? (
+            {listingImageSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={ctx.listingImage}
-                alt={ctx.listingTitle ?? 'Listing'}
+                src={listingImageSrc}
+                alt={row.listing_title || 'Listing'}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -142,9 +145,9 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               </div>
             )}
           </div>
-          {ctx.listingUrl ? (
+          {row.listing_url ? (
             <a
-              href={ctx.listingUrl}
+              href={row.listing_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center text-xs font-medium text-sky-400 hover:text-sky-300 hover:underline"
@@ -163,15 +166,15 @@ export default function QueueCard({ row }: { row: QueueRow }) {
           <div className="text-[10px] uppercase tracking-wider text-slate-500">
             Proposed match
           </div>
-          {(ctx.manufacturerName || ctx.familyName) && (
+          {(row.manufacturer_name || row.family_name) && (
             <div className="text-xs text-slate-400">
-              {ctx.manufacturerName ?? '—'}{' '}
+              {row.manufacturer_name || '—'}{' '}
               <span className="text-slate-600">›</span>{' '}
-              {ctx.familyName ?? '—'}
+              {row.family_name || '—'}
             </div>
           )}
           <h2 className="text-lg font-semibold leading-tight text-white">
-            {ctx.variantName ?? (
+            {row.variant_full_name || (
               <span className="text-slate-500">Variant not specified</span>
             )}
           </h2>
@@ -180,7 +183,7 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={variantImageSrc}
-                alt={ctx.variantName ?? 'Variant'}
+                alt={row.variant_full_name || 'Variant'}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -189,9 +192,9 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               </div>
             )}
           </div>
-          {ctx.variantUrlPath ? (
+          {row.variant_url_path ? (
             <a
-              href={ctx.variantUrlPath}
+              href={row.variant_url_path}
               className="inline-flex items-center text-xs font-medium text-sky-400 hover:text-sky-300 hover:underline"
             >
               View RC Data Vault page →

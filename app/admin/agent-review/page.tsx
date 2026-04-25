@@ -2,9 +2,8 @@
 // Main Review Queue page. Server component; reads queue rows via service role.
 // Admin gate: ADMIN_REVIEW_TOKEN shared secret, set via ?token=XXX on first visit.
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ADMIN_COOKIE_NAME, isAdminAuthorized } from './lib/admin-guard';
+import { isAdminAuthorized } from './lib/admin-guard';
 import {
   fetchDistinctValues,
   fetchQueueCounts,
@@ -30,14 +29,6 @@ export default async function AgentReviewPage({
   if (tokenParam) {
     const expected = process.env.ADMIN_REVIEW_TOKEN;
     if (expected && tokenParam === expected) {
-      const jar = await cookies();
-      jar.set(ADMIN_COOKIE_NAME, expected, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 8, // 8 hours
-      });
       const next = new URLSearchParams();
       for (const [k, v] of Object.entries(sp)) {
         if (k === 'token') continue;

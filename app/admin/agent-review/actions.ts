@@ -7,6 +7,7 @@
 import { revalidatePath } from 'next/cache';
 import { isAdminAuthorized } from './lib/admin-guard';
 import { updateQueueRowStatus } from './lib/supabase-admin';
+import { ALLOWED_REJECT_REASONS, type RejectReason } from './lib/types';
 
 async function guardOrFail(): Promise<void> {
   if (!(await isAdminAuthorized())) {
@@ -31,12 +32,20 @@ export async function approveQueueItem(
 
 export async function rejectQueueItem(
   queueId: number,
-  reviewerNote: string | null,
+  rejectReason: RejectReason,
+  freeTextNote?: string,
 ): Promise<{ ok: boolean; error: string | null }> {
   await guardOrFail();
+  if (!ALLOWED_REJECT_REASONS.includes(rejectReason)) {
+    throw new Error(`invalid reject_reason: ${rejectReason}`);
+  }
+  const cleanedNote = (freeTextNote ?? '').trim();
+  const reviewer_note = cleanedNote
+    ? `reject_reason:${rejectReason}\n${cleanedNote}`
+    : `reject_reason:${rejectReason}`;
   const result = await updateQueueRowStatus(queueId, {
     status: 'rejected',
-    reviewer_note: reviewerNote || undefined,
+    reviewer_note,
     reviewer: 'admin',
     reviewed_at: new Date().toISOString(),
   });

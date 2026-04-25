@@ -2,13 +2,25 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import type { QueueRow } from '../lib/types';
+import type { QueueRow, RejectReason } from '../lib/types';
 import {
   approveQueueItem,
   rejectQueueItem,
   needsMoreReviewQueueItem,
   addNoteToQueueItem,
 } from '../actions';
+
+const REJECT_REASON_OPTIONS: ReadonlyArray<{
+  value: RejectReason;
+  label: string;
+}> = [
+  { value: 'is_part', label: 'Is a part / accessory' },
+  { value: 'wrong_variant', label: 'Wrong variant proposed' },
+  { value: 'multi_vehicle_fitment', label: 'Fits multiple vehicles' },
+  { value: 'duplicate_listing', label: 'Duplicate listing' },
+  { value: 'garbage', label: 'Garbage / unusable listing' },
+  { value: 'other', label: 'Other' },
+];
 import {
   formatConfidencePercent,
   bucketPriority,
@@ -41,6 +53,11 @@ export default function QueueCard({ row }: { row: QueueRow }) {
   // re-firing on the same card during the window between server action
   // success and RSC revalidation. Note actions do not flip this lock.
   const [statusActionFired, setStatusActionFired] = useState(false);
+
+  // Reject panel state — required reason picker + optional free text.
+  const [showRejectPanel, setShowRejectPanel] = useState(false);
+  const [rejectReason, setRejectReason] = useState<RejectReason | null>(null);
+  const [rejectFreeText, setRejectFreeText] = useState('');
 
   const rowAllowsStatusChange =
     row.status === 'pending' || row.status === 'needs_more_review';
@@ -287,9 +304,10 @@ export default function QueueCard({ row }: { row: QueueRow }) {
         <ActionButton
           variant="reject"
           disabled={!canChangeStatus || pending}
-          onClick={() =>
-            runStatusAction(() => rejectQueueItem(row.queue_id, note || null))
-          }
+          onClick={() => {
+            setErr(null);
+            setShowRejectPanel((v) => !v);
+          }}
         >
           Reject
         </ActionButton>
@@ -314,6 +332,86 @@ export default function QueueCard({ row }: { row: QueueRow }) {
           Save note
         </ActionButton>
       </div>
+
+      {showRejectPanel && canChangeStatus && (
+        <div className="mt-3 rounded-lg border border-rose-700/40 bg-rose-950/20 p-3">
+          <fieldset>
+            <legend className="px-1 text-[10px] uppercase tracking-wider text-rose-300">
+              Reject reason (required)
+            </legend>
+            <div className="mt-2 grid grid-cols-1 gap-x-5 gap-y-2 text-sm sm:grid-cols-2">
+              {REJECT_REASON_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className="flex cursor-pointer items-center gap-2 text-slate-200"
+                >
+                  <input
+                    type="radio"
+                    name={`reject-reason-${row.queue_id}`}
+                    value={opt.value}
+                    checked={rejectReason === opt.value}
+                    onChange={() => setRejectReason(opt.value)}
+                    disabled={pending}
+                    className="h-4 w-4 cursor-pointer accent-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div className="mt-3">
+            <label
+              className="text-xs text-slate-400"
+              htmlFor={`reject-note-${row.queue_id}`}
+            >
+              Additional notes (optional)
+            </label>
+            <textarea
+              id={`reject-note-${row.queue_id}`}
+              className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-slate-200 placeholder:text-slate-600"
+              rows={2}
+              placeholder="optional context for this rejection"
+              value={rejectFreeText}
+              onChange={(e) => setRejectFreeText(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={!canChangeStatus || pending || rejectReason === null}
+              title={
+                rejectReason === null
+                  ? 'Choose a reject reason to confirm'
+                  : undefined
+              }
+              onClick={() => {
+                if (rejectReason === null) return;
+                runStatusAction(() =>
+                  rejectQueueItem(
+                    row.queue_id,
+                    rejectReason,
+                    rejectFreeText.trim() || undefined,
+                  ),
+                );
+              }}
+              className="flex-1 min-w-[7rem] rounded-lg bg-rose-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Confirm reject
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setShowRejectPanel(false)}
+              className="flex-1 min-w-[7rem] rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {statusActionFired && !err && (
         <p className="mt-2 text-xs text-emerald-400">

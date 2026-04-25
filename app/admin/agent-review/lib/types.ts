@@ -86,6 +86,23 @@ export type TabKey =
   | 'approved'
   | 'rejected';
 
+export type RejectReason =
+  | 'is_part'
+  | 'wrong_variant'
+  | 'multi_vehicle_fitment'
+  | 'duplicate_listing'
+  | 'garbage'
+  | 'other';
+
+export const ALLOWED_REJECT_REASONS: readonly RejectReason[] = [
+  'is_part',
+  'wrong_variant',
+  'multi_vehicle_fitment',
+  'duplicate_listing',
+  'garbage',
+  'other',
+] as const;
+
 export const TAB_DEFINITIONS: Array<{ key: TabKey; label: string }> = [
   { key: 'all_pending', label: 'All Pending' },
   { key: 'listing_matches', label: 'Listing Matches' },

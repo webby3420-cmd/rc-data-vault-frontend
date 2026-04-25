@@ -50,7 +50,7 @@ Deno.serve(async (_req) => {
     const { data: searchQueue } = await supabase
       .from("ebay_search_queue_view")
       .select("search_term, variant_id")
-      .limit(30);
+      .limit(100);
 
     if (!searchQueue || searchQueue.length === 0) {
       return new Response(JSON.stringify({ success: true, message: "No search terms" }), { status: 200 });
@@ -61,7 +61,7 @@ Deno.serve(async (_req) => {
     let skipped = 0;
 
     for (const { search_term, variant_id } of searchQueue) {
-      const items = await searchEbayActive(token, search_term, 10);
+      const items = await searchEbayActive(token, search_term, 50);
 
       for (const item of items) {
         const price = item.price?.value ? parseFloat(item.price.value) : null;

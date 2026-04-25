@@ -102,11 +102,26 @@ export default function StagingPartCard({ row }: { row: StagingPartRow }) {
               <span className="italic text-slate-500">Brand: unknown</span>
             )}
           </div>
-          <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
-            <div className="flex h-full items-center justify-center text-xs text-slate-600">
+          {row.listing_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.listing_image_url}
+              alt=""
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="h-24 w-24 flex-shrink-0 rounded-md border border-slate-800 bg-slate-900 object-cover"
+            />
+          ) : (
+            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-950/50 text-[10px] text-slate-600">
               No image
             </div>
-          </div>
+          )}
           {row.source_url && (
             <a
               href={row.source_url}

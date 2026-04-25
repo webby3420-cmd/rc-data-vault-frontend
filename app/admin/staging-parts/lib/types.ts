@@ -32,4 +32,9 @@ export interface StagingPartRow {
   // Computed in TS after fetch — number of pending_review rows sharing the
   // same part_number (always >=1; >1 indicates duplicates).
   duplicate_count?: number;
+
+  // Best-effort image lookup via marketplace_listings.raw_payload_json,
+  // joined on listing_url = staging_parts.source_url. Null if no match
+  // or no image in the payload.
+  listing_image_url?: string | null;
 }

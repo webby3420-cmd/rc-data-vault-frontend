@@ -27,7 +27,6 @@ import {
   formatPriceUSD,
   deriveSource,
   capitalize,
-  pickListingImage,
 } from '../lib/format';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -91,10 +90,7 @@ export default function QueueCard({ row }: { row: QueueRow }) {
     });
   }
 
-  const listingImageSrc = pickListingImage([
-    row.proposed_payload,
-    row.evidence_payload,
-  ]);
+  const listingImageSrc = row.listing_image_url ?? null;
 
   const statusClass = STATUS_STYLES[row.status] ?? 'bg-slate-700 text-slate-200';
   const riskTextClass = row.risk_label
@@ -148,20 +144,26 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               </span>
             )}
           </div>
-          <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
-            {listingImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={listingImageSrc}
-                alt={row.listing_title || 'Listing'}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-slate-600">
-                Image not available
-              </div>
-            )}
-          </div>
+          {listingImageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={listingImageSrc}
+              alt=""
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="h-24 w-24 flex-shrink-0 rounded-md border border-slate-800 bg-slate-900 object-cover"
+            />
+          ) : (
+            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-950/50 text-[10px] text-slate-600">
+              No image
+            </div>
+          )}
           {row.listing_url ? (
             <a
               href={row.listing_url}

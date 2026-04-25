@@ -74,9 +74,23 @@ export async function fetchStagingPartRows(): Promise<{
       const k = r.part_number ?? '';
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
+
+    // Best-effort image enrichment: join staging_parts.source_url to
+    // marketplace_listings.listing_url and extract from raw_payload_json
+    // using the same chain as v_agent_review_queue_enriched.
+    const sourceUrls = Array.from(
+      new Set(
+        raw.map((r) => r.source_url).filter((u): u is string => !!u),
+      ),
+    );
+    const imageMap = await fetchListingImages(sourceUrls);
+
     const rows = raw.map((r) => ({
       ...r,
       duplicate_count: counts.get(r.part_number ?? '') ?? 1,
+      listing_image_url: r.source_url
+        ? imageMap.get(r.source_url) ?? null
+        : null,
     }));
 
     return { rows, error: null };
@@ -86,6 +100,68 @@ export async function fetchStagingPartRows(): Promise<{
       error: err instanceof Error ? err.message : 'Unknown fetch error',
     };
   }
+}
+
+// Same chain v_agent_review_queue_enriched.listing_image_url uses on the
+// agent-review side: image.imageUrl → additionalImages[0].imageUrl →
+// thumbnailImages[0].imageUrl. Null if none of those resolve.
+function extractImageUrl(payload: unknown): string | null {
+  const p = payload as
+    | {
+        image?: { imageUrl?: unknown };
+        additionalImages?: Array<{ imageUrl?: unknown }>;
+        thumbnailImages?: Array<{ imageUrl?: unknown }>;
+      }
+    | null
+    | undefined;
+  if (!p) return null;
+  const candidates = [
+    p.image?.imageUrl,
+    p.additionalImages?.[0]?.imageUrl,
+    p.thumbnailImages?.[0]?.imageUrl,
+  ];
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim().length > 0) return c;
+  }
+  return null;
+}
+
+// Best-effort lookup of listing images keyed by listing_url. Failures and
+// misses return an empty/incomplete map; callers fall back to the
+// placeholder. PostgREST .in() with quoted URL values.
+async function fetchListingImages(
+  sourceUrls: string[],
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  if (sourceUrls.length === 0) return map;
+
+  const escaped = sourceUrls.map((u) => `"${u.replace(/"/g, '""')}"`);
+  const params = new URLSearchParams();
+  params.set('select', 'listing_url,raw_payload_json');
+  params.set('listing_url', `in.(${escaped.join(',')})`);
+
+  const url = `${SUPABASE_URL}/rest/v1/marketplace_listings?${params.toString()}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: restHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) return map;
+    const data = (await res.json()) as Array<{
+      listing_url: string | null;
+      raw_payload_json: unknown;
+    }>;
+    for (const row of data) {
+      if (!row.listing_url) continue;
+      const img = extractImageUrl(row.raw_payload_json);
+      if (img) map.set(row.listing_url, img);
+    }
+  } catch {
+    // best-effort; swallow and let callers fall back to placeholder
+  }
+  return map;
 }
 
 export async function updateStagingPartStatus(

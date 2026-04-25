@@ -20,7 +20,7 @@ export function middleware(req: NextRequest) {
 
   const res = NextResponse.redirect(cleanUrl);
 
-  res.cookies.set('rcdv_admin_review', '1', {
+  res.cookies.set('rcdv_admin_review', token, {
     path: '/',
     httpOnly: true,
     secure: true,

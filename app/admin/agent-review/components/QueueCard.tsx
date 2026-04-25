@@ -9,13 +9,14 @@ import {
   needsMoreReviewQueueItem,
   addNoteToQueueItem,
 } from '../actions';
-
-const RISK_STYLES: Record<string, string> = {
-  low: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-  medium: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-  high: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
-  production_blocking: 'bg-red-500/10 text-red-300 border-red-500/30',
-};
+import {
+  formatConfidencePercent,
+  bucketPriority,
+  formatPriceUSD,
+  deriveSource,
+  capitalize,
+  extractContext,
+} from '../lib/format';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-slate-700 text-slate-200',
@@ -25,8 +26,14 @@ const STATUS_STYLES: Record<string, string> = {
   auto_expired: 'bg-slate-600 text-slate-300',
 };
 
+const RISK_TEXT_STYLES: Record<string, string> = {
+  low: 'text-emerald-300',
+  medium: 'text-amber-300',
+  high: 'text-orange-300',
+  production_blocking: 'text-red-300',
+};
+
 export default function QueueCard({ row }: { row: QueueRow }) {
-  const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState(row.reviewer_note ?? '');
   const [pending, startTransition] = useTransition();
   const [err, setErr] = useState<string | null>(null);
@@ -67,74 +74,174 @@ export default function QueueCard({ row }: { row: QueueRow }) {
     });
   }
 
-  const riskClass =
-    row.risk_label && RISK_STYLES[row.risk_label]
-      ? RISK_STYLES[row.risk_label]
-      : 'bg-slate-700 text-slate-300 border-slate-600';
+  const ctx = extractContext([row.proposed_payload, row.evidence_payload]);
 
   const statusClass = STATUS_STYLES[row.status] ?? 'bg-slate-700 text-slate-200';
+  const riskTextClass = row.risk_label
+    ? RISK_TEXT_STYLES[row.risk_label] ?? 'text-slate-200'
+    : 'text-slate-500';
 
   const created = new Date(row.created_at);
   const createdStr = created.toISOString().replace('T', ' ').slice(0, 16) + 'Z';
 
+  const sourceLabel = deriveSource(ctx.listingSource, ctx.listingUrl);
+  const variantImageSrc = ctx.variantImage ?? ctx.familyImage ?? null;
+  const placeholderLetter =
+    ctx.manufacturerName?.charAt(0).toUpperCase() ?? '?';
+
   return (
-    <article className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-slate-200 shadow-sm">
+    <article className="rounded-xl border border-slate-700 bg-slate-900/60 p-5 text-slate-200 shadow-sm">
+      {/* HEADER */}
       <header className="flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-slate-300">
           #{row.queue_id}
         </span>
         <span className={`rounded px-2 py-0.5 ${statusClass}`}>{row.status}</span>
-        {row.risk_label && (
-          <span className={`rounded border px-2 py-0.5 ${riskClass}`}>
-            {row.risk_label.replace('_', ' ')}
-          </span>
-        )}
+        <span className="rounded bg-slate-800 px-2 py-0.5 font-mono text-slate-300">
+          {row.proposed_action}
+        </span>
         <span className="ml-auto text-slate-500">{createdStr}</span>
       </header>
 
-      <div className="mt-3">
-        <div className="text-sm font-semibold text-white">
-          {row.proposed_action}
-        </div>
-        <div className="mt-1 text-xs text-slate-400">
-          <span className="text-slate-500">agent:</span> {row.agent_name}{' '}
-          <span className="ml-2 text-slate-500">entity:</span> {row.entity_type}
-          <span className="ml-2 text-slate-500">id:</span>{' '}
-          <span className="font-mono">{row.entity_id}</span>
-        </div>
+      {/* TWO-COLUMN: LISTING ↔ PROPOSED MATCH */}
+      <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {/* LEFT — listing */}
+        <section className="space-y-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">
+            Listing
+          </div>
+          <h2 className="text-lg font-semibold leading-tight text-white">
+            {ctx.listingTitle ?? (
+              <span className="text-slate-500">Title not available</span>
+            )}
+          </h2>
+          <div className="text-2xl font-medium text-white">
+            {formatPriceUSD(ctx.listingPriceUSD, ctx.listingCurrency)}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">
+              {sourceLabel}
+            </span>
+            {ctx.listingCondition && (
+              <span className="rounded-full border border-blue-700/40 bg-blue-500/10 px-2 py-0.5 text-blue-300">
+                {ctx.listingCondition}
+              </span>
+            )}
+          </div>
+          <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
+            {ctx.listingImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ctx.listingImage}
+                alt={ctx.listingTitle ?? 'Listing'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-xs text-slate-600">
+                Image not available
+              </div>
+            )}
+          </div>
+          {ctx.listingUrl ? (
+            <a
+              href={ctx.listingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-xs font-medium text-sky-400 hover:text-sky-300 hover:underline"
+            >
+              View original listing ↗
+            </a>
+          ) : (
+            <span className="text-xs text-slate-500">
+              No listing link available
+            </span>
+          )}
+        </section>
+
+        {/* RIGHT — proposed variant match */}
+        <section className="space-y-3">
+          <div className="text-[10px] uppercase tracking-wider text-slate-500">
+            Proposed match
+          </div>
+          {(ctx.manufacturerName || ctx.familyName) && (
+            <div className="text-xs text-slate-400">
+              {ctx.manufacturerName ?? '—'}{' '}
+              <span className="text-slate-600">›</span>{' '}
+              {ctx.familyName ?? '—'}
+            </div>
+          )}
+          <h2 className="text-lg font-semibold leading-tight text-white">
+            {ctx.variantName ?? (
+              <span className="text-slate-500">Variant not specified</span>
+            )}
+          </h2>
+          <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
+            {variantImageSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={variantImageSrc}
+                alt={ctx.variantName ?? 'Variant'}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-4xl font-bold text-slate-700">
+                {placeholderLetter}
+              </div>
+            )}
+          </div>
+          {ctx.variantUrlPath ? (
+            <a
+              href={ctx.variantUrlPath}
+              className="inline-flex items-center text-xs font-medium text-sky-400 hover:text-sky-300 hover:underline"
+            >
+              View RC Data Vault page →
+            </a>
+          ) : (
+            <span className="text-xs text-slate-500">
+              No variant link available
+            </span>
+          )}
+        </section>
       </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-        <Metric
-          label="confidence"
-          value={row.confidence ? parseFloat(row.confidence).toFixed(3) : '—'}
+      {/* AGENT / ENTITY META */}
+      <div className="mt-4 text-[11px] text-slate-500">
+        <span>agent:</span>{' '}
+        <span className="text-slate-400">{row.agent_name}</span>{' '}
+        <span className="ml-2">entity:</span>{' '}
+        <span className="text-slate-400">{row.entity_type}</span>{' '}
+        <span className="ml-2">id:</span>{' '}
+        <span className="font-mono text-slate-400">{row.entity_id}</span>
+      </div>
+
+      {/* DECISION CONTEXT — confidence / risk / priority / severity */}
+      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-800 pt-4 text-xs sm:grid-cols-4">
+        <Stat
+          label="Confidence"
+          value={formatConfidencePercent(row.confidence)}
         />
-        <Metric
-          label="priority"
-          value={
-            row.priority_score ? parseFloat(row.priority_score).toFixed(3) : '—'
-          }
+        <Stat
+          label="Risk"
+          value={capitalize(row.risk_label) ?? '—'}
+          valueClassName={riskTextClass}
         />
-        <Metric
-          label="severity"
-          value={row.severity !== null ? String(row.severity) : '—'}
+        <Stat label="Priority" value={bucketPriority(row.priority_score)} />
+        <Stat
+          label="Severity"
+          value={row.severity != null ? String(row.severity) : '—'}
         />
       </div>
 
-      <button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs text-slate-300 transition hover:bg-slate-800"
-      >
-        {expanded ? 'Hide details' : 'Show details'}
-      </button>
-
-      {expanded && (
-        <div className="mt-3 space-y-3 text-xs">
+      {/* RAW DETAILS — collapsed by default */}
+      <details className="mt-4 text-xs">
+        <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-300">
+          Show raw details
+        </summary>
+        <div className="mt-3 space-y-3">
           <Section title="proposed_payload" json={row.proposed_payload} />
           <Section title="evidence_payload" json={row.evidence_payload} />
           <Section title="source_ref" json={row.source_ref} />
-          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-2 font-mono text-slate-400">
+          <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-2 font-mono text-[11px] leading-relaxed text-slate-400">
             <div>source_match_id: {row.source_match_id ?? '—'}</div>
             <div>source_stage_id: {row.source_stage_id ?? '—'}</div>
             <div>action_status: {row.action_status}</div>
@@ -142,10 +249,14 @@ export default function QueueCard({ row }: { row: QueueRow }) {
             <div>reviewer: {row.reviewer ?? '—'}</div>
           </div>
         </div>
-      )}
+      </details>
 
-      <div className="mt-3">
-        <label className="text-xs text-slate-400" htmlFor={`note-${row.queue_id}`}>
+      {/* REVIEWER NOTE */}
+      <div className="mt-4">
+        <label
+          className="text-xs text-slate-400"
+          htmlFor={`note-${row.queue_id}`}
+        >
           reviewer note
         </label>
         <textarea
@@ -159,6 +270,7 @@ export default function QueueCard({ row }: { row: QueueRow }) {
         />
       </div>
 
+      {/* ACTIONS */}
       <div className="mt-3 flex flex-wrap gap-2">
         <ActionButton
           variant="approve"
@@ -192,7 +304,9 @@ export default function QueueCard({ row }: { row: QueueRow }) {
         <ActionButton
           variant="note"
           disabled={pending || note.trim().length === 0}
-          onClick={() => runNoteAction(() => addNoteToQueueItem(row.queue_id, note))}
+          onClick={() =>
+            runNoteAction(() => addNoteToQueueItem(row.queue_id, note))
+          }
         >
           Save note
         </ActionButton>
@@ -204,18 +318,30 @@ export default function QueueCard({ row }: { row: QueueRow }) {
         </p>
       )}
 
-      {err && (
-        <p className="mt-2 text-xs text-rose-400">Error: {err}</p>
-      )}
+      {err && <p className="mt-2 text-xs text-rose-400">Error: {err}</p>}
     </article>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-2">
-      <div className="text-slate-500">{label}</div>
-      <div className="mt-0.5 font-mono text-slate-200">{value}</div>
+    <div>
+      <div className="text-[10px] uppercase tracking-wider text-slate-500">
+        {label}
+      </div>
+      <div
+        className={`mt-0.5 font-medium ${valueClassName ?? 'text-slate-200'}`}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -230,7 +356,7 @@ function Section({
   const text = json ? JSON.stringify(json, null, 2) : '(empty)';
   return (
     <div>
-      <div className="mb-1 text-slate-500">{title}</div>
+      <div className="mb-1 font-mono text-[11px] text-slate-500">{title}</div>
       <pre className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/50 p-2 font-mono text-[11px] leading-relaxed text-slate-300">
         {text}
       </pre>

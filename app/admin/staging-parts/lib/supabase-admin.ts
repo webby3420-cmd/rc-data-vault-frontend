@@ -5,7 +5,7 @@
 // service role; key must never leak to the client.
 
 import 'server-only';
-import type { StagingPartRow } from './types';
+import type { PartType, StagingPartRow } from './types';
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -90,24 +90,27 @@ export async function fetchStagingPartRows(): Promise<{
 
 export async function updateStagingPartStatus(
   stagingId: string,
-  patch: {
-    status: 'pending' | 'rejected' | 'duplicate';
-    processed_at?: string;
-  },
+  status: 'pending' | 'rejected' | 'duplicate',
+  extras?: { part_type?: PartType },
 ): Promise<{ ok: boolean; error: string | null }> {
   const url = `${SUPABASE_URL}/rest/v1/staging_parts?staging_id=eq.${encodeURIComponent(
     stagingId,
   )}`;
+  const body = {
+    status,
+    processed_at: new Date().toISOString(),
+    ...(extras?.part_type ? { part_type: extras.part_type } : {}),
+  };
   try {
     const res = await fetch(url, {
       method: 'PATCH',
       headers: { ...restHeaders(), Prefer: 'return=representation' },
-      body: JSON.stringify(patch),
+      body: JSON.stringify(body),
       cache: 'no-store',
     });
     if (!res.ok) {
-      const body = await res.text();
-      return { ok: false, error: `Supabase ${res.status}: ${body}` };
+      const errBody = await res.text();
+      return { ok: false, error: `Supabase ${res.status}: ${errBody}` };
     }
     return { ok: true, error: null };
   } catch (err) {

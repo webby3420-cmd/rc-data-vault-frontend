@@ -7,6 +7,17 @@ export type StagingPartStatus =
   | 'rejected'
   | 'duplicate';
 
+export type PartType =
+  | 'oem_replacement'
+  | 'aftermarket_upgrade'
+  | 'universal_fitment';
+
+export const ALLOWED_PART_TYPES: readonly PartType[] = [
+  'oem_replacement',
+  'aftermarket_upgrade',
+  'universal_fitment',
+] as const;
+
 export interface StagingPartRow {
   staging_id: string;
   ingestion_source: string | null;

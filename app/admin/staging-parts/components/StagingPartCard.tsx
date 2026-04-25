@@ -2,12 +2,18 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import type { StagingPartRow } from '../lib/types';
+import type { PartType, StagingPartRow } from '../lib/types';
 import {
   approveStagingPart,
   rejectStagingPart,
   markStagingPartDuplicate,
 } from '../actions';
+
+const PART_TYPE_OPTIONS: ReadonlyArray<{ value: PartType; label: string }> = [
+  { value: 'oem_replacement', label: 'OEM replacement' },
+  { value: 'aftermarket_upgrade', label: 'Aftermarket upgrade' },
+  { value: 'universal_fitment', label: 'Universal fitment' },
+];
 
 const STATUS_STYLES: Record<string, string> = {
   pending_review: 'bg-amber-700 text-amber-100',
@@ -33,6 +39,7 @@ export default function StagingPartCard({ row }: { row: StagingPartRow }) {
   const [err, setErr] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [actionFired, setActionFired] = useState(false);
+  const [partType, setPartType] = useState<PartType | null>(null);
 
   if (dismissed) return null;
 
@@ -146,12 +153,44 @@ export default function StagingPartCard({ row }: { row: StagingPartRow }) {
         </section>
       </div>
 
+      {/* PART TYPE — required to approve */}
+      <fieldset className="mt-5 rounded-lg border border-slate-800 bg-slate-950/40 p-3">
+        <legend className="px-1 text-[10px] uppercase tracking-wider text-slate-500">
+          Part type (required to approve)
+        </legend>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          {PART_TYPE_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex cursor-pointer items-center gap-2 text-slate-200"
+            >
+              <input
+                type="radio"
+                name={`part-type-${row.staging_id}`}
+                value={opt.value}
+                checked={partType === opt.value}
+                onChange={() => setPartType(opt.value)}
+                disabled={!canChange || pending}
+                className="h-4 w-4 cursor-pointer accent-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
       {/* ACTIONS */}
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <ActionButton
           variant="approve"
-          disabled={!canChange || pending}
-          onClick={() => runAction(() => approveStagingPart(row.staging_id))}
+          disabled={!canChange || pending || partType === null}
+          title={
+            partType === null ? 'Choose a part type to approve' : undefined
+          }
+          onClick={() => {
+            if (partType === null) return;
+            runAction(() => approveStagingPart(row.staging_id, partType));
+          }}
         >
           Approve for promotion
         </ActionButton>
@@ -176,6 +215,12 @@ export default function StagingPartCard({ row }: { row: StagingPartRow }) {
         )}
       </div>
 
+      {canChange && !pending && partType === null && (
+        <p className="mt-2 text-xs text-slate-500">
+          Choose a part type to approve.
+        </p>
+      )}
+
       {err && <p className="mt-2 text-xs text-rose-400">Error: {err}</p>}
     </article>
   );
@@ -186,11 +231,13 @@ function ActionButton({
   disabled,
   onClick,
   children,
+  title,
 }: {
   variant: 'approve' | 'reject' | 'duplicate';
   disabled: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  title?: string;
 }) {
   const base =
     'flex-1 min-w-[7rem] rounded-lg px-3 py-2 text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed';
@@ -204,6 +251,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className={`${base} ${styles[variant]}`}
     >
       {children}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import PriceAlertSignup from "@/components/PriceAlertSignup";
+import { getCatalogImageUrl } from "@/lib/catalog-image";
 
 export const dynamic = "force-dynamic";
 
@@ -246,8 +247,8 @@ export default async function ComparePage({ params }: PageProps) {
     (supabase.rpc as any)("get_variant_page_payload_v2", { p_variant_slug: slugA }),
     (supabase.rpc as any)("get_variant_page_payload_v2", { p_variant_slug: slugB }),
   ]);
-  const imgA = { url: payloadA?.identity?.primary_image_url ?? null, alt: payloadA?.identity?.primary_image_alt ?? null };
-  const imgB = { url: payloadB?.identity?.primary_image_url ?? null, alt: payloadB?.identity?.primary_image_alt ?? null };
+  const imgA = { url: getCatalogImageUrl(payloadA?.identity?.primary_image_url), alt: payloadA?.identity?.primary_image_alt ?? null };
+  const imgB = { url: getCatalogImageUrl(payloadB?.identity?.primary_image_url), alt: payloadB?.identity?.primary_image_alt ?? null };
 
   const variants = data as ComparisonVariant[] | null;
   if (!variants || variants.length < 2) notFound();
@@ -351,28 +352,14 @@ export default async function ComparePage({ params }: PageProps) {
         )}
 
         {/* Side-by-side images */}
-        {(imgA.url || imgB.url) && (
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900 aspect-[4/3]">
-              {imgA.url ? (
-                <img src={imgA.url} alt={imgA.alt || `${a.variant_name}`} className="h-full w-full object-cover" loading="eager" />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-slate-950">
-                  <span className="text-xs text-slate-600">Image pending</span>
-                </div>
-              )}
-            </div>
-            <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900 aspect-[4/3]">
-              {imgB.url ? (
-                <img src={imgB.url} alt={imgB.alt || `${b.variant_name}`} className="h-full w-full object-cover" loading="eager" />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-slate-950">
-                  <span className="text-xs text-slate-600">Image pending</span>
-                </div>
-              )}
-            </div>
+        <div className="mb-6 grid grid-cols-2 gap-4">
+          <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900 aspect-[4/3]">
+            <img src={imgA.url} alt={imgA.alt || `${a.variant_name}`} className="h-full w-full object-cover" loading="eager" />
           </div>
-        )}
+          <div className="overflow-hidden rounded-xl border border-slate-700 bg-slate-900 aspect-[4/3]">
+            <img src={imgB.url} alt={imgB.alt || `${b.variant_name}`} className="h-full w-full object-cover" loading="eager" />
+          </div>
+        </div>
 
         {/* Comparison table */}
         <div className="overflow-x-auto rounded-2xl border border-slate-700 bg-slate-900">

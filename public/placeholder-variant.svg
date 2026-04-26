@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Image coming soon">
+  <rect width="400" height="300" fill="#f3f4f6"/>
+  <g transform="translate(200 130)" fill="none" stroke="#9ca3af" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M -85 25 L -85 0 L -55 -25 L 55 -25 L 85 0 L 85 25 Z" fill="#e5e7eb"/>
+    <circle cx="-50" cy="30" r="14" fill="#9ca3af" stroke="none"/>
+    <circle cx="50" cy="30" r="14" fill="#9ca3af" stroke="none"/>
+  </g>
+  <text x="200" y="220" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="16" font-weight="500" fill="#4b5563">Image coming soon</text>
+  <text x="200" y="246" text-anchor="middle" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif" font-size="12" fill="#9ca3af">RC Data Vault</text>
+</svg>

@@ -1,4 +1,5 @@
 import PriceAlertSignup from "@/components/PriceAlertSignup";
+import { getCatalogImageUrl } from "@/lib/catalog-image";
 
 type BestOfVariant = {
   variant_name: string;
@@ -49,11 +50,9 @@ export default function BestOfCard({
         <div className="text-3xl font-bold text-slate-600 flex-shrink-0 w-10 text-center">
           {rank}
         </div>
-        {imageUrl && (
-          <div className="flex-shrink-0 overflow-hidden rounded-lg border border-slate-700 w-20 h-20">
-            <img src={imageUrl} alt={v.variant_name} className="h-full w-full object-cover" loading="lazy" />
-          </div>
-        )}
+        <div className="flex-shrink-0 overflow-hidden rounded-lg border border-slate-700 w-20 h-20">
+          <img src={getCatalogImageUrl(imageUrl)} alt={v.variant_name} className="h-full w-full object-cover" loading="lazy" />
+        </div>
         <div className="flex-1 min-w-0 space-y-3">
           <div>
             <h3 className="text-lg font-semibold text-white">{v.variant_name}</h3>

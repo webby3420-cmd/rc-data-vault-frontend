@@ -28,6 +28,10 @@ import {
   deriveSource,
   capitalize,
 } from '../lib/format';
+import {
+  PLACEHOLDER_VARIANT_IMAGE,
+  getCatalogImageUrl,
+} from '@/lib/catalog-image';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-slate-700 text-slate-200',
@@ -110,9 +114,7 @@ export default function QueueCard({ row }: { row: QueueRow }) {
   const createdStr = created.toISOString().replace('T', ' ').slice(0, 16) + 'Z';
 
   const sourceLabel = deriveSource(row.listing_source, row.listing_url);
-  const variantImageSrc = row.proposed_variant_image_url ?? null;
-  const placeholderLetter =
-    row.manufacturer_name?.charAt(0).toUpperCase() ?? '?';
+  const variantImageSrc = getCatalogImageUrl(row.proposed_variant_image_url);
 
   return (
     <article className="rounded-xl border border-slate-700 bg-slate-900/60 p-5 text-slate-200 shadow-sm">
@@ -221,26 +223,20 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               )}
             </div>
           )}
-          {variantImageSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={variantImageSrc}
-              alt=""
-              width={96}
-              height={96}
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-              className="h-24 w-24 flex-shrink-0 rounded-md border border-slate-800 bg-slate-900 object-cover"
-            />
-          ) : (
-            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-950/50 text-3xl font-bold text-slate-700">
-              {placeholderLetter}
-            </div>
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={variantImageSrc}
+            alt=""
+            width={96}
+            height={96}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.src = PLACEHOLDER_VARIANT_IMAGE;
+            }}
+            className="h-24 w-24 flex-shrink-0 rounded-md border border-slate-800 bg-slate-900 object-cover"
+          />
           {row.variant_url_path ? (
             <a
               href={row.variant_url_path}

@@ -92,6 +92,15 @@ export default function QueueCard({ row }: { row: QueueRow }) {
 
   const listingImageSrc = row.listing_image_url ?? null;
 
+  // For catalog_qa_agent rows that surface a suggested value, pluck it
+  // out of evidence_payload defensively. Different proposed_action types
+  // use different suggested-* keys; missing keys → null and the line
+  // doesn't render.
+  const suggested = pickSuggestedFromEvidence(
+    row.proposed_action,
+    row.evidence_payload,
+  );
+
   const statusClass = STATUS_STYLES[row.status] ?? 'bg-slate-700 text-slate-200';
   const riskTextClass = row.risk_label
     ? RISK_TEXT_STYLES[row.risk_label] ?? 'text-slate-200'
@@ -197,6 +206,21 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               <span className="text-slate-500">Variant not specified</span>
             )}
           </h2>
+          {suggested && (
+            <div className="text-xs text-amber-300">
+              Suggested:{' '}
+              <span className="font-medium text-amber-200">
+                {suggested.value}
+              </span>
+              {suggested.mentionCount != null && (
+                <span className="text-amber-300/80">
+                  {' '}
+                  ({suggested.mentionCount} listing mention
+                  {suggested.mentionCount === 1 ? '' : 's'})
+                </span>
+              )}
+            </div>
+          )}
           {variantImageSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -502,4 +526,63 @@ function ActionButton({
       {children}
     </button>
   );
+}
+
+// Extract a "Suggested: <value>" line from evidence_payload for the catalog_qa
+// proposed_action types that emit one. Returns null when no key matches —
+// the JSX then skips rendering the line entirely.
+function pickSuggestedFromEvidence(
+  action: string,
+  evidence: Record<string, unknown> | null,
+): { value: string; mentionCount: number | null } | null {
+  if (!evidence) return null;
+
+  const candidateKeys: Record<string, readonly string[]> = {
+    missing_chassis_platform_with_evidence: [
+      'suggested_chassis_platform',
+      'suggested_platform',
+    ],
+    catalog_number_missing_with_evidence: [
+      'suggested_catalog_number',
+      'suggested_part_number',
+    ],
+  };
+  const keys = candidateKeys[action];
+  if (!keys) return null;
+
+  let value: string | null = null;
+  for (const k of keys) {
+    const v = evidence[k];
+    if (typeof v === 'string' && v.trim().length > 0) {
+      value = v;
+      break;
+    }
+  }
+  if (!value) return null;
+
+  const countCandidates: readonly string[] = [
+    'listing_mention_count',
+    'mention_count',
+    'listing_count',
+    'evidence_count',
+    'n_listings',
+    'count',
+  ];
+  let mentionCount: number | null = null;
+  for (const k of countCandidates) {
+    const v = evidence[k];
+    if (typeof v === 'number' && Number.isFinite(v)) {
+      mentionCount = v;
+      break;
+    }
+    if (typeof v === 'string') {
+      const n = Number(v);
+      if (Number.isFinite(n)) {
+        mentionCount = n;
+        break;
+      }
+    }
+  }
+
+  return { value, mentionCount };
 }

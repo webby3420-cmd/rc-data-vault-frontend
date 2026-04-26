@@ -42,7 +42,7 @@ export function resolveOptionsFromSearchParams(
   const pick = (k: string) =>
     Array.isArray(sp[k]) ? (sp[k] as string[])[0] : (sp[k] as string | undefined);
 
-  const agent_name = pick('agent_name');
+  const agent_name = pick('agent');
   const entity_type = pick('entity_type');
   const proposed_action = pick('proposed_action');
   const risk_label = pick('risk_label');

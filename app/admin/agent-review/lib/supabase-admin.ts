@@ -159,6 +159,38 @@ export async function fetchQueueCounts(): Promise<Record<string, number>> {
   return results;
 }
 
+export async function fetchPendingAgentCounts(): Promise<
+  Record<string, number>
+> {
+  // Fetch agent_name for every pending row and group client-side. Cheaper
+  // than N parallel HEAD-with-count requests, and fine at current scale
+  // (~600 pending rows total). PostgREST default limit is 1000.
+  const params = new URLSearchParams();
+  params.set('select', 'agent_name');
+  params.set('status', 'eq.pending');
+  params.set('limit', '5000');
+
+  const url = `${SUPABASE_URL}/rest/v1/v_agent_review_queue_enriched?${params.toString()}`;
+
+  const result: Record<string, number> = {};
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: restHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) return result;
+    const rows = (await res.json()) as Array<{ agent_name: string | null }>;
+    for (const r of rows) {
+      if (!r.agent_name) continue;
+      result[r.agent_name] = (result[r.agent_name] ?? 0) + 1;
+    }
+  } catch {
+    // Best-effort; counts default to 0 if fetch fails.
+  }
+  return result;
+}
+
 export async function updateQueueRowStatus(
   queueId: number,
   patch: {

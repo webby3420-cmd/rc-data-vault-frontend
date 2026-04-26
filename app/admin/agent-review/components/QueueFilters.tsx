@@ -66,8 +66,8 @@ export default function QueueFilters({
       <Field label="agent_name">
         <select
           className={inputClass}
-          value={sp.get('agent_name') ?? ''}
-          onChange={(e) => update('agent_name', e.target.value)}
+          value={sp.get('agent') ?? ''}
+          onChange={(e) => update('agent', e.target.value)}
         >
           <option value="">any agent</option>
           {agentNames.map((a) => (

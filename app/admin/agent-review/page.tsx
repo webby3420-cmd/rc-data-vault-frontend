@@ -6,11 +6,13 @@ import { redirect } from 'next/navigation';
 import { isAdminAuthorized } from './lib/admin-guard';
 import {
   fetchDistinctValues,
+  fetchPendingAgentCounts,
   fetchQueueCounts,
   fetchQueueRows,
 } from './lib/supabase-admin';
 import { resolveOptionsFromSearchParams } from './lib/filters';
 import type { QueueRow } from './lib/types';
+import AgentTabs from './components/AgentTabs';
 import QueueTabs from './components/QueueTabs';
 import QueueFilters from './components/QueueFilters';
 import QueueCard from './components/QueueCard';
@@ -56,12 +58,19 @@ export default async function AgentReviewPage({
     rowsError = err instanceof Error ? err.message : 'Unknown error';
   }
 
-  const [agentNames, entityTypes, proposedActions, counts] = await Promise.all([
-    fetchDistinctValues('agent_name').catch(() => []),
-    fetchDistinctValues('entity_type').catch(() => []),
-    fetchDistinctValues('proposed_action').catch(() => []),
-    fetchQueueCounts().catch(() => ({})),
-  ]);
+  const [agentNames, entityTypes, proposedActions, counts, agentCounts] =
+    await Promise.all([
+      fetchDistinctValues('agent_name').catch(() => []),
+      fetchDistinctValues('entity_type').catch(() => []),
+      fetchDistinctValues('proposed_action').catch(() => []),
+      fetchQueueCounts().catch(() => ({})),
+      fetchPendingAgentCounts().catch(
+        () => ({}) as Record<string, number>,
+      ),
+    ]);
+
+  const activeAgent =
+    (Array.isArray(sp.agent) ? sp.agent[0] : sp.agent) || null;
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
@@ -74,6 +83,14 @@ export default async function AgentReviewPage({
           the queue row only — no production data is mutated here.
         </p>
       </header>
+
+      <div className="mb-4">
+        <AgentTabs
+          activeAgent={activeAgent}
+          agentCounts={agentCounts}
+          searchParams={sp}
+        />
+      </div>
 
       <QueueTabs activeTab={tab} counts={counts} />
 

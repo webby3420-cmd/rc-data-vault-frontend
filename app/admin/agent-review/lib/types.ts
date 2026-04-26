@@ -49,6 +49,7 @@ export interface QueueRow {
   listing_source: string | null;
   listing_condition: string | null;
   listing_image_url: string | null;
+  proposed_variant_image_url: string | null;
 
   variant_id: string;
   variant_full_name: string;

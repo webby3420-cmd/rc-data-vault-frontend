@@ -101,7 +101,7 @@ export default function QueueCard({ row }: { row: QueueRow }) {
   const createdStr = created.toISOString().replace('T', ' ').slice(0, 16) + 'Z';
 
   const sourceLabel = deriveSource(row.listing_source, row.listing_url);
-  const variantImageSrc = row.variant_box_art_url ?? row.family_image_url ?? null;
+  const variantImageSrc = row.proposed_variant_image_url ?? null;
   const placeholderLetter =
     row.manufacturer_name?.charAt(0).toUpperCase() ?? '?';
 
@@ -197,20 +197,26 @@ export default function QueueCard({ row }: { row: QueueRow }) {
               <span className="text-slate-500">Variant not specified</span>
             )}
           </h2>
-          <div className="aspect-video w-full overflow-hidden rounded-lg border border-slate-700 bg-slate-950/50">
-            {variantImageSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={variantImageSrc}
-                alt={row.variant_full_name || 'Variant'}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-4xl font-bold text-slate-700">
-                {placeholderLetter}
-              </div>
-            )}
-          </div>
+          {variantImageSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={variantImageSrc}
+              alt=""
+              width={96}
+              height={96}
+              loading="lazy"
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="h-24 w-24 flex-shrink-0 rounded-md border border-slate-800 bg-slate-900 object-cover"
+            />
+          ) : (
+            <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-950/50 text-3xl font-bold text-slate-700">
+              {placeholderLetter}
+            </div>
+          )}
           {row.variant_url_path ? (
             <a
               href={row.variant_url_path}

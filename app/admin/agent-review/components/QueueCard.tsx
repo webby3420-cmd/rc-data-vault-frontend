@@ -561,6 +561,7 @@ function pickSuggestedFromEvidence(
   if (!value) return null;
 
   const countCandidates: readonly string[] = [
+    'listing_mentions',
     'listing_mention_count',
     'mention_count',
     'listing_count',

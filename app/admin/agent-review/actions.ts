@@ -6,7 +6,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { isAdminAuthorized } from './lib/admin-guard';
-import { updateQueueRowStatus } from './lib/supabase-admin';
+import {
+  callApplyApproveListingToVariant,
+  callApplyListingMatchApproval,
+  callApplyRejectQueueRow,
+  updateQueueRowStatus,
+} from './lib/supabase-admin';
 import { ALLOWED_REJECT_REASONS, type RejectReason } from './lib/types';
 
 async function guardOrFail(): Promise<void> {
@@ -82,4 +87,74 @@ export async function addNoteToQueueItem(
   });
   if (result.ok) revalidatePath('/admin/agent-review');
   return result;
+}
+
+// =====================================================================
+// Grouped listing actions (RPC-backed)
+// =====================================================================
+
+const REVIEWER_ID = 'admin_review_ui';
+
+export async function approveListingToVariantAction(input: {
+  queueId: number;
+  dryRun: boolean;
+}) {
+  if (!(await isAdminAuthorized())) {
+    return { ok: false as const, error: 'unauthorized' };
+  }
+  const { receipt, error } = await callApplyApproveListingToVariant(
+    input.queueId,
+    input.dryRun,
+  );
+  if (error) return { ok: false as const, error };
+  if (!input.dryRun) revalidatePath('/admin/agent-review');
+  return { ok: true as const, receipt };
+}
+
+export async function retargetListingAction(input: {
+  queueId: number;
+  reviewerNote: string;
+  overrideTargetVariantId: string | null;
+  dryRun: boolean;
+}) {
+  if (!(await isAdminAuthorized())) {
+    return { ok: false as const, error: 'unauthorized' };
+  }
+  const note = (input.reviewerNote ?? '').trim();
+  if (!note) {
+    return { ok: false as const, error: 'reviewer_note_required' };
+  }
+  const { receipt, error } = await callApplyListingMatchApproval(
+    input.queueId,
+    REVIEWER_ID,
+    note,
+    input.overrideTargetVariantId,
+    input.dryRun,
+  );
+  if (error) return { ok: false as const, error };
+  if (!input.dryRun) revalidatePath('/admin/agent-review');
+  return { ok: true as const, receipt };
+}
+
+export async function rejectQueueRowViaRpcAction(input: {
+  queueId: number;
+  reviewerNote: string;
+  dryRun: boolean;
+}) {
+  if (!(await isAdminAuthorized())) {
+    return { ok: false as const, error: 'unauthorized' };
+  }
+  const note = (input.reviewerNote ?? '').trim();
+  if (!note) {
+    return { ok: false as const, error: 'reviewer_note_required' };
+  }
+  const { receipt, error } = await callApplyRejectQueueRow(
+    input.queueId,
+    REVIEWER_ID,
+    note,
+    input.dryRun,
+  );
+  if (error) return { ok: false as const, error };
+  if (!input.dryRun) revalidatePath('/admin/agent-review');
+  return { ok: true as const, receipt };
 }

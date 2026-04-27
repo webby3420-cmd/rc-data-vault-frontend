@@ -5,7 +5,7 @@
 // other roles). Key must never leak to the client.
 
 import 'server-only';
-import type { QueueRow } from './types';
+import type { ApplyReceipt, ListingGroup, QueueRow } from './types';
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -217,6 +217,127 @@ export async function updateQueueRowStatus(
     return {
       ok: false,
       error: err instanceof Error ? err.message : 'Unknown patch error',
+    };
+  }
+}
+
+// =====================================================================
+// Grouped listing view + apply RPC wrappers
+// =====================================================================
+
+export interface FetchListingGroupsOptions {
+  hasAnyRiskFlag?: boolean;
+  isSold?: boolean;
+  multiCandidateOnly?: boolean;
+  limit?: number;
+}
+
+export async function fetchListingGroups(
+  opts?: FetchListingGroupsOptions,
+): Promise<{ groups: ListingGroup[]; error: string | null }> {
+  const url = new URL(`${SUPABASE_URL}/rest/v1/v_agent_review_groups`);
+  url.searchParams.set('select', '*');
+  url.searchParams.set('order', 'n_pending.desc,listing_title.asc');
+  if (opts?.hasAnyRiskFlag !== undefined) {
+    url.searchParams.set('has_any_risk_flag', `eq.${opts.hasAnyRiskFlag}`);
+  }
+  if (opts?.isSold !== undefined) {
+    url.searchParams.set('is_sold', `eq.${opts.isSold}`);
+  }
+  if (opts?.multiCandidateOnly) {
+    url.searchParams.set('n_pending', 'gt.1');
+  }
+  if (opts?.limit) {
+    url.searchParams.set('limit', String(opts.limit));
+  }
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: restHeaders(),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      return {
+        groups: [],
+        error: `Supabase ${res.status}: ${text.slice(0, 300)}`,
+      };
+    }
+    const data = (await res.json()) as ListingGroup[];
+    return { groups: data, error: null };
+  } catch (err) {
+    return {
+      groups: [],
+      error: err instanceof Error ? err.message : 'Unknown fetch error',
+    };
+  }
+}
+
+export async function callApplyApproveListingToVariant(
+  queueId: number,
+  dryRun: boolean,
+): Promise<{ receipt: ApplyReceipt | null; error: string | null }> {
+  return callRpc('apply_approve_listing_to_variant', {
+    p_queue_id: queueId,
+    p_dry_run: dryRun,
+  });
+}
+
+export async function callApplyListingMatchApproval(
+  queueId: number,
+  reviewer: string,
+  reviewerNote: string,
+  overrideTargetVariantId: string | null,
+  dryRun: boolean,
+): Promise<{ receipt: ApplyReceipt | null; error: string | null }> {
+  return callRpc('apply_listing_match_approval', {
+    p_queue_id: queueId,
+    p_reviewer: reviewer,
+    p_reviewer_note: reviewerNote,
+    p_override_target_variant_id: overrideTargetVariantId,
+    p_dry_run: dryRun,
+  });
+}
+
+export async function callApplyRejectQueueRow(
+  queueId: number,
+  reviewer: string,
+  reviewerNote: string,
+  dryRun: boolean,
+): Promise<{ receipt: ApplyReceipt | null; error: string | null }> {
+  return callRpc('apply_reject_queue_row', {
+    p_queue_id: queueId,
+    p_reviewer: reviewer,
+    p_reviewer_note: reviewerNote,
+    p_dry_run: dryRun,
+  });
+}
+
+async function callRpc(
+  name: string,
+  body: Record<string, unknown>,
+): Promise<{ receipt: ApplyReceipt | null; error: string | null }> {
+  const url = `${SUPABASE_URL}/rest/v1/rpc/${name}`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: restHeaders(),
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      return {
+        receipt: null,
+        error: `Supabase ${res.status}: ${text.slice(0, 300)}`,
+      };
+    }
+    const data = (await res.json()) as ApplyReceipt;
+    return { receipt: data, error: null };
+  } catch (err) {
+    return {
+      receipt: null,
+      error: err instanceof Error ? err.message : 'Unknown RPC error',
     };
   }
 }

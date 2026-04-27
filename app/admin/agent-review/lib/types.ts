@@ -115,3 +115,78 @@ export const TAB_DEFINITIONS: Array<{ key: TabKey; label: string }> = [
   { key: 'approved', label: 'Approved' },
   { key: 'rejected', label: 'Rejected' },
 ];
+
+// =====================================================================
+// Grouped listing view (v_agent_review_groups)
+// =====================================================================
+
+export type ScopeLevel = 'family' | 'manufacturer' | 'variant';
+
+export interface GroupCandidate {
+  queue_id: number;
+  agent_name: string;
+  proposed_action: string;
+  proposed_variant_id: string | null;
+  proposed_variant_name: string | null;
+  proposed_variant_slug: string | null;
+  proposed_family_name: string | null;
+  proposed_family_deprecated: boolean | null;
+  proposed_manufacturer_name: string | null;
+  proposed_manufacturer_slug: string | null;
+  proposed_variant_image_url: string | null;
+  proposed_variant_url_path: string | null;
+  confidence: number | null;
+  risk_label: string | null;
+  evidence_payload: Record<string, unknown> | null;
+  matches_primary: boolean;
+  created_at: string;
+}
+
+export interface GroupTitleRiskFlags {
+  combo: boolean;
+  parts: boolean;
+  roller: boolean;
+  static: boolean;
+  read_desc: boolean;
+  upgraded: boolean;
+}
+
+export interface ListingGroup {
+  listing_id: string;
+  listing_title: string | null;
+  listing_url: string | null;
+  listing_source: string | null;
+  listing_condition: string | null;
+  listing_price: number | null;
+  listing_price_amount: number | null;
+  listing_price_usd: number | null;
+  listing_currency: string | null;
+  seller_name: string | null;
+  listing_location: string | null;
+  is_sold: boolean | null;
+  listing_status: string | null;
+  posted_at: string | null;
+  listing_image_url: string | null;
+  primary_listing_match_id: string | null;
+  primary_variant_id: string | null;
+  primary_variant_name: string | null;
+  primary_variant_slug: string | null;
+  primary_family_name: string | null;
+  primary_family_deprecated: boolean | null;
+  primary_manufacturer_slug: string | null;
+  primary_manufacturer_name: string | null;
+  primary_verification_status: string | null;
+  primary_match_method: string | null;
+  primary_is_human_verified: boolean | null;
+  primary_variant_image_url: string | null;
+  observation_count: number;
+  n_pending: number;
+  n_match_primary: number;
+  candidates: GroupCandidate[];
+  title_risk_flags: GroupTitleRiskFlags;
+  has_any_risk_flag: boolean;
+}
+
+// JSONB receipts returned by the apply RPCs.
+// Keep loose — they're forwarded to UI as-is for display.
+export type ApplyReceipt = Record<string, unknown>;

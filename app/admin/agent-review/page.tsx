@@ -6,16 +6,18 @@ import { redirect } from 'next/navigation';
 import { isAdminAuthorized } from './lib/admin-guard';
 import {
   fetchDistinctValues,
+  fetchListingGroups,
   fetchPendingAgentCounts,
   fetchQueueCounts,
   fetchQueueRows,
 } from './lib/supabase-admin';
 import { resolveOptionsFromSearchParams } from './lib/filters';
-import type { QueueRow } from './lib/types';
+import type { ListingGroup, QueueRow } from './lib/types';
 import AgentTabs from './components/AgentTabs';
 import QueueTabs from './components/QueueTabs';
 import QueueFilters from './components/QueueFilters';
 import QueueCard from './components/QueueCard';
+import ListingGroupCard from './components/ListingGroupCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,15 +49,37 @@ export default async function AgentReviewPage({
 
   const { tab, options } = resolveOptionsFromSearchParams(sp);
 
+  const activeAgent =
+    (Array.isArray(sp.agent) ? sp.agent[0] : sp.agent) || null;
+  const proposedActionParam = Array.isArray(sp.proposed_action)
+    ? sp.proposed_action[0]
+    : sp.proposed_action;
+  const entityTypeParam = Array.isArray(sp.entity_type)
+    ? sp.entity_type[0]
+    : sp.entity_type;
+  const isGroupedView =
+    activeAgent === 'listing_normalization_agent' &&
+    (!proposedActionParam || proposedActionParam === 'match_variant') &&
+    (!entityTypeParam || entityTypeParam === 'listing');
+
   let rows: QueueRow[] = [];
   let rowsError: string | null = null;
-  try {
-    const result = await fetchQueueRows(options);
-    rows = result.rows;
-    rowsError = result.error;
-  } catch (err) {
-    rows = [];
-    rowsError = err instanceof Error ? err.message : 'Unknown error';
+  let groups: ListingGroup[] = [];
+  let groupsError: string | null = null;
+
+  if (isGroupedView) {
+    const result = await fetchListingGroups();
+    groups = result.groups;
+    groupsError = result.error;
+  } else {
+    try {
+      const result = await fetchQueueRows(options);
+      rows = result.rows;
+      rowsError = result.error;
+    } catch (err) {
+      rows = [];
+      rowsError = err instanceof Error ? err.message : 'Unknown error';
+    }
   }
 
   const [agentNames, entityTypes, proposedActions, counts, agentCounts] =
@@ -68,9 +92,6 @@ export default async function AgentReviewPage({
         () => ({}) as Record<string, number>,
       ),
     ]);
-
-  const activeAgent =
-    (Array.isArray(sp.agent) ? sp.agent[0] : sp.agent) || null;
 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 text-slate-100 sm:px-6 lg:px-8">
@@ -102,19 +123,56 @@ export default async function AgentReviewPage({
         />
       </div>
 
-      {rowsError && (
+      {isGroupedView ? (
+        <GroupedListingsView groups={groups} error={groupsError} />
+      ) : (
+        <>
+          {rowsError && (
+            <div className="mt-4 rounded-xl border border-rose-700 bg-rose-950/40 p-4 text-sm text-rose-200">
+              <strong>Error loading queue:</strong> {rowsError}
+            </div>
+          )}
+
+          <div className="mt-4 space-y-3">
+            {!rowsError && rows.length === 0 && <EmptyState tab={tab} />}
+            {rows.map((row) => (
+              <QueueCard key={row.queue_id} row={row} />
+            ))}
+          </div>
+        </>
+      )}
+    </main>
+  );
+}
+
+function GroupedListingsView({
+  groups,
+  error,
+}: {
+  groups: ListingGroup[];
+  error: string | null;
+}) {
+  const totalPending = groups.reduce((s, g) => s + g.n_pending, 0);
+  return (
+    <>
+      {error && (
         <div className="mt-4 rounded-xl border border-rose-700 bg-rose-950/40 p-4 text-sm text-rose-200">
-          <strong>Error loading queue:</strong> {rowsError}
+          <strong>Error loading groups:</strong> {error}
         </div>
       )}
-
-      <div className="mt-4 space-y-3">
-        {!rowsError && rows.length === 0 && <EmptyState tab={tab} />}
-        {rows.map((row) => (
-          <QueueCard key={row.queue_id} row={row} />
+      {!error && (
+        <div className="mt-4 mb-3 text-xs text-slate-500">
+          {groups.length} listing{groups.length === 1 ? '' : 's'} ·{' '}
+          {totalPending} pending row{totalPending === 1 ? '' : 's'}
+        </div>
+      )}
+      {!error && groups.length === 0 && <EmptyState tab="grouped_listing" />}
+      <div className="space-y-3">
+        {groups.map((g) => (
+          <ListingGroupCard key={g.listing_id} group={g} />
         ))}
       </div>
-    </main>
+    </>
   );
 }
 

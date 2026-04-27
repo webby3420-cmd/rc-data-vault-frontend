@@ -27,7 +27,10 @@ export interface ResourceLink {
   resource_type:
     | "manual"
     | "exploded_view"
+    | "interactive_exploded_view"
     | "parts_diagram"
+    | "parts_list"
+    | "cross_reference"
     | "support_page"
     | "setup_sheet"
     | "product_page";

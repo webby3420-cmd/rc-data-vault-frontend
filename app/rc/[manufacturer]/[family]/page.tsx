@@ -150,11 +150,6 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
           </div>
         )}
 
-        <div className="mb-10 space-y-6">
-          <ResourceSection resources={resourceData ?? []} />
-          <ToolsBlock />
-        </div>
-
         {fms && fms.valued_variants >= 2 && (
           <div className="mb-6">
             <FamilyBestPicks
@@ -193,6 +188,14 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
         />
 
         <FamilyMarketActivity summary={fms} variants={page.variants} />
+
+        <div className="mt-8 mb-10">
+          <ToolsBlock />
+        </div>
+
+        <div className="mb-10">
+          <ResourceSection resources={resourceData ?? []} />
+        </div>
 
         <div className="mt-8">
           <FamilyEcosystemBlock ecosystem={ecosystemData ?? null} />

@@ -66,7 +66,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!variant) return { title: "RC Data Vault" };
 
-  const name = variant.full_name;
+  const { data: displayData } = await supabase
+    .from("mv_variant_payload")
+    .select("public_display_name")
+    .eq("variant_slug", variantSlug)
+    .maybeSingle();
+
+  const name = (displayData as any)?.public_display_name ?? variant.full_name;
 
   const { data: indexMeta } = await (supabase.rpc as any)("get_variant_indexing_metadata", {
     p_variant_slug: variantSlug,
@@ -849,6 +855,15 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
   const variantId = variantData.variant_id;
   const modelFamilyId = variantData.model_family_id;
+
+  // Phase D: computed public display name (year + kit number when available)
+  const { data: displayData } = await supabase
+    .from("mv_variant_payload")
+    .select("public_display_name")
+    .eq("variant_slug", variantSlug)
+    .maybeSingle();
+  const displayName = (displayData as any)?.public_display_name ?? variantData.full_name;
+
   const mfr = (variantData.model_families as any)?.manufacturers;
   const mfrName: string = mfr?.name ?? manufacturer;
   const mfrSlug: string = mfr?.slug ?? manufacturer;
@@ -859,7 +874,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
   const productSchema = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: variantData.full_name,
+    name: displayName,
     brand: { "@type": "Brand", name: mfrName },
     url: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}`,
   };
@@ -870,7 +885,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
     itemListElement: [
       { "@type": "ListItem", position: 1, name: mfrName, item: `https://rcdatavault.com/rc/${mfrSlug}` },
       { "@type": "ListItem", position: 2, name: familyName, item: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}` },
-      { "@type": "ListItem", position: 3, name: variantData.full_name, item: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}` },
+      { "@type": "ListItem", position: 3, name: displayName, item: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}` },
     ],
   };
 
@@ -888,7 +903,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
           <span className="mx-2">/</span>
           <Link className="hover:text-white" href={`/rc/${mfrSlug}/${familySlug}`}>{familyName}</Link>
           <span className="mx-2">/</span>
-          <span>{variantData.full_name}</span>
+          <span>{displayName}</span>
         </nav>
 
         {isAlertTraffic && (
@@ -897,7 +912,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
 
         <header className="mb-6">
           <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-            {variantData.full_name}
+            {displayName}
           </h1>
         </header>
 
@@ -911,7 +926,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               isAlertTraffic={isAlertTraffic}
               mfrSlug={mfrSlug}
               familySlug={familySlug}
-              modelName={variantData.full_name}
+              modelName={displayName}
             />
           </Suspense>
 
@@ -923,7 +938,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               isAlertTraffic={isAlertTraffic}
               mfrSlug={mfrSlug}
               familySlug={familySlug}
-              modelName={variantData.full_name}
+              modelName={displayName}
             />
           </Suspense>
 
@@ -932,7 +947,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
             <SecondarySection
               variantId={variantId}
               variantSlug={variantSlug}
-              modelName={variantData.full_name}
+              modelName={displayName}
             />
           </Suspense>
 
@@ -966,7 +981,7 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
               mfrSlug={mfrSlug}
               familyName={familyName}
               familySlug={familySlug}
-              modelName={variantData.full_name}
+              modelName={displayName}
             />
           </Suspense>
 

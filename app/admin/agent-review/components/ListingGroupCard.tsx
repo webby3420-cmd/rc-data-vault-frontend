@@ -291,7 +291,9 @@ export default function ListingGroupCard({ group }: { group: ListingGroup }) {
           Current primary
         </p>
         <p className="mt-1 text-sm text-white">
-          {group.primary_variant_name ?? '— (none)'}
+          {group.primary_public_display_name ??
+            group.primary_variant_name ??
+            '— (none)'}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
           {group.primary_verification_status && (
@@ -310,6 +312,28 @@ export default function ListingGroupCard({ group }: { group: ListingGroup }) {
           {group.primary_family_deprecated && (
             <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-rose-300">
               Family deprecated
+            </span>
+          )}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+          <ChassisPill value={group.primary_chassis_platform} />
+          <span
+            className={
+              group.primary_catalog_number ? PILL_SLATE : PILL_SLATE_MUTED
+            }
+          >
+            Catalog: {group.primary_catalog_number ?? '—'}
+          </span>
+          <span
+            className={
+              group.primary_release_year != null ? PILL_SLATE : PILL_SLATE_MUTED
+            }
+          >
+            Year: {group.primary_release_year ?? '—'}
+          </span>
+          {kitRtrText(group.primary_is_kit, group.primary_is_rtr) && (
+            <span className={PILL_SLATE}>
+              {kitRtrText(group.primary_is_kit, group.primary_is_rtr)}
             </span>
           )}
         </div>
@@ -442,7 +466,9 @@ function CandidateBlock({
         {/* Name + meta */}
         <div className="min-w-0 flex-1">
           <p className="text-sm text-white">
-            {candidate.proposed_variant_name ?? '(unknown variant)'}
+            {candidate.proposed_public_display_name ??
+              candidate.proposed_variant_name ??
+              '(unknown variant)'}
           </p>
           <p className="mt-0.5 text-xs text-slate-500">
             {[
@@ -453,11 +479,6 @@ function CandidateBlock({
               .join(' · ') || '—'}
           </p>
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
-            {candidate.confidence != null && (
-              <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">
-                {Math.round(Number(candidate.confidence) * 100)}% conf
-              </span>
-            )}
             {candidate.matches_primary ? (
               <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-300">
                 Matches current primary
@@ -465,6 +486,33 @@ function CandidateBlock({
             ) : (
               <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-400">
                 Different from primary
+              </span>
+            )}
+            {candidate.confidence != null && (
+              <span className="inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-300">
+                {Math.round(Number(candidate.confidence) * 100)}% conf
+              </span>
+            )}
+            <ChassisPill value={candidate.proposed_chassis_platform} />
+            {candidate.proposed_catalog_number && (
+              <span className={PILL_SLATE}>
+                Catalog: {candidate.proposed_catalog_number}
+              </span>
+            )}
+            {candidate.proposed_release_year != null && (
+              <span className={PILL_SLATE}>
+                Year: {candidate.proposed_release_year}
+              </span>
+            )}
+            {kitRtrText(
+              candidate.proposed_is_kit,
+              candidate.proposed_is_rtr,
+            ) && (
+              <span className={PILL_SLATE}>
+                {kitRtrText(
+                  candidate.proposed_is_kit,
+                  candidate.proposed_is_rtr,
+                )}
               </span>
             )}
             {candidate.risk_label && (
@@ -772,6 +820,28 @@ function humanize(s: string): string {
   if (!s) return s;
   const spaced = s.replace(/_/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function kitRtrText(
+  isKit: boolean | null,
+  isRtr: boolean | null,
+): string | null {
+  if (isKit === true && isRtr === true) return 'Kit / RTR';
+  if (isKit === true) return 'Kit';
+  if (isRtr === true) return 'RTR (Ready to Run)';
+  return null;
+}
+
+const PILL_SLATE =
+  'inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-300';
+const PILL_SLATE_MUTED =
+  'inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-500';
+const PILL_ROSE =
+  'inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-300';
+
+function ChassisPill({ value }: { value: string | null }) {
+  if (!value) return <span className={PILL_ROSE}>Chassis: Missing</span>;
+  return <span className={PILL_SLATE}>Chassis: {value}</span>;
 }
 
 function formatDate(iso: string): string {

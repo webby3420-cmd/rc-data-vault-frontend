@@ -140,6 +140,14 @@ export interface GroupCandidate {
   evidence_payload: Record<string, unknown> | null;
   matches_primary: boolean;
   created_at: string;
+
+  // Spec fields exposed for reviewer decisions
+  proposed_catalog_number: string | null;
+  proposed_release_year: number | null;
+  proposed_chassis_platform: string | null;
+  proposed_is_kit: boolean | null;
+  proposed_is_rtr: boolean | null;
+  proposed_public_display_name: string | null;
 }
 
 export interface GroupTitleRiskFlags {
@@ -179,6 +187,14 @@ export interface ListingGroup {
   primary_match_method: string | null;
   primary_is_human_verified: boolean | null;
   primary_variant_image_url: string | null;
+
+  // Primary spec fields
+  primary_catalog_number: string | null;
+  primary_release_year: number | null;
+  primary_chassis_platform: string | null;
+  primary_is_kit: boolean | null;
+  primary_is_rtr: boolean | null;
+  primary_public_display_name: string | null;
   observation_count: number;
   n_pending: number;
   n_match_primary: number;

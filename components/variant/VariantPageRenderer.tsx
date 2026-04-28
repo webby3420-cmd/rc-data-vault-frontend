@@ -1,6 +1,14 @@
 // @ts-nocheck
 
 import { buildVariantSubject, dedupeListings } from "@/lib/variant-utils";
+import {
+  formatNewestSoldComp,
+  freshnessCopy,
+  freshnessIsDemoted,
+  freshnessIsWarning,
+  freshnessShortLabel,
+  resolveFreshnessBucket,
+} from "@/lib/valuation/freshness";
 
 const BASE_URL = "https://rcdatavault.com";
 
@@ -95,10 +103,42 @@ export function VariantPageRenderer({ payload }: { payload: any }) {
               <div className="text-5xl font-semibold text-amber-400">{fmt(valuation.estimated_value_mid)}</div>
               <div className="mt-3 text-lg text-slate-200">Range: {fmt(valuation.estimated_value_low)} – {fmt(valuation.estimated_value_high)}</div>
               <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-300">
-                <span className="rounded-full border border-slate-600 px-3 py-1">{valuation.confidence_label}</span>
+                {(() => {
+                  const bucket = resolveFreshnessBucket(valuation);
+                  const tooltip = freshnessCopy(bucket);
+                  const demoted = freshnessIsDemoted(bucket);
+                  const showChip = freshnessIsWarning(bucket);
+                  return (
+                    <>
+                      <span
+                        className={
+                          demoted
+                            ? "rounded-full border border-amber-700/50 bg-amber-500/10 px-3 py-1 text-amber-200"
+                            : "rounded-full border border-slate-600 px-3 py-1"
+                        }
+                        title={tooltip}
+                      >
+                        {valuation.confidence_label}
+                      </span>
+                      {showChip && (
+                        <span
+                          className="rounded-full border border-amber-700/50 bg-amber-500/10 px-3 py-1 text-amber-200"
+                          title={tooltip}
+                        >
+                          {freshnessShortLabel(bucket)}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
                 <span>{valuation.observation_count} sold listings</span>
                 <span>Updated {fmtDate(valuation.valuation_last_updated_at)}</span>
               </div>
+              {valuation.newest_sold_observed_at && freshnessIsWarning(resolveFreshnessBucket(valuation)) && (
+                <div className="mt-2 text-xs text-amber-300/80" title={freshnessCopy(resolveFreshnessBucket(valuation))}>
+                  Newest sold comp: {formatNewestSoldComp(valuation.newest_sold_observed_at)}
+                </div>
+              )}
               <div className="mt-2 text-xs text-slate-500">Source: eBay sold listings</div>
             </section>
 

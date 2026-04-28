@@ -1,3 +1,24 @@
+// Sold-comp freshness signals from public.v_variant_valuations_with_freshness
+// (additive layer over v_variant_valuations_clean). Always treat as nullable —
+// the cached payload may be older than the backend migration that added them.
+export type SoldCompFreshnessBucket =
+  | 'fresh'
+  | 'aging'
+  | 'stale'
+  | 'no_sold'
+  | 'unknown';
+
+export type EffectiveConfidenceTier =
+  | 'high'
+  | 'high_aging'
+  | 'stale'
+  | 'stale_limited'
+  | 'low'
+  | 'insufficient'
+  | 'no_data'
+  | 'no_candidates'
+  | 'unknown';
+
 export type VariantPagePayload = {
   identity: {
     variant_id: string;
@@ -30,6 +51,12 @@ export type VariantPagePayload = {
     valuation_spread: number | null;
     has_outliers_present: boolean;
     valuation_last_updated_at: string | null;
+    // Freshness signals (nullable — cached payload may predate backend migration)
+    newest_sold_observed_at?: string | null;
+    sold_comp_age_days?: number | null;
+    sold_comp_freshness_bucket?: SoldCompFreshnessBucket | null;
+    effective_confidence_tier?: EffectiveConfidenceTier | null;
+    valuation_freshness_warning?: string | null;
   };
 
   retail: {

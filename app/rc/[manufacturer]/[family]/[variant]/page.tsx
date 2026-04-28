@@ -31,6 +31,15 @@ import {
 } from "@/components/variant/skeletons";
 import { ArrowUpRight, Search } from "lucide-react";
 import { getVariantPagePayload } from "@/lib/variant-page";
+import {
+  formatNewestSoldComp,
+  freshnessCopy,
+  freshnessIsDemoted,
+  freshnessIsWarning,
+  freshnessShortLabel,
+  resolveFreshnessBucket,
+  type FreshnessSource,
+} from "@/lib/valuation/freshness";
 
 export const dynamic = "force-dynamic";
 
@@ -226,8 +235,8 @@ async function PricingSection({
     variantPayload,
   ] = await Promise.all([
     supabase
-      .from("v_variant_valuations_clean")
-      .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at")
+      .from("v_variant_valuations_with_freshness")
+      .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at, newest_sold_observed_at, sold_comp_age_days, sold_comp_freshness_bucket, effective_confidence_tier, valuation_freshness_warning")
       .eq("variant_id", variantId)
       .single(),
     supabase.from("mv_variant_payload").select("*").eq("variant_slug", variantSlug).single(),
@@ -250,11 +259,24 @@ async function PricingSection({
     confidence: payloadVal.confidence ?? null,
     total_observation_count: payloadVal.observation_count ?? 0,
     last_observation_at: payloadVal.last_observation_at ?? null,
+    newest_sold_observed_at: null,
+    sold_comp_age_days: null,
+    sold_comp_freshness_bucket: null,
+    effective_confidence_tier: null,
+    valuation_freshness_warning: null,
     _source: "payload_estimate" as const,
   } : null);
 
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
+
+  const freshnessSrc = (valuation as FreshnessSource | null) ?? null;
+  const freshnessBucket = resolveFreshnessBucket(freshnessSrc);
+  const freshnessLabel = freshnessShortLabel(freshnessBucket);
+  const freshnessTooltip = freshnessCopy(freshnessBucket);
+  const freshnessNewest = freshnessSrc?.newest_sold_observed_at ?? null;
+  const showFreshnessChip = freshnessIsWarning(freshnessBucket);
+  const isDemotedFreshness = freshnessIsDemoted(freshnessBucket);
 
   // Tier B: RPC failed but insightData (v_variant_page_payload) has valuation.
   // Render a simplified valuation card from the never-fails view so the user
@@ -301,6 +323,23 @@ async function PricingSection({
                 )}
                 {obsCount != null && obsCount > 0 && (
                   <span>{obsCount} price observations</span>
+                )}
+              </div>
+            )}
+            {showFreshnessChip && (
+              <div
+                className={
+                  isDemotedFreshness
+                    ? "flex flex-wrap items-center gap-2 rounded-md border border-amber-700/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-200"
+                    : "flex flex-wrap items-center gap-2 text-xs text-amber-300"
+                }
+                title={freshnessTooltip}
+              >
+                <span className="font-medium">{freshnessLabel}</span>
+                {freshnessNewest && (
+                  <span className="text-amber-300/80">
+                    Newest sold comp: {formatNewestSoldComp(freshnessNewest)}
+                  </span>
                 )}
               </div>
             )}
@@ -385,8 +424,8 @@ async function MarketDealsSection({
     variantPayload,
   ] = await Promise.all([
     supabase
-      .from("v_variant_valuations_clean")
-      .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at")
+      .from("v_variant_valuations_with_freshness")
+      .select("fair_value, low_value, high_value, confidence, total_observation_count, last_observation_at, newest_sold_observed_at, sold_comp_age_days, sold_comp_freshness_bucket, effective_confidence_tier, valuation_freshness_warning")
       .eq("variant_id", variantId)
       .single(),
     supabase
@@ -421,11 +460,24 @@ async function MarketDealsSection({
     confidence: payloadVal.confidence ?? null,
     total_observation_count: payloadVal.observation_count ?? 0,
     last_observation_at: payloadVal.last_observation_at ?? null,
+    newest_sold_observed_at: null,
+    sold_comp_age_days: null,
+    sold_comp_freshness_bucket: null,
+    effective_confidence_tier: null,
+    valuation_freshness_warning: null,
     _source: "payload_estimate" as const,
   } : null);
 
   const intelligence = payloadData?.intelligence as any;
   const approvedPrimaryImage = getApprovedPrimaryImage(payloadData);
+
+  const freshnessSrc = (valuation as FreshnessSource | null) ?? null;
+  const freshnessBucket = resolveFreshnessBucket(freshnessSrc);
+  const freshnessLabel = freshnessShortLabel(freshnessBucket);
+  const freshnessTooltip = freshnessCopy(freshnessBucket);
+  const freshnessNewest = freshnessSrc?.newest_sold_observed_at ?? null;
+  const showFreshnessChip = freshnessIsWarning(freshnessBucket);
+  const isDemotedFreshness = freshnessIsDemoted(freshnessBucket);
 
   const recentSales = (payloadData?.recent_sales as any[]) ?? [];
   const soldListings: any[] = (listingsData && listingsData.length > 0)
@@ -541,6 +593,24 @@ async function MarketDealsSection({
       {soldListings.length > 0 && (
         <p className="text-xs text-slate-600">
           Updated {fmtDate(valuation?.last_observation_at)} · {soldListings.length} sold listings · Refreshes hourly
+        </p>
+      )}
+
+      {showFreshnessChip && (
+        <p
+          className={
+            isDemotedFreshness
+              ? "rounded-md border border-amber-700/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+              : "text-xs text-amber-300"
+          }
+          title={freshnessTooltip}
+        >
+          <span className="font-medium">{freshnessLabel}</span>
+          {freshnessNewest && (
+            <>
+              {" "}· Newest sold comp: {formatNewestSoldComp(freshnessNewest)}
+            </>
+          )}
         </p>
       )}
     </>

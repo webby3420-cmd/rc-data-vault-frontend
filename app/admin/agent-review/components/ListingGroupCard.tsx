@@ -24,6 +24,12 @@ import {
   retargetListingAction,
   rejectQueueRowViaRpcAction,
 } from '../actions';
+import {
+  ChassisPill,
+  kitRtrText,
+  PILL_SLATE,
+  PILL_SLATE_MUTED,
+} from './SpecPills';
 
 type ActionKind = 'approve' | 'retarget' | 'reject';
 
@@ -820,28 +826,6 @@ function humanize(s: string): string {
   if (!s) return s;
   const spaced = s.replace(/_/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-function kitRtrText(
-  isKit: boolean | null,
-  isRtr: boolean | null,
-): string | null {
-  if (isKit === true && isRtr === true) return 'Kit / RTR';
-  if (isKit === true) return 'Kit';
-  if (isRtr === true) return 'RTR (Ready to Run)';
-  return null;
-}
-
-const PILL_SLATE =
-  'inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-300';
-const PILL_SLATE_MUTED =
-  'inline-flex items-center rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-xs text-slate-500';
-const PILL_ROSE =
-  'inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2 py-0.5 text-xs text-rose-300';
-
-function ChassisPill({ value }: { value: string | null }) {
-  if (!value) return <span className={PILL_ROSE}>Chassis: Missing</span>;
-  return <span className={PILL_SLATE}>Chassis: {value}</span>;
 }
 
 function formatDate(iso: string): string {

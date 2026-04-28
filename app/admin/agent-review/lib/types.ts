@@ -63,6 +63,14 @@ export interface QueueRow {
   manufacturer_slug: string;
 
   variant_url_path: string;
+
+  // Spec fields surfaced to reviewer (from v_agent_review_queue_enriched)
+  proposed_chassis_platform: string | null;
+  proposed_catalog_number: string | null;
+  proposed_release_year: number | null;
+  proposed_is_kit: boolean | null;
+  proposed_is_rtr: boolean | null;
+  proposed_public_display_name: string | null;
 }
 
 export interface QueueFilters {

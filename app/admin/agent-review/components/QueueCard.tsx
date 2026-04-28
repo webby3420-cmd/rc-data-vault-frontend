@@ -32,6 +32,7 @@ import {
   PLACEHOLDER_VARIANT_IMAGE,
   getCatalogImageUrl,
 } from '@/lib/catalog-image';
+import { ChassisPill, kitRtrText, PILL_SLATE } from './SpecPills';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-slate-700 text-slate-200',
@@ -204,10 +205,28 @@ export default function QueueCard({ row }: { row: QueueRow }) {
             </div>
           )}
           <h2 className="text-lg font-semibold leading-tight text-white">
-            {row.variant_full_name || (
+            {row.proposed_public_display_name ?? row.variant_full_name ?? (
               <span className="text-slate-500">Variant not specified</span>
             )}
           </h2>
+          <div className="flex flex-wrap gap-2">
+            <ChassisPill value={row.proposed_chassis_platform} />
+            {row.proposed_catalog_number && (
+              <span className={PILL_SLATE}>
+                Catalog: {row.proposed_catalog_number}
+              </span>
+            )}
+            {row.proposed_release_year != null && (
+              <span className={PILL_SLATE}>
+                Year: {row.proposed_release_year}
+              </span>
+            )}
+            {kitRtrText(row.proposed_is_kit, row.proposed_is_rtr) && (
+              <span className={PILL_SLATE}>
+                {kitRtrText(row.proposed_is_kit, row.proposed_is_rtr)}
+              </span>
+            )}
+          </div>
           {suggested && (
             <div className="text-xs text-amber-300">
               Suggested:{' '}

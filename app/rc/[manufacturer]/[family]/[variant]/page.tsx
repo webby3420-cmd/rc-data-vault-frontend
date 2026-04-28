@@ -132,9 +132,36 @@ function listingSourceLabel(source: string | null | undefined): string {
 
 type SpecRow = { label: string; value: string | null };
 
-function buildSpecRows(specs: any): SpecRow[] {
-  if (!specs) return [];
+type SpecIdentity = {
+  chassis_platform?: string | null;
+  catalog_number?: string | null;
+  is_kit?: boolean | null;
+  is_rtr?: boolean | null;
+};
+
+function kitRtrLabel(isKit?: boolean | null, isRtr?: boolean | null): string | null {
+  if (isKit === true && isRtr === true) return "Kit / RTR";
+  if (isKit === true) return "Kit";
+  if (isRtr === true) return "RTR (Ready to Run)";
+  return null;
+}
+
+function buildSpecRows(specs: any, identity?: SpecIdentity | null): SpecRow[] {
   const rows: SpecRow[] = [];
+
+  // Identity-sourced rows (rendered first, hidden when null)
+  if (identity?.chassis_platform) {
+    rows.push({ label: "Chassis Platform", value: identity.chassis_platform });
+  }
+  if (identity?.catalog_number) {
+    rows.push({ label: "Item #", value: identity.catalog_number });
+  }
+  const kitRtr = kitRtrLabel(identity?.is_kit, identity?.is_rtr);
+  if (kitRtr) {
+    rows.push({ label: "Type", value: kitRtr });
+  }
+
+  if (!specs) return rows;
 
   const add = (label: string, value: string | number | boolean | null | undefined, suffix = "") => {
     if (value === null || value === undefined) return;
@@ -538,6 +565,7 @@ async function SecondarySection({
     { data: specsData },
     { data: verifiedContent },
     { data: purchaseLinks },
+    variantPayload,
   ] = await Promise.all([
     supabase.from("variant_specs").select("*").eq("variant_id", variantId).single(),
     supabase
@@ -553,9 +581,10 @@ async function SecondarySection({
       .eq("variant_id", variantId)
       .eq("is_active", true)
       .order("display_priority", { ascending: true }),
+    getVariantPagePayload(variantSlug),
   ]);
 
-  const specRows = buildSpecRows(specsData);
+  const specRows = buildSpecRows(specsData, variantPayload?.identity);
   const specsVerified = specsAreIndividuallyVerified(specsData);
   const fullName = modelName;
   const encodedName = encodeURIComponent(fullName);

@@ -10,6 +10,11 @@ export type VariantPagePayload = {
     manufacturer_slug: string;
     model_family_slug: string;
     canonical_url: string;
+    chassis_platform: string | null;
+    catalog_number: string | null;
+    is_kit: boolean | null;
+    is_rtr: boolean | null;
+    public_display_name: string | null;
   };
   valuation: {
     estimated_value_mid: number | null;

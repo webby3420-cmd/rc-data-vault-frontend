@@ -20,6 +20,9 @@ import MarketIntelligenceCard from "@/components/variant/MarketIntelligenceCard"
 import BestDeals from "@/components/variant/BestDeals";
 import QuickLinks from "@/components/variant/QuickLinks";
 import VariantBuyBlock from "@/components/variant/VariantBuyBlock";
+import ValuationTrustCard, {
+  type ValuationTrustSignals,
+} from "@/components/variant/ValuationTrustCard";
 import {
   HeroDecisionSurfaceSkeleton,
   PricingSnapshotSkeleton,
@@ -233,6 +236,7 @@ async function PricingSection({
     { data: payloadData },
     { data: insightData },
     variantPayload,
+    { data: trust, error: trustErr },
   ] = await Promise.all([
     supabase
       .from("v_variant_valuations_with_freshness")
@@ -246,7 +250,28 @@ async function PricingSection({
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
     getVariantPagePayload(variantSlug),
+    supabase
+      .from("v_variant_valuation_trust_signals")
+      .select(
+        [
+          "observation_count_90d",
+          "median_price_90d",
+          "price_low_90d",
+          "price_high_90d",
+          "trust_latest_observation_at:latest_observation_at",
+          "data_window_days",
+          "confidence_level",
+          "confidence_reason",
+        ].join(","),
+      )
+      .eq("variant_id", variantId)
+      .maybeSingle(),
   ]);
+
+  if (trustErr) {
+    // Non-fatal — trust card will render the no-data state.
+    console.error("trust signals fetch failed", trustErr);
+  }
 
   const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
   const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
@@ -344,6 +369,7 @@ async function PricingSection({
               </div>
             )}
           </div>
+          <ValuationTrustCard trust={trust as ValuationTrustSignals | null} />
         </>
       );
     }
@@ -384,6 +410,8 @@ async function PricingSection({
         retail={{ retail_current_price: retail.retail_current_price, retail_price_source: retail.retail_price_source }}
         segmentedPricing={{ nib: segmentedPricing.nib, used_complete: segmentedPricing.used_complete, roller: segmentedPricing.roller }}
       />
+
+      <ValuationTrustCard trust={trust as ValuationTrustSignals | null} />
 
       <VariantBuyBlock
         variantName={modelName}

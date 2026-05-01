@@ -16,14 +16,22 @@ const TOOL_LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 const RESOURCE_ICON: Record<string, LucideIcon> = {
   manual: FileText,
   exploded_view: Layers,
+  parts_list: FileText,
   support_page: HelpCircle,
   setup_sheet: FileText,
   product_page: ArrowUpRight,
 };
 
 export default function QuickLinks({ resources, variantSlug }: QuickLinksProps) {
-  // Pick up to 3 resources prioritized: manual, exploded_view, support_page
-  const priorityTypes = ["manual", "exploded_view", "support_page", "setup_sheet", "product_page"];
+  // Pick up to 3 resources prioritized: manual, exploded_view, parts_list, support_page
+  const priorityTypes = [
+    "manual",
+    "exploded_view",
+    "parts_list",
+    "support_page",
+    "setup_sheet",
+    "product_page",
+  ];
   const picked: { key: string; label: string; href: string; icon: LucideIcon; external: boolean }[] = [];
 
   // Add tools first
@@ -38,10 +46,12 @@ export default function QuickLinks({ resources, variantSlug }: QuickLinksProps) 
     if (match) {
       const icon = RESOURCE_ICON[type] ?? FileText;
       const label =
-        type === "manual" ? "Manual PDF"
+        type === "manual" ? "Owner's Manual"
         : type === "exploded_view" ? "Exploded View"
+        : type === "parts_list" ? "Parts List"
         : type === "support_page" ? "Support"
         : type === "setup_sheet" ? "Setup Sheet"
+        : type === "product_page" ? "Official Page"
         : match.title;
       picked.push({ key: match.id, label, href: match.url, icon, external: true });
     }

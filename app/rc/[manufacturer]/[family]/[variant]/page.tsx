@@ -22,6 +22,7 @@ import QuickLinks from "@/components/variant/QuickLinks";
 import VariantBuyBlock from "@/components/variant/VariantBuyBlock";
 import ValuationTrustCard from "@/components/variant/ValuationTrustCard";
 import { getVariantValuationConfidence } from "@/lib/valuation/confidence";
+import ResourceSection from "@/components/resources/ResourceSection";
 import {
   HeroDecisionSurfaceSkeleton,
   PricingSnapshotSkeleton,
@@ -832,6 +833,8 @@ async function LazySection({
   return (
     <>
       <QuickLinks resources={resourceData ?? []} variantSlug={variantSlug} />
+
+      <ResourceSection resources={resourceData ?? []} />
 
       {soldListings.length > 0 && (
         <CollapsibleSection title="All Sold Listings">

@@ -20,9 +20,8 @@ import MarketIntelligenceCard from "@/components/variant/MarketIntelligenceCard"
 import BestDeals from "@/components/variant/BestDeals";
 import QuickLinks from "@/components/variant/QuickLinks";
 import VariantBuyBlock from "@/components/variant/VariantBuyBlock";
-import ValuationTrustCard, {
-  type ValuationTrustSignals,
-} from "@/components/variant/ValuationTrustCard";
+import ValuationTrustCard from "@/components/variant/ValuationTrustCard";
+import { getVariantValuationConfidence } from "@/lib/valuation/confidence";
 import {
   HeroDecisionSurfaceSkeleton,
   PricingSnapshotSkeleton,
@@ -236,7 +235,7 @@ async function PricingSection({
     { data: payloadData },
     { data: insightData },
     variantPayload,
-    { data: trust, error: trustErr },
+    confidence,
   ] = await Promise.all([
     supabase
       .from("v_variant_valuations_with_freshness")
@@ -250,28 +249,8 @@ async function PricingSection({
       .eq("variant_slug", variantSlug)
       .maybeSingle(),
     getVariantPagePayload(variantSlug),
-    supabase
-      .from("v_variant_valuation_trust_signals")
-      .select(
-        [
-          "observation_count_90d",
-          "median_price_90d",
-          "price_low_90d",
-          "price_high_90d",
-          "trust_latest_observation_at:latest_observation_at",
-          "data_window_days",
-          "confidence_level",
-          "confidence_reason",
-        ].join(","),
-      )
-      .eq("variant_id", variantId)
-      .maybeSingle(),
+    getVariantValuationConfidence(variantId),
   ]);
-
-  if (trustErr) {
-    // Non-fatal — trust card will render the no-data state.
-    console.error("trust signals fetch failed", trustErr);
-  }
 
   const retail = variantPayload?.retail ?? { retail_current_price: null, retail_price_currency: null, retail_price_source: null, retail_price_last_verified_at: null };
   const segmentedPricing = variantPayload?.segmented_pricing ?? { nib: null, used_complete: null, roller: null, slider: null };
@@ -315,7 +294,7 @@ async function PricingSection({
       const maxRaw = insight?.valuation_max_price;
       const minPrice = minRaw != null ? Math.round(Number(minRaw)) : null;
       const maxPrice = maxRaw != null ? Math.round(Number(maxRaw)) : null;
-      const confidence: string | null = insight?.confidence_label ?? null;
+      const insightConfidenceLabel: string | null = insight?.confidence_label ?? null;
       const obsCount: number | null = insight?.candidate_count ?? null;
 
       return (
@@ -340,10 +319,10 @@ async function PricingSection({
                 Range: ${minPrice.toLocaleString()} – ${maxPrice.toLocaleString()}
               </p>
             )}
-            {(confidence || (obsCount != null && obsCount > 0)) && (
+            {(insightConfidenceLabel || (obsCount != null && obsCount > 0)) && (
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                {confidence && <span>{confidence} confidence</span>}
-                {confidence && obsCount != null && obsCount > 0 && (
+                {insightConfidenceLabel && <span>{insightConfidenceLabel} confidence</span>}
+                {insightConfidenceLabel && obsCount != null && obsCount > 0 && (
                   <span className="text-slate-700">·</span>
                 )}
                 {obsCount != null && obsCount > 0 && (
@@ -369,7 +348,7 @@ async function PricingSection({
               </div>
             )}
           </div>
-          <ValuationTrustCard trust={trust as ValuationTrustSignals | null} />
+          <ValuationTrustCard confidence={confidence} />
         </>
       );
     }
@@ -411,7 +390,7 @@ async function PricingSection({
         segmentedPricing={{ nib: segmentedPricing.nib, used_complete: segmentedPricing.used_complete, roller: segmentedPricing.roller }}
       />
 
-      <ValuationTrustCard trust={trust as ValuationTrustSignals | null} />
+      <ValuationTrustCard confidence={confidence} />
 
       <VariantBuyBlock
         variantName={modelName}

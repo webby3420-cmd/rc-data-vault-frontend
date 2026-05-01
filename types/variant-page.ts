@@ -1,3 +1,35 @@
+// Trust Layer V2 — public.variant_valuation_confidence_v1
+// One row per variant with ≥1 clean sold comp in last 90 days. Variants with
+// no recent comps are absent from the view (loader returns null in that case).
+export type ConfidenceReason =
+  | 'strong_sample_recent_sales_tight_spread'
+  | 'strong_volume_but_wide_spread'
+  | 'moderate_sample_recent_sales'
+  | 'recent_sales_but_volatile_range'
+  | 'thin_sample_recent_sales'
+  | 'stale_sales_data'
+  | 'insufficient_recent_comps'
+  | 'volatile_price_range';
+
+export type VariantValuationConfidence = {
+  variantId: string;
+  variantSlug: string | null;
+  observationCount90d: number;
+  medianPrice90d: number;
+  minPrice90d: number;
+  maxPrice90d: number;
+  mostRecentSaleDate: string;       // ISO date 'YYYY-MM-DD'
+  daysSinceLatestSale: number;
+  priceSpreadRatio: number | null;
+  valuationConfidence: 'high' | 'medium' | 'low';
+  confidenceReason: ConfidenceReason;
+  dataWindowDays: 90;
+};
+
+// Loader returns this shape (null = no_recent_data state)
+export type VariantValuationConfidenceLoaderResult =
+  VariantValuationConfidence | null;
+
 // Sold-comp freshness signals from public.v_variant_valuations_with_freshness
 // (additive layer over v_variant_valuations_clean). Always treat as nullable —
 // the cached payload may be older than the backend migration that added them.

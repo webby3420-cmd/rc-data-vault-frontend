@@ -18,7 +18,7 @@ export default function SpeedEstimatorPage() {
       <SpeedEstimatorCalculator />
       <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900/50 p-5 space-y-3">
         <h3 className="text-sm font-semibold text-slate-300">Common battery voltages</h3>
-        <p className="text-sm text-slate-400">2S LiPo = 7.4V · 3S = 11.1V · 4S = 14.8V · 6S = 22.2V</p>
+        <p className="text-sm text-slate-400">2S LiPo = 7.4V · 3S = 11.1V · 4S = 14.8V · 6S = 22.2V · 8S = 29.6V · 12S = 44.4V</p>
         <h3 className="text-sm font-semibold text-slate-300">Measuring tire diameter</h3>
         <p className="text-sm text-slate-400 leading-relaxed">
           Inflate tires to normal running pressure, then measure the outer diameter with calipers or a ruler. Use millimeters for this calculator.

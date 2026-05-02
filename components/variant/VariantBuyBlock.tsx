@@ -15,27 +15,30 @@ function ebaySearchUrl(query: string, customId: string): string {
   return `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&_sacat=0&LH_BIN=1&mkcid=1&mkrid=711-53200-19255-0&siteid=0&campid=${EBAY_CAMPID}&customid=${encodeURIComponent(customId)}&toolid=10001&mkevt=1`
 }
 
-// Manufacturer homepage search URLs — extend as more brands are added
-const MFR_SEARCH: Record<string, (q: string) => string> = {
-  // TRAXXAS — upgraded from generic catalog to model search
-  // traxxas.com/products/models is the base; appending the
-  // model name suffix routes to the specific model family page.
-  // The suffix is derived by lower-casing and replacing spaces
-  // with hyphens from the first significant word(s) of the
-  // variant name. Fallback to /products/models if derivation
-  // would be empty.
-  // Pattern confirmed: traxxas.com/products/models/electric/X-Maxx
-  //                    traxxas.com/products/models/electric/slash
-  //                    traxxas.com/products/models/electric/maxx
-  traxxas: (q) => {
-    // Extract the model name: everything before the first
-    // RTR/BLX/VXL/brushless/cell-count marker, trim, replace spaces with hyphens
-    const model = q
-      .replace(/^traxxas\s+/i, '')          // strip brand prefix
+// Manufacturer homepage search URLs — extend as more brands are added.
+// `q` is the variant display name; `familySlug` is the canonical lowercase
+// family slug (e.g. "x-maxx") and is preferred when the brand's URL scheme
+// addresses by family rather than search query.
+const MFR_SEARCH: Record<string, (q: string, familySlug?: string) => string> = {
+  // TRAXXAS — model-family page, addressed by canonical lowercase slug.
+  // Pattern: traxxas.com/products/models/electric/<family-slug>
+  //   confirmed for: x-maxx, slash, maxx, rustler, e-revo, ...
+  // Prefer the family slug from URL params; fall back to deriving a slug
+  // from the variant name (lowercased, leading brand + trailing variant
+  // suffix stripped) so the link still works for any caller that doesn't
+  // pass familySlug. Either way the resulting suffix is lowercase.
+  traxxas: (q, familySlug) => {
+    if (familySlug) {
+      return `https://traxxas.com/products/models/electric/${familySlug}`
+    }
+    const derived = q
+      .replace(/^traxxas\s+/i, '')
       .replace(/\s+(rtr|brushless|vxl|trx|4x4|2wd|4wd|blx|telluride|\d+s)\b.*$/i, '')
       .trim()
-    return model
-      ? `https://traxxas.com/products/models/electric/${encodeURIComponent(model)}`
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+    return derived
+      ? `https://traxxas.com/products/models/electric/${encodeURIComponent(derived)}`
       : 'https://traxxas.com/products/models'
   },
 
@@ -82,6 +85,7 @@ interface VariantBuyBlockProps {
   variantName:      string
   manufacturerSlug: string
   variantSlug:      string
+  familySlug?:      string
   className?:       string
 }
 
@@ -91,12 +95,13 @@ export default function VariantBuyBlock({
   variantName,
   manufacturerSlug,
   variantSlug,
+  familySlug,
   className = '',
 }: VariantBuyBlockProps) {
   const amazon   = amazonSearchUrl(variantName)
   const ebay     = ebaySearchUrl(variantName, variantSlug)
   const mfrFn    = MFR_SEARCH[manufacturerSlug]
-  const mfr      = mfrFn ? mfrFn(variantName) : null
+  const mfr      = mfrFn ? mfrFn(variantName, familySlug) : null
 
   return (
     <div className={`space-y-2 ${className}`}>

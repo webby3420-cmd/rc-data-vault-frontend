@@ -397,6 +397,7 @@ async function PricingSection({
         variantName={modelName}
         manufacturerSlug={mfrSlug}
         variantSlug={variantSlug}
+        familySlug={familySlug}
         className="mt-4"
       />
     </>

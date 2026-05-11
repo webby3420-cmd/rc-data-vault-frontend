@@ -92,7 +92,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const shouldIndex = indexMeta?.should_index !== false;
 
   return {
-    title: `${name} Value, Sold Prices & Market Trends | RC Data Vault`,
+    title: `${name} Value, Sold Prices & Market Trends`,
     description: `Research the ${name} with valuation data, sold listing comps, price trends, specs, and market insights from RC Data Vault.`,
     robots: shouldIndex ? "index,follow" : "noindex,follow",
     alternates: {

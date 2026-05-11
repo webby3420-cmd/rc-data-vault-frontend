@@ -188,21 +188,41 @@ function normalizeFamilyIntel(row: Record<string, any>, family: Family): FamilyI
   };
 }
 
+const BASE_URL = "https://rcdatavault.com";
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ manufacturer: string }>;
 }): Promise<Metadata> {
   const { manufacturer } = await params;
-  const { data } = await supabase.rpc("get_manufacturer_page", {
-    p_manufacturer_slug: manufacturer,
-  });
 
-  if (!data) return { title: "RC Data Vault" };
+  let displayName = manufacturer.charAt(0).toUpperCase() + manufacturer.slice(1);
+  try {
+    const { data } = await supabase.rpc("get_manufacturer_page", {
+      p_manufacturer_slug: manufacturer,
+    });
+    if (data?.manufacturer_name) displayName = data.manufacturer_name;
+  } catch {
+    // swallow — never throw inside generateMetadata
+  }
+
+  const canonical = `${BASE_URL}/rc/${manufacturer}`;
+  const title = `${displayName} RC Values, Families & Market Data`;
+  const description = `Browse ${displayName} RC vehicle values, model families, and recent sold listing data on RC Data Vault.`;
 
   return {
-    title: `${data.manufacturer_name} RC Values, Families & Market Data | RC Data Vault`,
-    description: `Browse ${data.manufacturer_name} RC family pricing, tracked variants, sold listing activity, and market depth using real market data.`,
+    title,
+    description,
+    robots: "index,follow",
+    alternates: { canonical },
+    openGraph: {
+      url: canonical,
+      title,
+      description,
+      siteName: "RC Data Vault",
+      type: "website",
+    },
   };
 }
 

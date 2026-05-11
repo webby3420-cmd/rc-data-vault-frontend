@@ -21,6 +21,8 @@ export async function GET() {
 
   const base = 'https://rcdatavault.com'
 
+  const seen = new Set<string>([`${base}`, `${base}/rc`, `${base}/market`])
+
   let urls = `
   <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${base}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
@@ -30,12 +32,15 @@ export async function GET() {
     for (const p of pages as any[]) {
       const path = p.url ?? p.canonical_path
       if (!path) continue
+      const fullLoc = `${base}${path}`
+      if (seen.has(fullLoc)) continue
+      seen.add(fullLoc)
       const lastmod = p.last_updated
         ? `\n    <lastmod>${new Date(p.last_updated).toISOString().split('T')[0]}</lastmod>`
         : ''
       urls += `
   <url>
-    <loc>${base}${path}</loc>${lastmod}
+    <loc>${fullLoc}</loc>${lastmod}
     <changefreq>${changefreqMap[p.page_type] ?? 'weekly'}</changefreq>
     <priority>${priorityMap[p.page_type] ?? '0.5'}</priority>
   </url>`

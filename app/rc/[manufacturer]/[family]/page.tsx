@@ -68,13 +68,45 @@ type PageData = {
   family_market_summary?: FamilyMarketSummary;
 };
 
+const BASE_URL = "https://rcdatavault.com";
+
+function humanizeSlug(slug: string): string {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ manufacturer: string; family: string }> }): Promise<Metadata> {
   const { manufacturer, family } = await params;
-  const { data } = await (supabase.rpc as any)("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
-  if (!data) return { title: "RC Data Vault" };
+
+  let manufacturerName = humanizeSlug(manufacturer);
+  let familyName = humanizeSlug(family);
+  try {
+    const { data } = await (supabase.rpc as any)("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
+    if (data?.manufacturer_name) manufacturerName = data.manufacturer_name;
+    if (data?.family_name) familyName = data.family_name;
+  } catch {
+    // swallow — never throw inside generateMetadata
+  }
+
+  const canonical = `${BASE_URL}/rc/${manufacturer}/${family}`;
+  const title = `${manufacturerName} ${familyName} Value & Price Guide`;
+  const description = `Used market values for the ${manufacturerName} ${familyName} based on real sold listings.`;
+
   return {
-    title: `${data.manufacturer_name} ${data.family_name} Value & Price Guide | RC Data Vault`,
-    description: `Used market values for the ${data.manufacturer_name} ${data.family_name} based on real sold listings.`,
+    title,
+    description,
+    robots: "index,follow",
+    alternates: { canonical },
+    openGraph: {
+      url: canonical,
+      title,
+      description,
+      siteName: "RC Data Vault",
+      type: "website",
+    },
   };
 }
 

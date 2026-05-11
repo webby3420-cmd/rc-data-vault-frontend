@@ -9,8 +9,21 @@ const supabase = createClient(
 );
 
 export const metadata: Metadata = {
-  title: "RC Vehicle Values & Price Guide | RC Data Vault",
-  description: "Search used RC vehicle values and price guides. Based on real sold listings for Traxxas, ARRMA, Losi, and more.",
+  title: "RC Vehicle Values & Price Guide",
+  description:
+    "Search used RC vehicle values and price guides. Based on real sold listings for Traxxas, ARRMA, Losi, and more.",
+  robots: "index,follow",
+  alternates: {
+    canonical: "https://rcdatavault.com/rc",
+  },
+  openGraph: {
+    url: "https://rcdatavault.com/rc",
+    title: "RC Vehicle Values & Price Guide",
+    description:
+      "Search used RC vehicle values and price guides. Based on real sold listings.",
+    siteName: "RC Data Vault",
+    type: "website",
+  },
 };
 
 type Manufacturer = {

@@ -11,7 +11,7 @@ import type { Metadata } from 'next'
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: 'Used RC Car Values & Price Guide',
+  title: { absolute: 'RC Data Vault | Used RC Car Values & Price Guide' },
   description: 'Used RC car values, price guides, and sold market data for Traxxas, ARRMA, Losi, Axial, and more.',
   robots: 'index,follow',
   alternates: {

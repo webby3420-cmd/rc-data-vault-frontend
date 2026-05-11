@@ -21,10 +21,10 @@ export async function GET() {
 
   const base = 'https://rcdatavault.com'
 
-  const seen = new Set<string>([`${base}`, `${base}/rc`, `${base}/market`])
+  const seen = new Set<string>([`${base}/`, `${base}/rc`, `${base}/market`])
 
   let urls = `
-  <url><loc>${base}</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>${base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
   <url><loc>${base}/rc</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
   <url><loc>${base}/market</loc><changefreq>daily</changefreq><priority>0.8</priority></url>`
 

@@ -11,8 +11,19 @@ import type { Metadata } from 'next'
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: 'RC Data Vault | Used RC Car Values & Price Guide',
+  title: 'Used RC Car Values & Price Guide',
   description: 'Used RC car values, price guides, and sold market data for Traxxas, ARRMA, Losi, Axial, and more.',
+  robots: 'index,follow',
+  alternates: {
+    canonical: 'https://rcdatavault.com/',
+  },
+  openGraph: {
+    url: 'https://rcdatavault.com/',
+    title: 'RC Data Vault — Used RC Car Values & Price Guide',
+    description: 'Used RC car values, price guides, and sold market data for Traxxas, ARRMA, Losi, Axial, and more.',
+    siteName: 'RC Data Vault',
+    type: 'website',
+  },
 }
 
 export default async function HomePage() {

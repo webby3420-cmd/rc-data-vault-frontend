@@ -6,7 +6,7 @@
 // key or flat — the loader tolerates both.
 
 import 'server-only';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import type {
   VariantValuePayload,
   VariantValueTier,
@@ -58,7 +58,7 @@ function unwrapInner(root: Record<string, unknown>): Record<string, unknown> {
 export async function loadVariantValuePayload(
   queueId: number,
 ): Promise<LoadVariantValueResult> {
-  const supabase = createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase.rpc('build_seo_page_payload', {
     p_queue_id: queueId,
   });

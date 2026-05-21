@@ -1,12 +1,16 @@
 export const dynamic = 'force-dynamic';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { getAllFamilyIndexability } from '@/lib/seo/indexability'
 
 export const revalidate = 3600
 
 export async function GET() {
   const supabase = createSupabaseServerClient()
-  const { data: pages } = await supabase.rpc('get_sitemap_all_pages')
+  const [{ data: pages }, familyIndex] = await Promise.all([
+    supabase.rpc('get_sitemap_all_pages'),
+    getAllFamilyIndexability(),
+  ])
 
   const priorityMap: Record<string, string> = {
     hub: '1.0', parts_hub: '0.9', manufacturer: '0.8',
@@ -32,6 +36,15 @@ export async function GET() {
     for (const p of pages as any[]) {
       const path = p.url ?? p.canonical_path
       if (!path) continue
+      if (p.page_type === 'family') {
+        const segments = String(path).split('/').filter(Boolean)
+        if (segments[0] === 'rc' && segments[1] && segments[2] && !segments[3]) {
+          const key = `${segments[1]}/${segments[2]}`
+          if (!familyIndex.get(key)?.indexable) continue
+        } else {
+          continue
+        }
+      }
       const fullLoc = `${base}${path}`
       if (seen.has(fullLoc)) continue
       seen.add(fullLoc)

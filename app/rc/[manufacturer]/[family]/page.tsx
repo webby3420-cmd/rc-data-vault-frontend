@@ -13,6 +13,7 @@ import FamilyVariantCoverage from "@/components/family/FamilyVariantCoverage";
 import FamilyMarketOpportunitySlot from "@/components/family/FamilyMarketOpportunitySlot";
 import FamilySummaryStrip from "@/components/family/FamilySummaryStrip";
 import FamilyMarketActivity from "@/components/family/FamilyMarketActivity";
+import { getFamilyIndexability } from "@/lib/seo/indexability";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -95,10 +96,22 @@ export async function generateMetadata({ params }: { params: Promise<{ manufactu
   const title = `${manufacturerName} ${familyName} Value & Price Guide`;
   const description = `Used market values for the ${manufacturerName} ${familyName} based on real sold listings.`;
 
+  // Fail open: if indexability lookup throws, keep current index,follow
+  // behavior rather than accidentally noindexing a good page.
+  let indexable = true;
+  try {
+    const idx = await getFamilyIndexability(manufacturer, family);
+    indexable = idx.indexable;
+  } catch {
+    // swallow — never throw inside generateMetadata
+  }
+
   return {
     title,
     description,
-    robots: "index,follow",
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     alternates: { canonical },
     openGraph: {
       url: canonical,
@@ -112,10 +125,14 @@ export async function generateMetadata({ params }: { params: Promise<{ manufactu
 
 
 
-export default async function FamilyPage({ params, searchParams }: { params: Promise<{ manufacturer: string; family: string }>; searchParams: Promise<{ src?: string; alert_context?: string }> }) {
+export default async function FamilyPage({ params, searchParams }: { params: Promise<{ manufacturer: string; family: string }>; searchParams: Promise<{ src?: string; alert_context?: string; debug?: string }> }) {
   const { manufacturer, family } = await params;
   const sp = await searchParams;
   const isAlertTraffic = sp.src === "alert";
+  const showIndexabilityDebug = sp.debug === "indexability";
+  const indexabilityDebug = showIndexabilityDebug
+    ? await getFamilyIndexability(manufacturer, family).catch(() => null)
+    : null;
 
   const { data, error } = await (supabase.rpc as any)("get_family_page", { p_manufacturer_slug: manufacturer, p_family_slug: family });
 
@@ -234,6 +251,12 @@ export default async function FamilyPage({ params, searchParams }: { params: Pro
         </div>
 
         <FamilyMarketOpportunitySlot />
+
+        {indexabilityDebug && (
+          <pre className="mt-8 overflow-x-auto rounded bg-slate-900 p-3 text-xs text-slate-400">
+{JSON.stringify(indexabilityDebug, null, 2)}
+          </pre>
+        )}
       </div>
     </main>
   );

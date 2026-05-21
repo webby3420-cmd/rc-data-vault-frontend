@@ -1,3 +1,6 @@
+// TODO(6.1.6): consumes unfiltered RPC output. Update to use
+// lib/seo/indexability.ts helper or delete. Not advertised in
+// robots.txt, so not blocking GSC fix WNC-20237597.
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(

@@ -237,3 +237,22 @@
 ## Change Log
 
 - **2026-05-27 v1:** Initial creation. Seeded with v2.5.x decisions: Trust Layer structural enforcement, canonicalization gate, demand-anchor thesis, HyperFrames pre-selection with deferred implementation, no Canopy coupling, license strategy, scraping strategy, thread discipline, and the three new tool evaluation candidates from 2026-05-26.
+
+---
+
+## 2026-06-06 — Renovate dependency bot: kept on RCDV, quiet config
+
+**Decision:** Keep Mend Renovate enabled on `rc-data-vault-frontend`, configured low-noise.
+**Config:** Monthly schedule; non-major updates grouped into one PR; Dependency Dashboard ON
+(approval-queue workflow); `automerge: false`; vulnerability/security alerts surfaced any time
+(not held for the monthly window; `osvVulnerabilityAlerts` enabled). No production-impacting
+behavior beyond normal PR review/merge.
+**Context:** Renovate (Mend GitHub App) was found installed on the `webby3420-cmd` account with
+"Only select repositories" scope (`rc-data-vault-frontend`, `canopy-app`, `_handoffs`), installed
+2026-06-01. The adoption was intentional (dependency security + drift control) but predated
+documentation — never logged at the time. Surfaced via a Vercel "deployment error" email that led
+to the open onboarding PR (#3).
+**Activation:** Conservative `renovate.json` committed via PR #3 and merged.
+**Future lever:** If PR-preview noise grows, suppress Renovate's Vercel previews via a Vercel
+ignored-build-step (skip build when only renovate.json/dep changes) — not enabled now.
+**Scope note:** `canopy-app` and `_handoffs` remain on Renovate — to be decided separately.

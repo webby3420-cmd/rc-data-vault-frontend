@@ -157,3 +157,11 @@ Time per update: 3-5 minutes max.
 - Duplicate Vercel project rc-data-vault-frontend: parked infra debt (do not touch)
 - Pending (Jason): Google Rich Results Test + GSC Validate Fix (WNC-10030322)
 - Next: eBay escalation, then deal-feed PR
+
+---
+
+## Maintenance / Backlog
+
+- Infra debt (maintenance lane, parked): retire or disconnect duplicate Vercel project
+  rc-data-vault-frontend — preferred fix is removing its GitHub integration (or deleting it).
+  Do NOT add Supabase credentials to it. Until retired it red-X's every PR; non-blocking.

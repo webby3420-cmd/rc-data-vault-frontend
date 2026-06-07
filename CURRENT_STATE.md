@@ -144,3 +144,16 @@ Time per update: 3-5 minutes max.
 ## Change Log
 
 - **2026-05-27 v1:** Initial creation. Reflects state after 2026-05-26 infrastructure setup session. Three architectural blockers identified (eBay escalation, demand-anchor decision, canonicalization tool selection). Operating-rules thread budget at 0/3.
+
+---
+
+## 2026-06-07 — Product structured-data (active offers) SHIPPED + production-verified
+- PR #6 merged (squash): ef83ef3190b23d40a4b71ff1275573ef1e9819a8
+- Production deploy: dpl_72QvFXc4NjqmGyPcfpudqgd5rzT1 (READY, target production)
+- Tamiya Nismo R34 positive: PASS (AggregateOffer offerCount 7, $155.80–$448.22; visible callout matches)
+- X-Maxx 8S negative control: PASS (no offers, no callout)
+- Trust boundary preserved: active matched listings only; sold comps untouched
+- Source view: v_variant_active_offer; coverage at ship 70/1,047 variants (~7%), gated + self-expanding
+- Duplicate Vercel project rc-data-vault-frontend: parked infra debt (do not touch)
+- Pending (Jason): Google Rich Results Test + GSC Validate Fix (WNC-10030322)
+- Next: eBay escalation, then deal-feed PR

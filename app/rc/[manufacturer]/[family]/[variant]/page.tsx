@@ -34,6 +34,8 @@ import {
 } from "@/components/variant/skeletons";
 import { ArrowUpRight, Search } from "lucide-react";
 import { getVariantPagePayload } from "@/lib/variant-page";
+import ActiveListingsCallout from "@/components/variant/ActiveListingsCallout";
+import { buildActiveOfferSchema, type ActiveOfferRow } from "@/lib/seo/active-offer";
 import {
   formatNewestSoldComp,
   freshnessCopy,
@@ -980,14 +982,33 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
   const familyName: string = (variantData.model_families as any)?.name ?? family;
   const familySlug = family;
 
+  const canonicalUrl = `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}`;
+
+  /* ─── Active-listing offers (Product structured data) ───
+     Source of truth: read-only view public.v_variant_active_offer.
+     One row per variant with >= 1 clean approved ACTIVE USD listing.
+     No row => no active listings => emit NO offers + render no element.
+     Sold comps / valuation fields must NEVER populate offers. */
+  const { data: activeOfferData } = await supabase
+    .from("v_variant_active_offer")
+    .select("offer_count, low_price, high_price, price_currency, offer_schema_type, lowest_listing_url")
+    .eq("variant_id", variantId)
+    .maybeSingle();
+  const activeOffer = (activeOfferData as ActiveOfferRow | null) ?? null;
+
   /* ─── Structured data (sync, from identity) ─── */
-  const productSchema = {
+  const productSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: displayName,
     brand: { "@type": "Brand", name: mfrName },
-    url: `https://rcdatavault.com/rc/${mfrSlug}/${familySlug}/${variantSlug}`,
+    url: canonicalUrl,
   };
+
+  // GATE: only emit offers when an active-listing row exists.
+  if (activeOffer) {
+    productSchema.offers = buildActiveOfferSchema(activeOffer, canonicalUrl);
+  }
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -1027,6 +1048,9 @@ export default async function VariantPage({ params, searchParams }: PageProps) {
         </header>
 
         <div className="space-y-6">
+
+          {/* ─── ACTIVE LISTINGS (gated; matches Product offers JSON-LD) ─── */}
+          {activeOffer && <ActiveListingsCallout offer={activeOffer} />}
 
           {/* ─── TIER 2: PRICING (first data to arrive) ─── */}
           <Suspense fallback={<><HeroDecisionSurfaceSkeleton /><PricingSnapshotSkeleton /></>}>

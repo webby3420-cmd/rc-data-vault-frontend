@@ -256,3 +256,17 @@ to the open onboarding PR (#3).
 **Future lever:** If PR-preview noise grows, suppress Renovate's Vercel previews via a Vercel
 ignored-build-step (skip build when only renovate.json/dep changes) — not enabled now.
 **Scope note:** `canopy-app` and `_handoffs` remain on Renovate — to be decided separately.
+
+---
+
+## 2026-06-07 — Product structured data: active-listing offers only
+
+Product structured data will use active matched listings only. Sold comps remain valuation
+data and must never populate Product offers. Emit Offer for exactly one clean approved active
+listing, AggregateOffer for two or more, and omit offers entirely when no clean approved active
+listing exists. Matching visible page content is required.
+
+Source: read-only view `public.v_variant_active_offer` (active + USD + actionable + parts-excluded
++ vehicle-eligible + approved-matched). Coverage at ship: 70 of 1,047 variants (~7%); gated and
+self-expanding as matches are approved. Follow-on track (NOT part of this fix): active-listing
+match approval is the true coverage driver for Product rich-result eligibility.

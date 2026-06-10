@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "24"), 50);
 
   let query = supabase
-    .from("top_deals_live")
+    .from("v_top_deals_balanced")
     .select("*")
     .gte("deal_score", minScore)
     .order("deal_score", { ascending: false })

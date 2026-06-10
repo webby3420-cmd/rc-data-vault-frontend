@@ -1,13 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import DealCard from "@/components/DealCard";
+import DataFreshnessBanner from "@/components/DataFreshnessBanner";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Live RC Deals | RC Data Vault",
-  description: "Real-time RC vehicle deals from live eBay listings, scored against market data. Find below-market RC cars, trucks, and crawlers.",
+  title: "Live RC Deals",
+  description: "Live RC vehicle listings scored against current active-market supply and the sold-comp data we have for each model. Updated continuously on RC Data Vault.",
 };
 
 async function getDeals() {
@@ -16,7 +17,7 @@ async function getDeals() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const { data } = await supabase
-    .from("top_deals_live")
+    .from("v_top_deals_balanced")
     .select("*")
     .gte("deal_score", 55)
     .order("deal_score", { ascending: false })
@@ -30,7 +31,7 @@ async function getBrands() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const { data } = await supabase
-    .from("top_deals_live")
+    .from("v_top_deals_balanced")
     .select("manufacturer_name, manufacturer_slug")
     .gte("deal_score", 55)
     .order("manufacturer_name");
@@ -50,6 +51,8 @@ export default async function DealsPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <DataFreshnessBanner />
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
@@ -120,7 +123,7 @@ export default async function DealsPage() {
       )}
 
       <p className="mt-10 text-xs text-slate-600 text-center">
-        Deal scores are calculated from live listing price vs. current market median. Scores above 70 represent below-market listings.
+        Deal scores compare each live listing&apos;s price against the active-market and sold-comp data we hold for that model. They reflect relative positioning against the stated comparison set, not a guaranteed market value.
       </p>
     </main>
   );

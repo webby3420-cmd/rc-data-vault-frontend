@@ -21,6 +21,8 @@ interface Deal {
   deal_score: number;
   deal_label: string;
   pct_below_market: number;
+  anchor_label?: string;
+  anchor_explainer?: string;
 }
 
 const labelConfig: Record<string, { color: string; text: string }> = {
@@ -71,15 +73,28 @@ export default function DealCard({ deal }: { deal: Deal }) {
       </div>
 
       {/* Stats row */}
-      <div className="flex gap-3 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
         {savings && Number(savings) > 0 && (
-          <span className="text-emerald-500">~${savings} below market</span>
+          <span className="text-emerald-400">~${savings} lower</span>
         )}
-        {deal.active_supply_count && (
+        {deal.active_supply_count ? (
           <span>{deal.active_supply_count} active listing{deal.active_supply_count !== 1 ? "s" : ""}</span>
-        )}
+        ) : null}
+        {deal.listing_quality_score ? (
+          <span>Listing quality {Math.round(deal.listing_quality_score)}/100</span>
+        ) : null}
         {deal.condition_raw && <span>{deal.condition_raw}</span>}
       </div>
+
+      {/* Comparison basis (honest anchor disclosure — not a guaranteed market value) */}
+      {deal.anchor_label && (
+        <p className="text-[11px] leading-snug text-slate-500">
+          {deal.anchor_label}
+          {deal.anchor_explainer ? (
+            <span className="text-slate-600"> — {deal.anchor_explainer}</span>
+          ) : null}
+        </p>
+      )}
 
       {/* Deal score bar */}
       <div className="space-y-1">

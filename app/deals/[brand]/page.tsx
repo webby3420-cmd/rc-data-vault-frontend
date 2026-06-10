@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import DealCard from "@/components/DealCard";
+import DataFreshnessBanner from "@/components/DataFreshnessBanner";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -9,8 +10,8 @@ export const revalidate = 300;
 export async function generateMetadata({ params }: { params: { brand: string } }): Promise<Metadata> {
   const brand = decodeURIComponent(params.brand);
   return {
-    title: `${brand} RC Deals | RC Data Vault`,
-    description: `Live ${brand} RC deals scored against market data. Find below-market ${brand} RC vehicles on eBay.`,
+    title: `${brand} RC Deals`,
+    description: `Live ${brand} RC listings scored against current active-market supply and the sold-comp data we hold for each model on RC Data Vault.`,
   };
 }
 
@@ -20,7 +21,7 @@ async function getBrandDeals(brandSlug: string) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
   const { data } = await supabase
-    .from("top_deals_live")
+    .from("v_top_deals_balanced")
     .select("*")
     .eq("manufacturer_slug", brandSlug)
     .gte("deal_score", 55)
@@ -40,6 +41,8 @@ export default async function BrandDealsPage({ params }: { params: { brand: stri
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <DataFreshnessBanner />
+
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-slate-500 mb-3">
           <a href="/deals" className="hover:text-slate-300 transition-colors">All Deals</a>

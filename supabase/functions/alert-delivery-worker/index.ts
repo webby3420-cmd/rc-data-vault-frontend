@@ -180,7 +180,7 @@ Deno.serve(async (_req) => {
       try {
         // 2a. Fetch matching deals
         let dealQuery = supabase
-          .from("top_deals_live")
+          .from("v_top_deals_balanced")
           .select("listing_id, variant_name, manufacturer_name, title_raw, price_amount, listing_url, deal_score, deal_label, condition_raw")
           .gte("deal_score", 55)
           .order("deal_score", { ascending: false })

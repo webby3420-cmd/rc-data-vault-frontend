@@ -47,12 +47,15 @@ export async function POST(req: Request) {
       const email = notif.recipient_email;
       if (!email) continue;
 
-      // Get listing details
+      // Get listing details from the trust-gated view (never the raw
+      // marketplace_listings table). If the listing has left the gated view
+      // between match and send, `listing` is null and we fall back to the
+      // values already stored on the match/notification row below.
       const { data: listing } = await supabase
-        .from("marketplace_listings")
+        .from("v_top_deals_balanced")
         .select("title_raw, listing_url, price_amount, source_name")
         .eq("listing_id", match.listing_id)
-        .single();
+        .maybeSingle();
 
       const unsubscribeUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://rcdatavault.com"}/unsubscribe?token=${sub?.unsubscribe_token ?? ""}`;
       const price = listing?.price_amount ?? match.total_price;

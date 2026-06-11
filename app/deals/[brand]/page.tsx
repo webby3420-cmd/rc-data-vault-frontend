@@ -5,10 +5,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 300;
 
-export async function generateMetadata({ params }: { params: { brand: string } }): Promise<Metadata> {
-  const brand = decodeURIComponent(params.brand);
+export async function generateMetadata({ params }: { params: Promise<{ brand: string }> }): Promise<Metadata> {
+  const { brand: rawBrand } = await params;
+  const brand = decodeURIComponent(rawBrand);
   return {
     title: `${brand} RC Deals`,
     description: `Live ${brand} RC listings scored against current active-market supply and the sold-comp data we hold for each model on RC Data Vault.`,
@@ -30,12 +30,13 @@ async function getBrandDeals(brandSlug: string) {
   return data ?? [];
 }
 
-export default async function BrandDealsPage({ params }: { params: { brand: string } }) {
-  const deals = await getBrandDeals(params.brand);
+export default async function BrandDealsPage({ params }: { params: Promise<{ brand: string }> }) {
+  const { brand } = await params;
+  const deals = await getBrandDeals(decodeURIComponent(brand));
 
   if (deals.length === 0) notFound();
 
-  const brandName = deals[0]?.manufacturer_name ?? params.brand;
+  const brandName = deals[0]?.manufacturer_name ?? decodeURIComponent(brand);
   const goodDeals = deals.filter(d => d.deal_score >= 70);
   const fairDeals = deals.filter(d => d.deal_score >= 55 && d.deal_score < 70);
 

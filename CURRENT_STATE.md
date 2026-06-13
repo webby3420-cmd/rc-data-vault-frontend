@@ -3,7 +3,7 @@
 **Project repo:** rc-data-vault-frontend
 **Purpose:** Operational re-entry document. Where exactly did work stop? What's the next concrete action?
 **Update frequency:** HIGH. Update at end of every working session.
-**Last updated:** 2026-05-27 (morning)
+**Last updated:** 2026-06-12 (evening)
 
 ---
 
@@ -154,7 +154,7 @@ Time per update: 3-5 minutes max.
 - X-Maxx 8S negative control: PASS (no offers, no callout)
 - Trust boundary preserved: active matched listings only; sold comps untouched
 - Source view: v_variant_active_offer; coverage at ship 70/1,047 variants (~7%), gated + self-expanding
-- Duplicate Vercel project rc-data-vault-frontend: parked infra debt (do not touch)
+- Duplicate Vercel project rc-data-vault-frontend: RESOLVED — deleted 2026-06-10, T05 closed
 - Pending (Jason): Google Rich Results Test + GSC Validate Fix (WNC-10030322)
 - Next: eBay escalation, then deal-feed PR
 
@@ -162,6 +162,31 @@ Time per update: 3-5 minutes max.
 
 ## Maintenance / Backlog
 
-- Infra debt (maintenance lane, parked): retire or disconnect duplicate Vercel project
-  rc-data-vault-frontend — preferred fix is removing its GitHub integration (or deleting it).
-  Do NOT add Supabase credentials to it. Until retired it red-X's every PR; non-blocking.
+- RESOLVED 2026-06-10 (T05): duplicate Vercel project deleted by operator; PR checks clean.
+
+---
+
+## 2026-06-12 — Consolidated state: T02/T03 shipped, brand pages fixed, T05 closed, T03-HF1 resolved
+
+**Shipped to production (rcdatavault.com):**
+- PR #9 (T02), merged 2026-06-10 (3a4c993): all deal surfaces read v_top_deals_balanced; deal_score scale 0-100.
+- PR #10 (T03), merged 2026-06-10 (1f6a807): alert trust hardening; alert_ready_deals_view contamination gate (76 -> 10 rows, zero contamination).
+- PR #11 (T02-HF1), merged (0d9a899): /deals/[brand] 404 fix — Next.js 16 async params await + decodeURIComponent brand fallback. Latent pre-T02 bug surfaced by post-deploy verification. Verified live: /deals/arrma 200, 3 cards, decoded brand in H1.
+- alert-delivery-worker v10 deployed 2026-06-10 (verify_jwt true, sha256 3e78bdce...): reads v_top_deals_balanced; zero top_deals_live consumers remain anywhere.
+
+**T05 CLOSED:** duplicate Vercel project deleted 2026-06-10; canonical rcdatavault-frontend only.
+
+**T03-HF1 incident (2026-06-12) — alert delivery had NEVER fired via cron:**
+- Root cause: cron job 25 built its Authorization header from current_setting('app.service_role_key'), a GUC never set on this database -> NULL header -> verify_jwt 401 -> worker body never executed. Broken since the cron's creation in April; predates and is independent of worker v10.
+- Blast: alert_jobs backlog accumulated 2026-04-09 through 06-12 (65 pending, attempt_count 0, processed_at NULL throughout). cron.job_run_details reported "succeeded" the entire time — that status only proves net.http_post enqueued.
+- Fix: legacy service_role JWT stored in Supabase Vault as secret name service_role_key (operator-placed via dashboard); job 25 repointed to read Vault at call time with 60s timeout. 63 stale jobs (>48h) expired to status skipped, failure_reason expired_stale_backlog_T03HF1_20260612. Test-fire: HTTP 200, processed 2 / sent 0 / skipped 2 / failed 0. Queue clean: 0 pending, 0 failed.
+- Watch: first autonomous run 2026-06-13 08:00 UTC. Verify via net._http_response status+body AND alert_jobs.processed_at movement — never cron.job_run_details alone.
+
+**Known issues / queue:**
+- Unidentified */15 cron returning processed 0 / failed 20 / total 20 — identify next session (candidates: ebay-active-listings, generate-embeddings).
+- cron job 35 (generate-embeddings-hourly) carries a plaintext secret API key inside cron.job.command — rotate the key, then migrate to the Vault pattern.
+- eBay Finding API escalation email still NOT SENT (errorId 10001 / RateLimiter; sold-comp ingestion blocked since mid-April) — top external blocker. Cron job 62 remains paused.
+- GSC Validate Fix (operator action) still pending.
+- COMPLETION-ROADMAP.md and APPROVALS-NEEDED.md exist only as UNTRACKED local files in this working tree — they are invisible to the repo and went stale enough to act as a false trust anchor during T03-HF1. Decision pending: track them here or move to _handoffs.
+
+**Next:** eBay escalation -> GSC three-liner -> AUDIT-6 -> v2.7.0 acceptance.

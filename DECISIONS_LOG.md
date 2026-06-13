@@ -270,3 +270,20 @@ Source: read-only view `public.v_variant_active_offer` (active + USD + actionabl
 + vehicle-eligible + approved-matched). Coverage at ship: 70 of 1,047 variants (~7%); gated and
 self-expanding as matches are approved. Follow-on track (NOT part of this fix): active-listing
 match approval is the true coverage driver for Product rich-result eligibility.
+
+---
+
+## 2026-06-12 — Cron-to-edge auth via Vault; cron-verification doctrine; stale-alert policy
+
+**Decision:** pg_cron -> edge function authorization reads the legacy service_role JWT from Supabase Vault (secret name service_role_key) at call time. No secrets in cron.job.command plaintext; no database GUCs for secrets. verify_jwt stays true on alert-delivery-worker.
+
+**Why:** job 25's header was built from current_setting('app.service_role_key'), which was never set -> NULL header -> silent 401 on every run since April (T03-HF1). Vault read-at-call-time is the Supabase-documented pattern. Plaintext-in-command (as in job 35) is readable by anything that can query cron.job.
+
+**Also decided:**
+1. Verification doctrine: a pg_cron "succeeded" status only proves the HTTP request enqueued. Delivery is verified by net._http_response status+body PLUS mutation of the target table. Applies to every cron->edge job.
+2. Stale-alert policy: pending alert_jobs older than 48h are expired (status skipped, annotated), never sent. Emailing subscribers weeks-old deals burns trust.
+3. Key-format constraint: new sb_secret / sb_publishable API keys are NOT JWTs and fail verify_jwt; pg_cron Bearer auth requires the legacy JWT keys. (Supabase docs, confirmed empirically 2026-06-12.)
+
+**Impact:** alert delivery pipeline live for the first time. Pattern is mandatory for all future cron->edge auth. Job 35 queued for key rotation + Vault migration.
+
+**Reversal cost:** Low — swap header construction in the cron command.

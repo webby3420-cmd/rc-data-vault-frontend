@@ -184,7 +184,7 @@ Time per update: 3-5 minutes max.
 
 **Known issues / queue:**
 - Unidentified */15 cron returning processed 0 / failed 20 / total 20 — identify next session (candidates: ebay-active-listings, generate-embeddings).
-- cron job 35 (generate-embeddings-hourly) carries a plaintext secret API key inside cron.job.command — rotate the key, then migrate to the Vault pattern.
+- One legacy scheduled job pending credential rotation + migration to the Vault auth pattern (tracked internally).
 - eBay Finding API escalation email still NOT SENT (errorId 10001 / RateLimiter; sold-comp ingestion blocked since mid-April) — top external blocker. Cron job 62 remains paused.
 - GSC Validate Fix (operator action) still pending.
 - COMPLETION-ROADMAP.md and APPROVALS-NEEDED.md exist only as UNTRACKED local files in this working tree — they are invisible to the repo and went stale enough to act as a false trust anchor during T03-HF1. Decision pending: track them here or move to _handoffs.

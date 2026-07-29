@@ -142,14 +142,49 @@ Deno.serve(async (_req) => {
     }
 
     // Mark listings not seen in 2 hours as ended
-    await supabase.from("marketplace_listings")
-      .update({ listing_status: "ended" })
-      .eq("listing_status", "active")
-      .eq("is_sold", false)
-      .lt("updated_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString());
+    // Batched RPC preserves the partial-index access path.
+    const staleCutoff = new Date(
+      Date.now() - 2 * 60 * 60 * 1000,
+    ).toISOString();
+    let sweptTotal = 0;
+    let sweepBatches = 0;
+    for (let i = 0; i < 100; i++) {
+      const { data: swept, error: sweepErr } = await supabase.rpc(
+        "expire_stale_listings",
+        {
+          p_cutoff: staleCutoff,
+          p_batch_limit: 500,
+        },
+      );
+      if (sweepErr) {
+        console.error("stale-sweep RPC error:", sweepErr.message);
+        throw new Error(`Stale-listing sweep failed: ${sweepErr.message}`);
+      }
+      const n = Number(swept ?? 0);
+      if (!Number.isInteger(n) || n < 0 || n > 500) {
+        throw new Error(`Invalid stale-sweep result: ${String(swept)}`);
+      }
+      sweptTotal += n;
+      sweepBatches += 1;
+      if (n < 500) {
+        break;
+      }
+      if (i === 99) {
+        throw new Error(
+          "Stale-listing sweep exceeded the 100-batch safety limit",
+        );
+      }
+    }
 
     return new Response(
-      JSON.stringify({ success: true, ingested, skipped, searched: searchQueue.length }),
+      JSON.stringify({
+        success: true,
+        ingested,
+        skipped,
+        swept: sweptTotal,
+        sweepBatches,
+        searched: searchQueue.length,
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (err) {

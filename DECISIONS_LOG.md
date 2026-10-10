@@ -8,6 +8,16 @@
 
 ---
 
+## 2026-10-10 — Source reconciliation: Master Plan v2.8 supersedes stale May planning states
+
+**Type:** Canonical-source reconciliation and repository evidence checkpoint; **not a new product decision, not owner sign-off or deployment approval**.
+
+**Verified repo source:** `docs/master-plan/MASTER_PLAN_v2.8.md` is tracked on public `webby3420-cmd/rc-data-vault-frontend` `main` SHA `a6d2406904a32d844765bd03594cd291342452e3` (reviewed 2026-10-10). The plan dated 2026-09-16 defines the 19 pillars and makes the **public deal feed** the locked demand anchor, with alerts and valuation downstream. This supersedes earlier *unresolved* demand-anchor text in `CURRENT_STATE.md` without erasing the 2026-05-26 decision record. June-origin implementation claims are historical until independently verified on production/DB.
+
+**Decision boundary unchanged:** Do not reopen settled Trust Layer, catalog/valuation integrity, contamination, eBay APIs-first, vintage, and publishing-policy decisions merely to start a pilot. Do not reactivate completed-listing ingestion pending independent eBay resolution. Phase 0 remains open pending fresh production/Supabase/Vercel/cron/security and external evidence. A repo-only 19-pillar footprint is not a completion matrix. The explicit current-state evidence and prioritized missing checks now live in the top section of `CURRENT_STATE.md`.
+
+---
+
 ## 2026-05-27 — Superpowers framework evaluated, deferred adoption
 
 **Decision:** Add obra/superpowers to TOOLCHEST as Evaluation Candidate. Do not install yet. Re-evaluate after first feature ships using in-house agent setup (codebase-researcher + implementation-validator + CLAUDE.md).

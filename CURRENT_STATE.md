@@ -3,9 +3,62 @@
 **Project repo:** rc-data-vault-frontend
 **Purpose:** Operational re-entry document. Where exactly did work stop? What's the next concrete action?
 **Update frequency:** HIGH. Update at end of every working session.
-**Last updated:** 2026-06-12 (evening)
+**Last updated:** 2026-10-10 (Phase 0 repository-only evidence; external verification pending)
 
 ---
+
+## Current truth — 2026-10-10 Phase 0 re-anchor (repository evidence only)
+
+**Canonical completion authority:** [`docs/master-plan/MASTER_PLAN_v2.8.md`](docs/master-plan/MASTER_PLAN_v2.8.md), dated 2026-09-16. The current Phase 0 task is **in progress, not accepted**. The older May/June narrative retained below is historical provenance, **not** the current operational status or approved backlog. Master Plan v2.3 remains historical.
+
+**Read-first order now:** Master Plan v2.8 → this current-truth section → recent decisions in `DECISIONS_LOG.md` → `TERMINOLOGY.md` → current git HEAD / open PRs → independently verified production, database, cron, security and external-blocker evidence. Do not elevate stale handoffs or June snapshot numbers over live source.
+
+**Source observation:** GitHub `webby3420-cmd/rc-data-vault-frontend`, `main` at `a6d2406904a32d844765bd03594cd291342452e3` (fetched and matched against `origin/main` on 2026-10-10); exact plan v2.8 is tracked at this commit. The older local `main` checkout was behind remote, so inspection used a clean isolated worktree. The tracked tree contains 236 paths; the file references below were checked for actual existence at that SHA.
+
+**What changed in direction:** The demand-anchor question described as unresolved in the May snapshot is **resolved in the canonical plan**: the *public deal feed* is first; alerts and valuation are downstream. Historical assertions that “no features shipped,” “the catalog is empty,” or “no working scraper exists” are **not present-day verified findings**. The v2.8 historical register describes existing deal/Trust Layer/alert/valuation implementations but expressly requires fresh re-verification before completion claims.
+
+**What is NOT verified in this exercise:** active production deployment SHA, Supabase schema/rows/views/RPCs and jobs, Vercel environments/aliases, eBay completed-listing/support status, secret/cron-auth posture, DMARC/redirects, data freshness, and real user-facing behavior. Public repository source is not production proof. No protected data, secrets, raw listings, or private account content was accessed or moved. Do not resume completed-listing ingestion or change valuation/Trust Layer contracts as a consequence of this snapshot.
+
+### Initial 19-pillar repository footprint (not acceptance/completion)
+
+`SOURCE LOCATED` below means a representative tracked implementation path was found at the stated commit; it **does not** mean the pillar works or is complete. `NOT LOCATED IN BOUNDED SCAN` means only that the small scan did not find a dedicated artifact, not that the product capability is absent. **Operational acceptance is unverified for all 19 pillars.** Final pillar states (`COMPLETE`, `COMPLETE_WITH_HELD_FUTURE_SCOPE`, `DEFERRED_BY_OWNER`, `KILLED_BY_OWNER`) require separate primary evidence and do not appear here.
+
+| # | Canonical pillar | Repo-only observation at `a6d2406` | Operational acceptance |
+|---:|---|---|---|
+| 1 | Catalog Canonicalization & Identity | SOURCE LOCATED: `app/rc/[manufacturer]/[family]/[variant]/page.tsx` | Unverified |
+| 2 | Marketplace Ingestion & Matching | SOURCE LOCATED: `lib/ebay/buildSearchUrl.ts` (URL helper; not proof of ingestion) | Unverified; eBay support blocker unknown |
+| 3 | Valuation, Pricing & Trust | SOURCE LOCATED: `lib/valuation/freshness.ts`, `lib/valuation/confidence.ts` | Unverified |
+| 4 | Deal Feed & Alerts | SOURCE LOCATED: `app/deals/page.tsx`, `app/api/deals/top/route.ts`, `supabase/functions/alert-delivery-worker/index.ts` | Unverified |
+| 5 | Parts, Compatibility & Purchase Links | SOURCE LOCATED: `app/parts/page.tsx`, `components/parts/VariantPartsSection.tsx` | Unverified |
+| 6 | Resources & Documentation | SOURCE LOCATED: `app/api/resources/route.ts`, `components/resources/ResourceSection.tsx` | Unverified |
+| 7 | Tools & Calculators | SOURCE LOCATED: `app/tools/gear-ratio/page.tsx`, `lib/tools/gearRatio.ts` | Unverified |
+| 8 | Search & Navigation | SOURCE LOCATED: `app/api/search/route.ts`, `components/HomepageSearch.tsx` | Unverified |
+| 9 | pSEO, Publishing & Indexability | SOURCE LOCATED: `app/sitemap/route.ts`, `lib/seo/indexability.ts` | Unverified |
+| 10 | Variant / Family / Manufacturer Authority Pages | SOURCE LOCATED: `app/rc/[manufacturer]/[family]/page.tsx` | Unverified |
+| 11 | Market / Demand / Ecosystem Intelligence | SOURCE LOCATED: `app/market/page.tsx`, `components/family/FamilyMarketActivity.tsx` | Unverified |
+| 12 | User Accounts, Alerts & My Garage | SOURCE LOCATED for alerts: `app/api/alerts/deal/route.ts`; My Garage not established | Unverified |
+| 13 | Seller / Lead / Listing Tools | NOT LOCATED IN BOUNDED SCAN (no dedicated seller/lead path found) | Unverified |
+| 14 | API / Data Licensing / Partnerships | NOT LOCATED IN BOUNDED SCAN (ordinary app API routes do not establish a licensing product) | Unverified |
+| 15 | Content & Video Engine | NOT LOCATED IN BOUNDED SCAN (provider idea in plan is not deployed content engine) | Unverified |
+| 16 | Image / Identification Layer | SOURCE LOCATED: `app/api/identify/route.ts`, `lib/catalog-image.ts` | Unverified |
+| 17 | Vintage / Collector Intelligence | NOT LOCATED IN BOUNDED SCAN (no dedicated vintage/collector path confirmed) | Unverified |
+| 18 | Agents, QA & Governance | SOURCE LOCATED: `app/admin/agent-review/page.tsx`, `app/admin/agent-review/actions.ts` | Unverified |
+| 19 | Operations, Security & Infrastructure | SOURCE LOCATED: `docs/SECURITY.md`, `supabase/functions/alert-delivery-worker/index.ts` | Unverified |
+
+### Ordered next Phase 0 evidence tasks
+
+1. **Source/CI baseline:** Reconfirm `main` SHA, current open dependency/security PRs and `npm run lint`/`npm run build` in an isolated checkout with no secrets; fix only bounded defects in separate reviewable PRs.
+2. **Deployment and database:** Obtain authorized current Vercel deployment/alias/runtime evidence and read-only Supabase schema/view/RPC/cron metadata. Do not query private rows, dump credentials, or infer runtime health from repository artifacts.
+3. **External and security blockers:** Independently verify eBay completed-listing/support status before any reactivation; review cron-auth secret exposure, DMARC/redirects, stale pipeline views, GR Yaris split, and historic RC Bluebook alias without changing them. Classify missing connector access as an evidence gap, not product failure.
+4. **Phase 0 acceptance:** Move from repo-footprint to a separately sourced 19-pillar evidence baseline with observed vs partial vs blocked vs unknown; reconcile the decision/terminology references where proven; publish an ordered implementation backlog. Only then consider Phase 1 deal-feed improvements.
+
+**Execution boundary:** This is a safe documentation/repository inspection slice. It does not grant Forge mission-worker registration, database mutations, merges, deployments, spend, scraping, or external messaging authority. Independent verification and the project release gates are still required.
+
+---
+
+## Historical May–June re-entry snapshot (retained verbatim where not explicitly annotated; superseded)
+
+The following earlier sections are an audit trail of what was believed during May and June 2026. Their stale statuses, active-thread counts, dated claims, and TODOs are **not** the current Phase 0 source of truth. Use the dated current-truth section above and Master Plan v2.8 instead.
 
 ## If Returning Cold
 

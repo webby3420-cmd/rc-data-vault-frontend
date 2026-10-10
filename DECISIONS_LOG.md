@@ -4,7 +4,7 @@
 **Purpose:** Strategic memory. Prevent re-litigation of solved problems or proposing previously rejected paths. RCDV has unusually high architectural commitment density — this log is the source of truth for "why is it this way?"
 **Update frequency:** MEDIUM. Append only when real architectural or strategic decision is made.
 **Format:** newest entries at top.
-**Last updated:** 2026-05-27
+**Last updated:** 2026-10-10 (source reconciliation only; no new owner decision)
 
 ---
 

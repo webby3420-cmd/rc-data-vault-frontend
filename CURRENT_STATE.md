@@ -52,6 +52,20 @@
 3. **External and security blockers:** Independently verify eBay completed-listing/support status before any reactivation; review cron-auth secret exposure, DMARC/redirects, stale pipeline views, GR Yaris split, and historic RC Bluebook alias without changing them. Classify missing connector access as an evidence gap, not product failure.
 4. **Phase 0 acceptance:** Move from repo-footprint to a separately sourced 19-pillar evidence baseline with observed vs partial vs blocked vs unknown; reconcile the decision/terminology references where proven; publish an ordered implementation backlog. Only then consider Phase 1 deal-feed improvements.
 
+### Phase 0 acceptance checklist (finite, evidence-gated; all pending)
+
+Each gate must carry a timestamp, inspected primary source or live endpoint, a bounded observation, and a disposition of `VERIFIED`, `BLOCKED_EXTERNAL`, `BLOCKED_OWNER`, or `UNKNOWN`. A connector absent from Forge is `UNKNOWN`/blocked access, **not** a passing health check. These gates do not authorize disclosure or mutation.
+
+- [ ] **Repository and CI** — exact source `main` HEAD, current dependency/security PR disposition, isolated lint/build result, canonical doc pointer/terminology/decision reconciliation, with output and revision reference.
+- [ ] **Production/Vercel** — actual production deployment ID and commit SHA, primary domain and legacy alias/redirect behavior, and a fresh minimal HTTP response check. A PR preview build is *not* production evidence.
+- [ ] **Supabase database read-only metadata** — verified schema/table, relevant Trust Layer and `v_top_deals_balanced`/`alert_ready_deals_view` existence and definitions, authorized aggregate freshness/count observations where allowed. No row exports; absence of a trusted data path remains unknown.
+- [ ] **Scheduled jobs and alert pipeline** — active cron/job configuration, absence of exposed literal credentials in inspected authorized metadata, job/HTTP outcome and target-state evidence (job enqueue alone cannot prove alert delivery), stale-alert guard and status-view freshness.
+- [ ] **eBay and ingestion dependency** — independent provider/support evidence for completed-listing eligibility and freshness; until verified, the stopped ingestion stays stopped. Re-check matching contamination caps and GR Yaris without modifying catalog or valuation production structures.
+- [ ] **Security and messaging** — bounded secret-posture check, DMARC and applicable mail DNS verification, authenticated redirect / alias posture, dependency vulnerability state; never print or store key values in this repository.
+- [ ] **All 19 pillars** — evidence matrix with verified repo facts, current production/DB findings when available, precise owner/external blockers and ordered Phase 1 backlog. Final pillar status vocabulary is the one in Master Plan v2.8; do not invent terminal completion.
+
+**Phase 0 outcome:** `PENDING_EVIDENCE` (as of this repository-only pilot). Tony may recommend Phase 0 acceptance **only when all seven gates have independent supporting evidence**; unresolved owner/external dependencies remain named exceptions and must not silently become passed tests. A signed/recorded closeout and ordered next eligible task are separate from the existence of this checklist. No arbitrary freshness or row-count thresholds are asserted without an approved source contract.
+
 **Execution boundary:** This is a safe documentation/repository inspection slice. It does not grant Forge mission-worker registration, database mutations, merges, deployments, spend, scraping, or external messaging authority. Independent verification and the project release gates are still required.
 
 ---
